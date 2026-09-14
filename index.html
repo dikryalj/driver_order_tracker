@@ -1254,7 +1254,8 @@
                 const rawImg = new Image();
                 rawImg.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const maxDim = 800;
+                    // Tingkatkan resolusi max agar teks kecil screenshot bisa terbaca AI
+                    const maxDim = 1600;
                     let w = rawImg.width;
                     let h = rawImg.height;
 
@@ -1272,7 +1273,7 @@
                     canvas.height = h;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(rawImg, 0, 0, w, h);
-                    uploadedImageDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                    uploadedImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
                     document.getElementById('uploaded-image-preview').src = uploadedImageDataUrl;
                     document.getElementById('image-preview-container').classList.remove('hidden');
@@ -1424,6 +1425,7 @@ Ekstrak teks gambar menjadi format JSON valid:
 Aturan: Jika tagihan/terima tunai > Rp0 maka cashAmount = nominal angka. Jika Rp0 maka cashAmount = 0.
 Hanya balaskan JSON tanpa teks lain.`;
 
+                // Format payload menggunakan format xAI yang benar (input_image / input_text)
                 const payload = {
                     model: 'grok-2-vision-1212',
                     messages: [
@@ -1432,18 +1434,18 @@ Hanya balaskan JSON tanpa teks lain.`;
                             role: 'user',
                             content: [
                                 {
-                                    type: 'image_url',
-                                    image_url: {
-                                        url: `data:image/jpeg;base64,${base64Data}`,
-                                        detail: 'high'
-                                    }
+                                    type: 'input_image',
+                                    image_url: `data:image/jpeg;base64,${base64Data}`
                                 },
-                                { type: 'text', text: 'Ekstrak data screenshot pesanan ini ke JSON:' }
+                                {
+                                    type: 'input_text',
+                                    text: 'Ekstrak data screenshot pesanan ini ke JSON:'
+                                }
                             ]
                         }
                     ],
                     temperature: 0.1,
-                    max_tokens: 1024
+                    max_tokens: 1500
                 };
 
                 const res = await fetch(apiUrl, {
@@ -1457,11 +1459,17 @@ Hanya balaskan JSON tanpa teks lain.`;
 
                 if (!res.ok) {
                     const errData = await res.json().catch(() => ({}));
-                    if (res.status === 401) {
-                        showToast('API Key tidak valid atau sudah kedaluwarsa.', 'rose');
+                    const errMsg = errData?.error?.message || errData?.message || res.statusText;
+                    console.error('Grok API Error Response:', errData);
+                    if (res.status === 401 || res.status === 403) {
+                        showToast('API Key tidak valid atau tidak punya akses. Periksa key di console.x.ai.', 'rose');
                         clearGrokApiKey();
+                    } else if (res.status === 404) {
+                        showToast('Model Grok Vision tidak ditemukan. Periksa koneksi internet.', 'rose');
+                    } else if (res.status === 429) {
+                        showToast('Rate limit tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
                     } else {
-                        showToast(`Grok API Error: ${errData?.error?.message || res.statusText}`, 'rose');
+                        showToast(`Grok API Error (${res.status}): ${errMsg}`, 'rose');
                     }
                     return;
                 }
