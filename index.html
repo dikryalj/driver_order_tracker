@@ -278,8 +278,8 @@
                         <i class="fa-solid fa-key"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="text-xs font-extrabold text-rose-800">API Key Grok Belum Diatur</p>
-                        <p class="text-[11px] text-rose-600 mt-0.5">Masukkan Grok API Key (xAI) untuk mengaktifkan fitur AI ekstrak screenshot otomatis.</p>
+                        <p class="text-xs font-extrabold text-rose-800">API Key Groq Belum Diatur</p>
+                        <p class="text-[11px] text-rose-600 mt-0.5">Masukkan Groq API Key (groq.com) untuk mengaktifkan fitur AI ekstrak screenshot otomatis.</p>
                     </div>
                 </div>
                 <div class="flex gap-2">
@@ -291,7 +291,7 @@
                         <i class="fa-solid fa-plug"></i> Hubungkan
                     </button>
                 </div>
-                <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage). Dapatkan key di <a href="https://console.x.ai" target="_blank" class="underline font-bold">console.x.ai</a></p>
+                <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage). Dapatkan key di <a href="https://console.groq.com" target="_blank" class="underline font-bold">console.groq.com</a></p>
             </div>
 
             <!-- Grok API Connected Status -->
@@ -570,7 +570,7 @@
                         <i class="fa-solid fa-trash-can mr-1"></i> Hapus API Key Tersimpan
                     </button>
                 </div>
-                <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Dapatkan API Key di <a href="https://console.x.ai" target="_blank" class="text-indigo-500 font-bold underline">console.x.ai</a></p>
+                <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Dapatkan API Key di <a href="https://console.groq.com" target="_blank" class="text-indigo-500 font-bold underline">console.groq.com</a></p>
             </div>
 
             <!-- Pengaturan Finansial -->
@@ -1381,9 +1381,9 @@
         }
 
         // ============================================================
-        // GROK VISION API — Ekstrak screenshot pesanan
-        // Endpoint: https://api.x.ai/v1/chat/completions (OpenAI-compatible)
-        // Model: grok-2-vision-1212 (mendukung input gambar)
+        // GROQ VISION API — Ekstrak screenshot pesanan (groq.com)
+        // Base URL: https://api.groq.com/openai/v1/chat/completions
+        // Models: llama-3.2-11b-vision-preview, qwen/qwen3.6-27b
         // ============================================================
         async function processImageWithGrok(base64DataUrl) {
             const loading = document.getElementById('ocr-loading');
@@ -1392,7 +1392,7 @@
             const apiKey = getGrokApiKey();
             if (!apiKey) {
                 loading.classList.add('hidden');
-                showToast('API Key Grok belum diatur. Masukkan key terlebih dahulu.', 'rose');
+                showToast('API Key Groq belum diatur. Masukkan key terlebih dahulu.', 'rose');
                 updateGrokKeyUI(); // pastikan banner muncul
                 const now = new Date();
                 now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -1402,7 +1402,7 @@
 
             try {
                 const base64Data = base64DataUrl.split(',')[1];
-                const apiUrl = 'https://api.x.ai/v1/chat/completions';
+                const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
                 const systemPrompt = `Anda adalah OCR AI ekstraktor screenshot pesanan driver ojek online.
 Ekstrak teks gambar menjadi format JSON valid:
@@ -1425,53 +1425,69 @@ Ekstrak teks gambar menjadi format JSON valid:
 Aturan: Jika tagihan/terima tunai > Rp0 maka cashAmount = nominal angka. Jika Rp0 maka cashAmount = 0.
 Hanya balaskan JSON tanpa teks lain.`;
 
-                // Format payload - xAI grok-4 menggunakan format OpenAI-compatible standard
-                const payload = {
-                    model: 'grok-4',
-                    messages: [
-                        { role: 'system', content: systemPrompt },
-                        {
-                            role: 'user',
-                            content: [
-                                {
-                                    type: 'image_url',
-                                    image_url: {
-                                        url: `data:image/jpeg;base64,${base64Data}`
+                // Coba model Vision Groq (Llama 3.2 Vision / Qwen Vision)
+                const visionModels = [
+                    'llama-3.2-11b-vision-preview',
+                    'llama-3.2-90b-vision-preview',
+                    'qwen/qwen3.6-27b'
+                ];
+
+                let res = null;
+                let lastErrData = null;
+
+                for (const modelName of visionModels) {
+                    const payload = {
+                        model: modelName,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            {
+                                role: 'user',
+                                content: [
+                                    {
+                                        type: 'image_url',
+                                        image_url: {
+                                            url: `data:image/jpeg;base64,${base64Data}`
+                                        }
+                                    },
+                                    {
+                                        type: 'text',
+                                        text: 'Ekstrak data screenshot pesanan driver ini ke JSON sesuai format di atas:'
                                     }
-                                },
-                                {
-                                    type: 'text',
-                                    text: 'Ekstrak data screenshot pesanan driver ini ke JSON sesuai format di atas:'
-                                }
-                            ]
-                        }
-                    ],
-                    temperature: 0.1,
-                    max_tokens: 1500
-                };
+                                ]
+                            }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 1500
+                    };
 
-                const res = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify(payload)
-                });
+                    res = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
 
-                if (!res.ok) {
-                    const errData = await res.json().catch(() => ({}));
-                    const errMsg = errData?.error?.message || errData?.message || res.statusText;
-                    console.error('Grok API Error Response:', errData);
-                    if (res.status === 401 || res.status === 403) {
-                        showToast('API Key tidak valid atau tidak punya akses. Periksa key di console.x.ai.', 'rose');
+                    if (res.ok) break;
+
+                    lastErrData = await res.json().catch(() => ({}));
+                    console.warn(`Groq model ${modelName} returned status ${res.status}:`, lastErrData);
+
+                    // Jika error 401 atau 403, key salah — jangan coba model lain
+                    if (res.status === 401 || res.status === 403) break;
+                }
+
+                if (!res || !res.ok) {
+                    const errMsg = lastErrData?.error?.message || lastErrData?.message || res?.statusText;
+                    console.error('Groq API Error Response:', lastErrData);
+                    if (res?.status === 401 || res?.status === 403) {
+                        showToast('API Key Groq tidak valid. Periksa key Anda di console.groq.com.', 'rose');
                         clearGrokApiKey();
-                    } else if (res.status === 404) {
-                        showToast('Model Grok Vision tidak ditemukan. Periksa koneksi internet.', 'rose');
-                    } else if (res.status === 429) {
-                        showToast('Rate limit tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
+                    } else if (res?.status === 429) {
+                        showToast('Rate limit Groq tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
                     } else {
-                        showToast(`Grok API Error (${res.status}): ${errMsg}`, 'rose');
+                        showToast(`Groq API Error (${res?.status || 500}): ${errMsg}`, 'rose');
                     }
                     return;
                 }
