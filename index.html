@@ -1425,21 +1425,23 @@ Ekstrak teks gambar menjadi format JSON valid:
 Aturan: Jika tagihan/terima tunai > Rp0 maka cashAmount = nominal angka. Jika Rp0 maka cashAmount = 0.
 Hanya balaskan JSON tanpa teks lain.`;
 
-                // Format payload menggunakan format xAI yang benar (input_image / input_text)
+                // Format payload - xAI grok-4 menggunakan format OpenAI-compatible standard
                 const payload = {
-                    model: 'grok-2-vision-1212',
+                    model: 'grok-4',
                     messages: [
                         { role: 'system', content: systemPrompt },
                         {
                             role: 'user',
                             content: [
                                 {
-                                    type: 'input_image',
-                                    image_url: `data:image/jpeg;base64,${base64Data}`
+                                    type: 'image_url',
+                                    image_url: {
+                                        url: `data:image/jpeg;base64,${base64Data}`
+                                    }
                                 },
                                 {
-                                    type: 'input_text',
-                                    text: 'Ekstrak data screenshot pesanan ini ke JSON:'
+                                    type: 'text',
+                                    text: 'Ekstrak data screenshot pesanan driver ini ke JSON sesuai format di atas:'
                                 }
                             ]
                         }
