@@ -94,13 +94,15 @@
     <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 sm:px-6">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="relative">
-                    <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Driver Avatar" class="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/30">
+                <div class="relative cursor-pointer" onclick="switchTab('profile')">
+                    <div id="header-driver-avatar" class="w-10 h-10 rounded-full object-cover ring-2 ring-indigo-500/30 overflow-hidden flex items-center justify-center bg-indigo-50 text-indigo-600 font-bold text-sm">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
                     <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
                 </div>
                 <div>
-                    <h1 class="text-xs font-semibold text-slate-400 leading-none">Driver Pro 👋</h1>
-                    <p class="text-base font-extrabold text-slate-900 leading-tight">Alex Harrison</p>
+                    <h1 class="text-xs font-semibold text-slate-400 leading-none" id="header-greeting">Driver 👋</h1>
+                    <p class="text-base font-extrabold text-slate-900 leading-tight" id="header-driver-name">Driver</p>
                 </div>
             </div>
             
@@ -138,7 +140,7 @@
                 <!-- Progress Bar -->
                 <div class="space-y-1.5 my-3">
                     <div class="flex justify-between text-xs font-medium text-indigo-100">
-                        <span>Target Harian (15 Order)</span>
+                        <span id="hero-target-label">Target Harian (10 Order)</span>
                         <span id="hero-progress-text">0% Reached</span>
                     </div>
                     <div class="w-full bg-black/20 h-2.5 rounded-full overflow-hidden p-0.5 backdrop-blur-sm">
@@ -461,42 +463,204 @@
             </div>
         </section>
 
-        <section id="tab-insights" class="hidden space-y-4">
-            <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-clock text-amber-500"></i> Distribusi Jam Gacor
-                    </h4>
-                    <span class="text-[10px] font-bold text-slate-400">24 Jam</span>
+        <!-- Section Insights (Sesuai Desain My Schedule & Today's Progress) -->
+        <section id="tab-insights" class="hidden space-y-4 pb-28">
+            <!-- Header My Schedule: Terpusat & Rapi Sesuai Gambar Referensi -->
+            <div class="text-center space-y-2 pt-1">
+                <h2 class="text-lg font-black text-slate-900 tracking-tight">My Schedule</h2>
+                
+                <!-- Month Picker Pill (Center Aligned) -->
+                <div class="relative inline-flex items-center">
+                    <label for="insights-month-input" class="inline-flex items-center gap-1.5 bg-white border border-slate-200/80 shadow-sm px-3.5 py-1.5 rounded-2xl text-xs font-bold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                        <i class="fa-regular fa-calendar text-emerald-600 text-[11px]"></i>
+                        <span id="insights-month-label">September, 2026</span>
+                        <i class="fa-solid fa-chevron-down text-[9px] text-slate-400 ml-0.5"></i>
+                    </label>
+                    <input type="month" id="insights-month-input" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="onInsightsMonthChange(this.value)">
                 </div>
-                <div class="h-56">
-                    <canvas id="chart-hours"></canvas>
+
+                <!-- Horizontal Weekly Date Strip (S M T W T F S) -->
+                <div class="bg-white px-2 py-2 rounded-3xl card-shadow border border-slate-100 flex items-center justify-between mt-1">
+                    <button type="button" onclick="navigateInsightsWeek(-1)" class="w-7 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 rounded-xl transition text-xs flex-shrink-0" title="Minggu Sebelumnya">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div id="insights-week-strip" class="flex-1 grid grid-cols-7 gap-1">
+                        <!-- 7 Hari dinamis via renderInsightsWeekStrip() -->
+                    </div>
+                    <button type="button" onclick="navigateInsightsWeek(1)" class="w-7 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 rounded-xl transition text-xs flex-shrink-0" title="Minggu Berikutnya">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- Toggle Harian | Mingguan -->
+                <div class="flex items-center justify-center gap-1 bg-slate-100 p-1 rounded-2xl w-52 mx-auto mt-2">
+                    <button type="button" id="btn-period-daily" onclick="setInsightsPeriodMode('daily')" class="flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition">Harian</button>
+                    <button type="button" id="btn-period-weekly" onclick="setInsightsPeriodMode('weekly')" class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition">Mingguan</button>
+                </div>
+                <p id="insights-range-label" class="text-xs font-bold text-slate-500 mt-0.5"></p>
+            </div>
+
+            <!-- Card: Today's Progress / Weekly Progress -->
+            <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-extrabold text-slate-900 text-sm" id="insights-progress-title">
+                        Today's Progress
+                    </h3>
+                    <button type="button" onclick="openTargetModal()" class="text-slate-400 hover:text-emerald-600 transition text-xs p-1" title="Ubah Target">
+                        <i class="fa-regular fa-pen-to-square"></i>
+                    </button>
+                </div>
+
+                <!-- Ring & Metrik Utama -->
+                <div class="flex items-center justify-between gap-3 px-1">
+                    <!-- Circular Ring Progress -->
+                    <div class="relative w-28 h-28 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <!-- Track Ring -->
+                            <circle cx="50" cy="50" r="38" stroke="#F1F5F9" stroke-width="8" fill="transparent"/>
+                            <!-- Progress Ring Hijau Emerald Sesuai Gambar -->
+                            <circle id="insights-ring-progress" cx="50" cy="50" r="38" stroke="#10B981" stroke-width="8" stroke-linecap="round" fill="transparent" stroke-dasharray="238.76" stroke-dashoffset="60" class="transition-all duration-700 ease-out"/>
+                        </svg>
+                        <div class="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
+                            <span class="text-[10px] text-slate-400 font-medium tracking-tight" id="insights-ring-sublabel">Remaining</span>
+                            <span class="text-2xl font-black text-slate-800 leading-none my-0.5 tracking-tight" id="insights-ring-value">5</span>
+                            <span class="text-[10px] text-slate-400 font-semibold" id="insights-ring-unit">order</span>
+                        </div>
+                    </div>
+
+                    <!-- Metrik Kanan (Pendapatan & BBM dengan titik warna yang cocok dengan legend) -->
+                    <div class="flex-1 space-y-3 pl-2">
+                        <div class="space-y-0.5">
+                            <p class="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                                <span>Pendapatan</span>
+                            </p>
+                            <div class="flex items-center gap-1.5 text-slate-800 font-black text-base leading-none">
+                                <span id="insights-metric-income">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <div class="space-y-0.5">
+                            <p class="text-[11px] font-medium text-slate-400 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>
+                                <span>Est. BBM Terpakai</span>
+                            </p>
+                            <div class="flex items-center gap-1.5 text-slate-800 font-black text-base leading-none">
+                                <span id="insights-metric-fuel">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 Mini Progress Bar (Fat, Protein, Carbs Style) -->
+                <div class="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100 text-left">
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-medium text-slate-400">Food</p>
+                        <p class="text-xs font-black text-slate-800" id="insights-bar-food-val">0/0</p>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                            <div id="insights-bar-food-progress" class="bg-rose-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-medium text-slate-400">SPX Paket</p>
+                        <p class="text-xs font-black text-slate-800" id="insights-bar-spx-val">0/0</p>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                            <div id="insights-bar-spx-progress" class="bg-sky-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <p class="text-[11px] font-medium text-slate-400">Bersih</p>
+                        <p class="text-xs font-black text-emerald-600" id="insights-bar-net-val">Rp0</p>
+                        <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                            <div id="insights-bar-net-progress" class="bg-amber-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-store text-indigo-500"></i> Resto Paling Sering Order
-                    </h4>
-                    <span class="text-[10px] font-bold text-slate-400">Top Restos</span>
+            <!-- Card: Grafik Pendapatan vs Est. BBM (Selalu terlihat, tidak di dalam accordion) -->
+            <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-chart-column text-indigo-500"></i> Grafik Pendapatan vs Est. BBM
+                        </h4>
+                        <p class="text-[10px] text-slate-400 mt-0.5" id="comparison-chart-subtitle">Perbandingan 7 hari (Minggu - Sabtu)</p>
+                    </div>
+                    <span id="comparison-chart-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">7 Hari</span>
                 </div>
-                <div class="h-56">
-                    <canvas id="chart-restos"></canvas>
+                <div class="h-48 relative">
+                    <canvas id="chart-comparison"></canvas>
+                    <div id="chart-comparison-empty" class="hidden absolute inset-0 flex items-center justify-center text-xs font-semibold text-slate-400 bg-white/80">
+                        Belum ada data minggu ini
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
-                        <i class="fa-solid fa-chart-pie text-violet-500"></i> Pendapatan per Platform
-                    </h4>
-                    <span class="text-[10px] font-bold text-slate-400">Breakdown</span>
+            <!-- Section: Today's Orders / This Week's Orders -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between px-1">
+                    <h3 class="font-extrabold text-slate-900 text-sm" id="insights-orders-title">
+                        Today's Orders
+                    </h3>
+                    <button type="button" onclick="switchTab('upload')" class="text-xs font-extrabold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-xl transition flex items-center gap-1 shadow-sm">
+                        <i class="fa-solid fa-plus text-[11px]"></i> Tambah
+                    </button>
                 </div>
-                <div class="h-56">
-                    <canvas id="chart-platform"></canvas>
+
+                <!-- Card Terpadu Pesanan Hari Ini / Minggu Ini -->
+                <div id="insights-orders-list" class="bg-white rounded-3xl p-4.5 card-shadow border border-slate-100 space-y-4">
+                    <!-- Dinamis terisi oleh renderInsightsOrdersList() -->
                 </div>
-                <div id="platform-breakdown-list" class="grid grid-cols-2 gap-2 mt-3"></div>
+            </div>
+
+            <!-- Expandable Accordion: Analisis Grafik 24 Jam & Platform -->
+            <div class="pt-2">
+                <button type="button" onclick="toggleExtraCharts()" class="w-full text-center text-xs font-bold text-slate-500 hover:text-indigo-600 py-3 bg-white border border-slate-200/80 rounded-2xl transition flex items-center justify-center gap-2 shadow-sm">
+                    <i class="fa-solid fa-chart-pie text-indigo-500"></i>
+                    <span id="toggle-charts-label">Tampilkan Analisis Grafik Jam & Platform</span>
+                    <i id="toggle-charts-icon" class="fa-solid fa-chevron-down text-[10px] text-slate-400 transition-transform"></i>
+                </button>
+                <div id="extra-charts-container" class="hidden space-y-4 pt-3">
+                    <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-clock text-amber-500"></i> Distribusi Jam Gacor
+                            </h4>
+                            <span class="text-[10px] font-bold text-slate-400">24 Jam</span>
+                        </div>
+                        <div class="h-56">
+                            <canvas id="chart-hours"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-store text-indigo-500"></i> Resto Paling Sering Order
+                            </h4>
+                            <span class="text-[10px] font-bold text-slate-400">Top Restos</span>
+                        </div>
+                        <div class="h-56">
+                            <canvas id="chart-restos"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-chart-pie text-violet-500"></i> Pendapatan per Platform
+                            </h4>
+                            <span class="text-[10px] font-bold text-slate-400">Breakdown</span>
+                        </div>
+                        <div class="h-56">
+                            <canvas id="chart-platform"></canvas>
+                        </div>
+                        <div id="platform-breakdown-list" class="grid grid-cols-2 gap-2 mt-3"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -511,20 +675,18 @@
                 <button onclick="exportData()" class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold px-3 py-1.5 rounded-xl transition active:scale-95">Backup</button>
             </div>
 
-            <div class="bg-white p-5 rounded-3xl card-shadow border border-slate-100 text-center space-y-3">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" alt="Profile" class="w-20 h-20 rounded-full mx-auto object-cover ring-4 ring-indigo-100">
+            <div class="bg-white p-5 rounded-3xl card-shadow border border-slate-100 text-center relative space-y-3">
+                <button type="button" onclick="openEditProfileModal()" class="absolute top-4 right-4 w-8 h-8 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 transition flex items-center justify-center active:scale-95 shadow-xs" title="Edit Profil">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <div class="w-20 h-20 rounded-full mx-auto ring-4 ring-indigo-100 overflow-hidden flex items-center justify-center bg-indigo-50 text-indigo-600 text-2xl font-extrabold cursor-pointer" onclick="openEditProfileModal()" id="profile-avatar-container">
+                    <i class="fa-solid fa-user text-2xl"></i>
+                </div>
                 <div>
-                    <h3 class="font-extrabold text-slate-900 text-lg">Alex Harrison</h3>
-                    <p class="text-xs text-slate-400 font-medium">Driver Super Ojol • ID #884920</p>
+                    <h3 class="font-extrabold text-slate-900 text-lg" id="profile-driver-name">Driver</h3>
+                    <p class="text-xs text-slate-400 font-medium cursor-pointer" onclick="openEditProfileModal()" id="profile-driver-subtitle">Ketuk untuk melengkapi profil</p>
                 </div>
-                <div class="flex justify-center gap-2 pt-2">
-                    <span class="bg-emerald-50 text-emerald-600 text-xs font-bold px-3 py-1 rounded-full border border-emerald-100">
-                        <i class="fa-solid fa-shield-check"></i> Terverifikasi
-                    </span>
-                    <span class="bg-indigo-50 text-indigo-600 text-xs font-bold px-3 py-1 rounded-full border border-indigo-100">
-                        <i class="fa-solid fa-star text-amber-400"></i> 4.98 Rating
-                    </span>
-                </div>
+                <div id="profile-driver-chips" class="flex flex-wrap justify-center gap-1.5 pt-1"></div>
             </div>
 
             <!-- Backup & Restore -->
@@ -590,7 +752,7 @@
 
             <div class="bg-white rounded-3xl card-shadow border border-slate-100 divide-y divide-slate-100 text-xs font-semibold text-slate-700">
                 <div onclick="resetToMockData()" class="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer rounded-t-3xl">
-                    <span class="flex items-center gap-3 text-indigo-600"><i class="fa-solid fa-rotate"></i> Reset Data Contoh</span>
+                    <span class="flex items-center gap-3 text-indigo-600"><i class="fa-solid fa-rotate"></i> Muat Data Contoh</span>
                     <i class="fa-solid fa-chevron-right text-slate-300 text-[10px]"></i>
                 </div>
                 <div onclick="clearAllData()" class="p-4 flex items-center justify-between hover:bg-slate-50 cursor-pointer rounded-b-3xl">
@@ -625,6 +787,66 @@
                     Batal
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="edit-profile-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 py-6">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-user-pen text-indigo-600"></i> Edit Profil Driver
+                </h3>
+                <button type="button" onclick="closeEditProfileModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form id="edit-profile-form" onsubmit="saveProfileForm(event)" class="space-y-4">
+                <!-- Foto Profil -->
+                <div class="flex flex-col items-center space-y-2">
+                    <div class="relative w-20 h-20 rounded-full ring-4 ring-indigo-100 overflow-hidden bg-indigo-50 flex items-center justify-center text-indigo-600 text-2xl font-bold">
+                        <img id="edit-profile-preview-img" src="" alt="Preview" class="hidden w-full h-full object-cover">
+                        <span id="edit-profile-preview-placeholder"><i class="fa-solid fa-user"></i></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="document.getElementById('profile-photo-input').click()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-camera"></i> Ganti Foto
+                        </button>
+                        <button type="button" id="btn-delete-profile-photo" onclick="deleteProfilePhoto()" class="hidden bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> Hapus Foto
+                        </button>
+                        <input type="file" id="profile-photo-input" accept="image/*" class="hidden" onchange="handleProfilePhotoSelect(event)">
+                    </div>
+                </div>
+
+                <!-- Nama Driver -->
+                <div class="space-y-1">
+                    <label class="block text-[10px] font-bold text-slate-500">Nama Driver * (Maks. 30 karakter)</label>
+                    <input type="text" id="edit-profile-name" maxlength="30" required placeholder="Contoh: Budi Santoso" class="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none transition">
+                </div>
+
+                <!-- Jenis Driver Multi-select Chips -->
+                <div class="space-y-1.5">
+                    <label class="block text-[10px] font-bold text-slate-500">Jenis Driver (Bisa pilih lebih dari satu)</label>
+                    <div id="driver-types-chips-container" class="flex flex-wrap gap-1.5">
+                        <!-- Dynamic chips via renderDriverTypeChips() -->
+                    </div>
+                    <div id="custom-driver-type-container" class="hidden pt-1">
+                        <input type="text" id="edit-profile-custom-type" maxlength="30" placeholder="Tulis jenis driver lainnya..." class="w-full bg-slate-50 border border-slate-200 focus:border-indigo-400 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-800 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeEditProfileModal()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 rounded-xl transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-xl transition shadow-md shadow-indigo-200">
+                        Simpan
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -704,9 +926,9 @@
                     </div>
 
                     <!-- Interactive Map Viewport -->
-                    <div id="detail-map-container" class="w-full h-56 rounded-xl border border-indigo-200 overflow-hidden relative shadow-inner bg-slate-100">
+                    <div id="detail-map-container" class="w-full h-56 rounded-xl border border-indigo-200 overflow-hidden relative shadow-inner bg-slate-100 cursor-pointer">
                         <div id="detail-map" class="w-full h-full z-0"></div>
-                        <div id="map-checkin-placeholder" class="hidden absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-slate-50 to-indigo-50/60 space-y-2.5">
+                        <div id="map-checkin-placeholder" onclick="openGmapsDirect('full')" class="hidden absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-slate-50 to-indigo-50/60 space-y-2.5 cursor-pointer">
                             <div class="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-600 text-lg shadow-sm">
                                 <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
                             </div>
@@ -719,10 +941,14 @@
                                 </p>
                             </div>
                             <div class="flex items-center gap-2 pt-0.5">
-                                <button type="button" onclick="scrollToCheckinSection()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                                <button type="button" onclick="event.stopPropagation(); scrollToCheckinSection();" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm">
                                     <i class="fa-solid fa-location-crosshairs text-amber-300"></i> Checkin Lokasi di Bawah
                                 </button>
                             </div>
+                        </div>
+                        <!-- Hint Ketuk Peta -->
+                        <div class="absolute bottom-2 left-2 z-20 pointer-events-none bg-slate-900/75 text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-xs shadow flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-amber-300"></i> Ketuk peta untuk buka Google Maps
                         </div>
                     </div>
 
@@ -953,6 +1179,13 @@
         let chartHoursInstance = null;
         let chartRestosInstance = null;
         let chartPlatformInstance = null;
+        let chartComparisonInstance = null;
+
+        // Profile
+        const PROFILE_STORAGE_KEY = 'drivertrack_profile';
+        let userProfile = { name: '', photo: null, driverTypes: [], otherType: '' };
+        let editProfileSelectedTypes = [];
+        let editProfileTempPhoto = null; // base64 atau null
 
         // Area Coordinates Database (Solo Raya & Central Java Districts)
         const AREA_COORDINATES_DB = {
@@ -1011,7 +1244,9 @@
         }
 
         window.onload = function() {
+            loadUserProfile();
             loadFromLocalStorage();
+            initInsightsDate();
             onCategoryChange();
             renderAllViews();
             updateBackupWarningUI();
@@ -1126,21 +1361,13 @@
             try {
                 const saved = localStorage.getItem('drivertrack_orders');
                 if (saved) {
-                    ordersList = JSON.parse(saved);
-                    // Pastikan pesanan SPX #4N73 dari screenshot tercatat jika belum ada
-                    if (!ordersList.some(o => o.codeOrder === '#4N73')) {
-                        const spxOrder = getInitialMockOrders().find(o => o.codeOrder === '#4N73');
-                        if (spxOrder) {
-                            ordersList.unshift(spxOrder);
-                            saveToLocalStorage();
-                        }
-                    }
+                    const parsed = JSON.parse(saved);
+                    ordersList = Array.isArray(parsed) ? parsed : [];
                 } else {
-                    ordersList = getInitialMockOrders();
-                    saveToLocalStorage();
+                    ordersList = [];
                 }
             } catch (e) {
-                ordersList = getInitialMockOrders();
+                ordersList = [];
             }
         }
 
@@ -1154,18 +1381,20 @@
 
         // ============================================================
         // 1.1 BACKUP & RESTORE MANUAL
-        // Export/Import ordersList (termasuk restoCheckin/recipCheckin)
-        // sebagai file .json. Tidak mengubah struktur data yang sudah ada.
+        // Export/Import ordersList (termasuk restoCheckin/recipCheckin & profil)
+        // sebagai file .json. Tidak merusak format lama.
         // ============================================================
         const BACKUP_TIMESTAMP_KEY = 'drivertrack_last_backup';
         let pendingImportOrders = null;
+        let pendingImportProfile = null;
 
         function exportData() {
             try {
                 const payload = {
                     app: 'DriverTrack',
-                    exportVersion: 1,
+                    exportVersion: 2,
                     exportedAt: new Date().toISOString(),
+                    profile: userProfile,
                     totalOrders: ordersList.length,
                     ordersList: ordersList
                 };
@@ -1209,13 +1438,13 @@
                     return;
                 }
 
-                // Terima dua bentuk: hasil export resmi ({ ordersList: [...] })
-                // atau array polos hasil export versi lama / manual.
                 let candidateList = null;
                 if (Array.isArray(parsed)) {
                     candidateList = parsed;
+                    pendingImportProfile = null;
                 } else if (parsed && Array.isArray(parsed.ordersList)) {
                     candidateList = parsed.ordersList;
+                    pendingImportProfile = (parsed.profile && typeof parsed.profile === 'object') ? parsed.profile : null;
                 }
 
                 if (!candidateList) {
@@ -1234,7 +1463,7 @@
 
                 pendingImportOrders = candidateList;
                 document.getElementById('import-modal-desc').innerText =
-                    `File valid, berisi ${candidateList.length} pesanan${invalidCount > 0 ? ` (${invalidCount} item terlewati karena tidak lengkap)` : ''}.`;
+                    `File valid, berisi ${candidateList.length} pesanan${invalidCount > 0 ? ` (${invalidCount} item terlewati karena tidak lengkap)` : ''}${pendingImportProfile ? ' & profil driver' : ''}.`;
                 document.getElementById('import-modal').classList.remove('hidden');
                 event.target.value = '';
             };
@@ -1248,6 +1477,7 @@
         function closeImportModal() {
             document.getElementById('import-modal').classList.add('hidden');
             pendingImportOrders = null;
+            pendingImportProfile = null;
         }
 
         function confirmImport(mode) {
@@ -1264,6 +1494,16 @@
                 ordersList.forEach(o => { existingById[o.id] = o; });
                 validIncoming.forEach(o => { existingById[o.id] = o; });
                 ordersList = Object.values(existingById).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            }
+
+            if (pendingImportProfile && pendingImportProfile.name) {
+                userProfile = {
+                    name: String(pendingImportProfile.name || '').slice(0, 30),
+                    photo: pendingImportProfile.photo || null,
+                    driverTypes: Array.isArray(pendingImportProfile.driverTypes) ? pendingImportProfile.driverTypes : [],
+                    otherType: pendingImportProfile.otherType || ''
+                };
+                saveUserProfile(userProfile);
             }
 
             saveToLocalStorage();
@@ -1318,7 +1558,7 @@
             });
 
             if (tab === 'insights') {
-                renderCharts();
+                renderInsightsView();
             }
             if (tab === 'profile') {
                 updateBackupWarningUI();
@@ -1929,7 +2169,13 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             document.getElementById('hero-total-orders').innerText = `${filtered.length} Orders`;
             document.getElementById('home-count-badge').innerText = filtered.length;
             
-            const progress = Math.min(100, Math.round((filtered.length / 15) * 100));
+            const target = insightsDailyTarget || 10;
+            const targetLabelEl = document.getElementById('hero-target-label');
+            if (targetLabelEl) {
+                targetLabelEl.innerText = `Target Harian (${target} Order)`;
+            }
+            
+            const progress = target > 0 ? Math.min(100, Math.round((filtered.length / target) * 100)) : 0;
             document.getElementById('hero-progress-text').innerText = `${progress}% Reached`;
             document.getElementById('hero-progress-bar').style.width = `${progress}%`;
 
@@ -1955,12 +2201,24 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             renderFinancialSummaryUI(filtered);
             renderHomeOrders(filtered.slice(0, 3));
             renderOrdersList(filtered);
+            if (activeTab === 'insights') {
+                renderInsightsView();
+            }
         }
 
         function renderHomeOrders(orders) {
             const container = document.getElementById('home-recent-orders');
             if (orders.length === 0) {
-                container.innerHTML = `<div class="bg-white p-4 rounded-2xl text-center text-xs text-slate-400">Belum ada data pesanan.</div>`;
+                container.innerHTML = `
+                    <div class="bg-white p-6 rounded-3xl text-center border border-slate-100 space-y-2.5 shadow-sm">
+                        <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-sm">
+                            <i class="fa-solid fa-receipt"></i>
+                        </div>
+                        <p class="text-xs text-slate-400 font-medium">Belum ada pesanan terbaru.</p>
+                        <button type="button" onclick="switchTab('upload')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition inline-flex items-center gap-1.5 shadow-sm active:scale-95">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Tambah pesanan pertama
+                        </button>
+                    </div>`;
                 return;
             }
             container.innerHTML = orders.map(o => createOrderCardHTML(o)).join('');
@@ -2053,6 +2311,9 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             const order = ordersList.find(o => o.id === orderId);
             if (!order) return;
 
+            currentDetailOrder = order;
+            currentMapRouteMode = 'full';
+
             document.getElementById('detail-modal-category-badge').innerText = order.category;
             document.getElementById('detail-modal-title').innerText = order.restoName;
 
@@ -2140,6 +2401,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
 
         function closeOrderDetailModal() {
             document.getElementById('order-detail-modal').classList.add('hidden');
+            currentDetailOrder = null;
             if (leafletMapInstance) {
                 leafletMapInstance.remove();
                 leafletMapInstance = null;
@@ -2449,15 +2711,91 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
+        let currentDetailOrder = null;
+        let currentMapRouteMode = 'full';
+
+        // ============================================================
+        // HELPER GOOGLE MAPS NAVIGATION
+        // Dibangun murni dari alamat yang diketik user (restoAddr / recipAddr,
+        // fallback restoName / recipName) dengan encodeURIComponent.
+        // Tidak memakai hasil geocoding/koordinat tebakan agar titik tidak meleset.
+        // ============================================================
+        function buildGmapsUrl(order, mode = 'full') {
+            if (!order) return null;
+            const resto = (order.restoAddr || order.restoName || '').trim();
+            const recip = (order.recipAddr || order.recipName || '').trim();
+
+            if (mode === 'resto') {
+                if (!resto) return null;
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(resto)}`;
+            } else if (mode === 'recip') {
+                if (!recip) return null;
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(recip)}`;
+            } else { // 'full' (Rute Semua)
+                if (!resto && !recip) return null;
+                if (resto && recip) {
+                    return `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(resto)}&destination=${encodeURIComponent(recip)}&travelmode=driving`;
+                }
+                if (recip) {
+                    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(recip)}&travelmode=driving`;
+                }
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(resto)}`;
+            }
+        }
+
+        function openGmapsDirect(mode) {
+            const targetOrder = currentDetailOrder;
+            if (!targetOrder) return;
+            const activeMode = mode || currentMapRouteMode || 'full';
+            const url = buildGmapsUrl(targetOrder, activeMode);
+            if (!url) {
+                showToast("Alamat belum diisi", "rose");
+                return;
+            }
+            window.open(url, '_blank', 'noopener');
+        }
+
+        function updateNavButtons(order, activeMode) {
+            const btnNavRoute = document.getElementById('btn-gmap-route');
+            const btnNavResto = document.getElementById('btn-gmap-resto');
+            const btnNavRecip = document.getElementById('btn-gmap-recip');
+
+            const m = activeMode || currentMapRouteMode || 'full';
+            const routeUrl = buildGmapsUrl(order, m);
+            const restoUrl = buildGmapsUrl(order, 'resto');
+            const recipUrl = buildGmapsUrl(order, 'recip');
+
+            if (btnNavRoute) {
+                btnNavRoute.href = routeUrl || '#';
+                btnNavRoute.onclick = (e) => {
+                    e.preventDefault();
+                    openGmapsDirect(currentMapRouteMode || 'full');
+                };
+            }
+            if (btnNavResto) {
+                btnNavResto.href = restoUrl || '#';
+                btnNavResto.onclick = (e) => {
+                    e.preventDefault();
+                    openGmapsDirect('resto');
+                };
+            }
+            if (btnNavRecip) {
+                btnNavRecip.href = recipUrl || '#';
+                btnNavRecip.onclick = (e) => {
+                    e.preventDefault();
+                    openGmapsDirect('recip');
+                };
+            }
+        }
+
         async function initOrderMap(order) {
+            currentDetailOrder = order;
             const restoAddr = order.restoAddr || order.restoName || 'Resto / Pengirim';
             const recipAddr = order.recipAddr || order.recipName || 'Tujuan / Penerima';
             const distanceBadge = document.getElementById('detail-calculated-distance');
             const placeholderEl = document.getElementById('map-checkin-placeholder');
             const modeSelector = document.getElementById('map-mode-selector');
             const btnNavRoute = document.getElementById('btn-gmap-route');
-            const btnNavResto = document.getElementById('btn-gmap-resto');
-            const btnNavRecip = document.getElementById('btn-gmap-recip');
 
             if (leafletMapInstance) {
                 leafletMapInstance.remove();
@@ -2485,19 +2823,10 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                     distanceBadge.innerHTML = '<i class="fa-solid fa-location-crosshairs mr-1"></i> Menunggu Checkin GPS (0/2)';
                 }
 
-                const qResto = encodeURIComponent(order.restoAddr || order.restoName || '');
-                const qRecip = encodeURIComponent(order.recipAddr || order.recipName || '');
-                if (btnNavResto) {
-                    btnNavResto.href = `https://www.google.com/maps/search/?api=1&query=${qResto}`;
-                    btnNavResto.title = 'Buka Alamat Resto di Google Maps';
-                }
-                if (btnNavRecip) {
-                    btnNavRecip.href = `https://www.google.com/maps/search/?api=1&query=${qRecip}`;
-                    btnNavRecip.title = 'Buka Alamat Penerima di Google Maps';
-                }
+                currentMapRouteMode = 'full';
+                updateNavButtons(order, 'full');
                 if (btnNavRoute) {
-                    btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&destination=${qRecip}`;
-                    btnNavRoute.innerHTML = `<i class="fa-solid fa-magnifying-glass text-amber-300 mr-1"></i> Cari Rute di Google Maps`;
+                    btnNavRoute.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Navigasi Google Maps`;
                 }
                 return;
             }
@@ -2543,6 +2872,9 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 }).addTo(leafletMapInstance);
 
+                // Leaflet click membuka Google Maps sesuai mode
+                leafletMapInstance.on('click', () => { openGmapsDirect(currentMapRouteMode || 'resto'); });
+
                 mapRestoMarker = L.marker([mapRestoCoords.lat, mapRestoCoords.lon], { icon: redIcon }).addTo(leafletMapInstance)
                     .bindPopup(`<div class="space-y-1"><b>1. ${order.restoName || 'Resto / Pengirim'}</b><div class="text-[11px] text-slate-600">${restoAddr}</div><span class="inline-block bg-rose-50 text-rose-700 font-bold text-[10px] px-2 py-0.5 rounded border border-rose-200">📍 Titik GPS Resto Checkin (1/2)</span></div>`).openPopup();
 
@@ -2551,12 +2883,10 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                     distanceBadge.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Titik Resto Terverifikasi (Checkin 1/2)';
                 }
 
-                if (btnNavResto) btnNavResto.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRestoCoords.lat},${mapRestoCoords.lon}`;
-                const qRecip = encodeURIComponent(order.recipAddr || order.recipName || '');
-                if (btnNavRecip) btnNavRecip.href = `https://www.google.com/maps/search/?api=1&query=${qRecip}`;
+                currentMapRouteMode = 'resto';
+                updateNavButtons(order, 'resto');
                 if (btnNavRoute) {
-                    btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&origin=${mapRestoCoords.lat},${mapRestoCoords.lon}&destination=${qRecip}`;
-                    btnNavRoute.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Rute ke Penerima (Maps)`;
+                    btnNavRoute.innerHTML = `<i class="fa-solid fa-store text-amber-300 mr-1"></i> Navigasi Ke Resto (#1)`;
                 }
 
                 updateMapModeButtons(true, false, 'resto');
@@ -2580,6 +2910,9 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 }).addTo(leafletMapInstance);
 
+                // Leaflet click membuka Google Maps sesuai mode
+                leafletMapInstance.on('click', () => { openGmapsDirect(currentMapRouteMode || 'recip'); });
+
                 mapRecipMarker = L.marker([mapRecipCoords.lat, mapRecipCoords.lon], { icon: greenIcon }).addTo(leafletMapInstance)
                     .bindPopup(`<div class="space-y-1"><b>2. ${order.recipName || 'Tujuan / Penerima'}</b><div class="text-[11px] text-slate-600">${recipAddr}</div><span class="inline-block bg-emerald-50 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded border border-emerald-200">📍 Titik GPS Penerima Checkin (1/2)</span></div>`).openPopup();
 
@@ -2588,12 +2921,10 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                     distanceBadge.innerHTML = '<i class="fa-solid fa-location-dot mr-1"></i> Titik Penerima Terverifikasi (Checkin 1/2)';
                 }
 
-                const qResto = encodeURIComponent(order.restoAddr || order.restoName || '');
-                if (btnNavResto) btnNavResto.href = `https://www.google.com/maps/search/?api=1&query=${qResto}`;
-                if (btnNavRecip) btnNavRecip.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
+                currentMapRouteMode = 'recip';
+                updateNavButtons(order, 'recip');
                 if (btnNavRoute) {
-                    btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
-                    btnNavRoute.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Menuju Titik Penerima`;
+                    btnNavRoute.innerHTML = `<i class="fa-solid fa-location-dot text-amber-300 mr-1"></i> Navigasi Ke Penerima (#2)`;
                 }
 
                 updateMapModeButtons(false, true, 'recip');
@@ -2617,14 +2948,19 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             }).addTo(leafletMapInstance);
 
+            // Leaflet click membuka Google Maps sesuai mode
+            leafletMapInstance.on('click', () => { openGmapsDirect(currentMapRouteMode || 'full'); });
+
             const lat1 = mapRestoCoords.lat;
             const lon1 = mapRestoCoords.lon;
             const lat2 = mapRecipCoords.lat;
             const lon2 = mapRecipCoords.lon;
 
-            if (btnNavResto) btnNavResto.href = `https://www.google.com/maps/dir/?api=1&destination=${lat1},${lon1}`;
-            if (btnNavRecip) btnNavRecip.href = `https://www.google.com/maps/dir/?api=1&destination=${lat2},${lon2}`;
-            if (btnNavRoute) btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=driving`;
+            currentMapRouteMode = 'full';
+            updateNavButtons(order, 'full');
+            if (btnNavRoute) {
+                btnNavRoute.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Navigasi Google Maps`;
+            }
 
             mapRestoMarker = L.marker([lat1, lon1], { icon: redIcon }).addTo(leafletMapInstance)
                 .bindPopup(`<div class="space-y-1"><b>1. ${order.restoName || 'Resto / Pengirim'}</b><div class="text-[11px] text-slate-600">${restoAddr}</div><span class="inline-block bg-rose-50 text-rose-700 font-bold text-[10px] px-2 py-0.5 rounded border border-rose-200">📍 Titik GPS Checkin Resto</span></div>`);
@@ -2753,6 +3089,11 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
         }
 
         function setMapRouteMode(mode) {
+            currentMapRouteMode = mode;
+            if (currentDetailOrder) {
+                updateNavButtons(currentDetailOrder, mode);
+            }
+
             if (!leafletMapInstance) return;
 
             const hasResto = !!mapRestoCoords;
@@ -2764,7 +3105,6 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 leafletMapInstance.setView([mapRestoCoords.lat, mapRestoCoords.lon], 16);
                 if (mapRestoMarker) mapRestoMarker.openPopup();
                 if (btnNavMain) {
-                    btnNavMain.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRestoCoords.lat},${mapRestoCoords.lon}`;
                     btnNavMain.innerHTML = `<i class="fa-solid fa-store text-amber-300 mr-1"></i> Navigasi Ke Resto (#1)`;
                 }
             } else if (mode === 'recip' && mapRecipCoords) {
@@ -2772,7 +3112,6 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 leafletMapInstance.setView([mapRecipCoords.lat, mapRecipCoords.lon], 16);
                 if (mapRecipMarker) mapRecipMarker.openPopup();
                 if (btnNavMain) {
-                    btnNavMain.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
                     btnNavMain.innerHTML = `<i class="fa-solid fa-location-dot text-amber-300 mr-1"></i> Navigasi Ke Penerima (#2)`;
                 }
             } else if (mode === 'full') {
@@ -2782,8 +3121,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                         leafletMapInstance.fitBounds(mapPolyline.getBounds(), { padding: [35, 35] });
                     }
                     if (btnNavMain) {
-                        btnNavMain.href = `https://www.google.com/maps/dir/?api=1&origin=${mapRestoCoords.lat},${mapRestoCoords.lon}&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}&travelmode=driving`;
-                        btnNavMain.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Navigasi Rute Lengkap`;
+                        btnNavMain.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Navigasi Google Maps`;
                     }
                 } else if (mapRestoCoords) {
                     setMapRouteMode('resto');
@@ -2795,6 +3133,608 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             setTimeout(() => {
                 if (leafletMapInstance) leafletMapInstance.invalidateSize();
             }, 100);
+        }
+
+        // ============================================================
+        // CONTROLLER INSIGHTS: MY SCHEDULE & TODAY'S PROGRESS
+        // Mengikuti UI Gambar: Kalender Mingguan, Donut Ring, Order Plan
+        // Data diambil dari input user & klik kartu membuka detail pesanan
+        // ============================================================
+        let insightsSelectedDate = new Date();
+        let insightsDailyTarget = parseInt(localStorage.getItem('drivertrack_daily_target') || '10');
+        let insightsPeriodMode = 'daily'; // 'daily' | 'weekly'
+
+        function initInsightsDate() {
+            if (ordersList && ordersList.length > 0) {
+                const todayHasOrders = ordersList.some(o => isSameDay(o.timestamp, new Date()));
+                if (!todayHasOrders) {
+                    const sorted = [...ordersList].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    if (sorted[0] && sorted[0].timestamp) {
+                        insightsSelectedDate = new Date(sorted[0].timestamp);
+                        return;
+                    }
+                }
+            }
+            insightsSelectedDate = new Date();
+        }
+
+        function isSameDay(d1Val, d2Val) {
+            const d1 = new Date(d1Val);
+            const d2 = new Date(d2Val);
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
+
+        function selectInsightsDate(isoDateStr) {
+            insightsSelectedDate = new Date(isoDateStr);
+            renderInsightsView();
+        }
+
+        function navigateInsightsWeek(direction) {
+            const newDate = new Date(insightsSelectedDate);
+            newDate.setDate(newDate.getDate() + (direction * 7));
+            insightsSelectedDate = newDate;
+            renderInsightsView();
+        }
+
+        function onInsightsMonthChange(val) {
+            if (!val) return;
+            const parts = val.split('-');
+            const year = parseInt(parts[0]);
+            const month = parseInt(parts[1]);
+            insightsSelectedDate = new Date(year, month - 1, 1);
+            renderInsightsView();
+        }
+
+        function openTargetModal() {
+            const val = prompt('Masukkan target jumlah pesanan harian Anda:', insightsDailyTarget);
+            if (val && !isNaN(val) && parseInt(val) > 0) {
+                insightsDailyTarget = parseInt(val);
+                localStorage.setItem('drivertrack_daily_target', String(insightsDailyTarget));
+                renderInsightsView();
+                showToast(`Target harian diatur ke ${insightsDailyTarget} pesanan.`, 'emerald');
+            }
+        }
+
+        // ============================================================
+        // PERIOD TOGGLE: Harian | Mingguan
+        // ============================================================
+        function setInsightsPeriodMode(mode) {
+            insightsPeriodMode = mode;
+            const btnDaily = document.getElementById('btn-period-daily');
+            const btnWeekly = document.getElementById('btn-period-weekly');
+            if (btnDaily && btnWeekly) {
+                if (mode === 'daily') {
+                    btnDaily.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition';
+                    btnWeekly.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition';
+                } else {
+                    btnWeekly.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition';
+                    btnDaily.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition';
+                }
+            }
+            renderInsightsView();
+        }
+
+        function getWeekBounds(date) {
+            const curr = new Date(date);
+            const dow = curr.getDay(); // 0=Sun
+            const start = new Date(curr);
+            start.setDate(curr.getDate() - dow);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            end.setHours(23, 59, 59, 999);
+            return { start, end };
+        }
+
+        function formatWeekRange(start, end) {
+            const opts = { day: 'numeric', month: 'short', year: 'numeric' };
+            const s = start.toLocaleDateString('id-ID', opts);
+            const e = end.toLocaleDateString('id-ID', opts);
+            return `${s} – ${e}`;
+        }
+
+        function toggleExtraCharts() {
+            const container = document.getElementById('extra-charts-container');
+            const label = document.getElementById('toggle-charts-label');
+            const icon = document.getElementById('toggle-charts-icon');
+            if (!container) return;
+
+            const isHidden = container.classList.contains('hidden');
+            if (isHidden) {
+                container.classList.remove('hidden');
+                if (label) label.innerText = 'Sembunyikan Analisis Grafik';
+                if (icon) icon.classList.add('rotate-180');
+                renderCharts();
+            } else {
+                container.classList.add('hidden');
+                if (label) label.innerText = 'Tampilkan Analisis Grafik Jam & Platform';
+                if (icon) icon.classList.remove('rotate-180');
+            }
+        }
+
+        function renderInsightsView() {
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            const currentYear = insightsSelectedDate.getFullYear();
+            const currentMonthIndex = insightsSelectedDate.getMonth();
+            const monthLabelEl = document.getElementById('insights-month-label');
+            const monthInputEl = document.getElementById('insights-month-input');
+
+            if (monthLabelEl) {
+                monthLabelEl.innerText = `${monthNames[currentMonthIndex]}, ${currentYear}`;
+            }
+            if (monthInputEl) {
+                const monthStr = String(currentMonthIndex + 1).padStart(2, '0');
+                monthInputEl.value = `${currentYear}-${monthStr}`;
+            }
+
+            // 1. Render Strip Kalender Mingguan (S M T W T F S)
+            renderInsightsWeekStrip();
+
+            // ----------------------------------------------------------------
+            // DAILY vs WEEKLY mode
+            // ----------------------------------------------------------------
+            const { start: weekStart, end: weekEnd } = getWeekBounds(insightsSelectedDate);
+            const weekOrders = ordersList.filter(o => {
+                const ts = new Date(o.timestamp);
+                return ts >= weekStart && ts <= weekEnd;
+            });
+
+            const isWeekly = insightsPeriodMode === 'weekly';
+
+            // Judul kartu
+            const progressTitleEl = document.getElementById('insights-progress-title');
+            const ordersTitleEl = document.getElementById('insights-orders-title');
+            if (progressTitleEl) progressTitleEl.innerText = isWeekly ? "Weekly Progress" : "Today's Progress";
+            if (ordersTitleEl) ordersTitleEl.innerText = isWeekly ? "This Week's Orders" : "Today's Orders";
+
+            // Range label
+            const rangeEl = document.getElementById('insights-range-label');
+            if (rangeEl) {
+                rangeEl.innerText = isWeekly ? formatWeekRange(weekStart, weekEnd) : '';
+            }
+
+            // Badge grafik
+            const badgeEl = document.getElementById('comparison-chart-badge');
+            if (badgeEl) badgeEl.innerText = isWeekly ? '7 Hari' : 'Hari Ini';
+            const subtitleEl = document.getElementById('comparison-chart-subtitle');
+            if (subtitleEl) subtitleEl.innerText = isWeekly ? 'Perbandingan 7 hari (Minggu - Sabtu)' : 'Pendapatan & BBM hari terpilih per jam';
+
+            // 2. Pilih pesanan yang akan diarahkan
+            const dayOrders = ordersList.filter(o => isSameDay(o.timestamp, insightsSelectedDate));
+            const targetOrders = isWeekly ? weekOrders : dayOrders;
+
+            // 3. Hitung Agregasi Data
+            const totalOrders = targetOrders.length;
+            let totalIncome = 0;
+            let totalFuel = 0;
+            let foodCount = 0;
+            let spxCount = 0;
+
+            targetOrders.forEach(o => {
+                totalIncome += (o.orderIncome || 0);
+                totalFuel += computeOrderFuelCost(o);
+                if (o.category === 'Food') foodCount++;
+                if (o.category === 'SPX') spxCount++;
+            });
+
+            const netIncome = Math.max(0, totalIncome - totalFuel);
+
+            // Target (harian atau mingguan)
+            const effectiveTarget = isWeekly ? (insightsDailyTarget * 7) : insightsDailyTarget;
+
+            // 4. Update Circular Donut Ring Progress
+            const ringEl = document.getElementById('insights-ring-progress');
+            const ringValEl = document.getElementById('insights-ring-value');
+            const ringSubEl = document.getElementById('insights-ring-sublabel');
+            const ringUnitEl = document.getElementById('insights-ring-unit');
+
+            const circumference = 251.327; // 2 * PI * r (r=40)
+            const progressRatio = Math.min(totalOrders / effectiveTarget, 1);
+            const strokeOffset = circumference * (1 - progressRatio);
+
+            if (ringEl) {
+                ringEl.style.strokeDashoffset = strokeOffset;
+            }
+
+            if (totalOrders >= effectiveTarget) {
+                if (ringSubEl) ringSubEl.innerText = 'Goal';
+                if (ringValEl) ringValEl.innerText = totalOrders;
+                if (ringUnitEl) ringUnitEl.innerText = 'selesai';
+            } else {
+                const remaining = effectiveTarget - totalOrders;
+                if (ringSubEl) ringSubEl.innerText = 'Remaining';
+                if (ringValEl) ringValEl.innerText = remaining;
+                if (ringUnitEl) ringUnitEl.innerText = 'order';
+            }
+
+            // 5. Update Metrik Kanan (Income & Fuel)
+            const incomeEl = document.getElementById('insights-metric-income');
+            const fuelEl = document.getElementById('insights-metric-fuel');
+            if (incomeEl) incomeEl.innerText = `Rp${Math.round(totalIncome).toLocaleString('id-ID')}`;
+            if (fuelEl) fuelEl.innerText = `Rp${Math.round(totalFuel).toLocaleString('id-ID')}`;
+
+            // 6. Update 3 Mini Progress Bar
+            const barFoodVal = document.getElementById('insights-bar-food-val');
+            const barFoodProg = document.getElementById('insights-bar-food-progress');
+            const barSpxVal = document.getElementById('insights-bar-spx-val');
+            const barSpxProg = document.getElementById('insights-bar-spx-progress');
+            const barNetVal = document.getElementById('insights-bar-net-val');
+            const barNetProg = document.getElementById('insights-bar-net-progress');
+
+            if (barFoodVal) barFoodVal.innerText = `${foodCount}/${totalOrders}`;
+            if (barFoodProg) barFoodProg.style.width = `${totalOrders > 0 ? (foodCount / totalOrders) * 100 : 0}%`;
+
+            if (barSpxVal) barSpxVal.innerText = `${spxCount}/${totalOrders}`;
+            if (barSpxProg) barSpxProg.style.width = `${totalOrders > 0 ? (spxCount / totalOrders) * 100 : 0}%`;
+
+            if (barNetVal) barNetVal.innerText = `Rp${Math.round(netIncome).toLocaleString('id-ID')}`;
+            if (barNetProg) barNetProg.style.width = `${totalIncome > 0 ? Math.min(100, (netIncome / totalIncome) * 100) : 0}%`;
+
+            // 7. Render List Pesanan
+            if (isWeekly) {
+                renderWeeklyOrdersList(weekOrders, weekStart);
+            } else {
+                renderInsightsOrdersList(dayOrders);
+            }
+
+            // 8. Render Comparison Chart
+            renderComparisonChart(weekStart);
+        }
+
+        // ============================================================
+        // GRAFIK PENDAPATAN vs EST. BBM (Grouped Bar Chart)
+        // ============================================================
+        function renderComparisonChart(weekStart) {
+            const canvas = document.getElementById('chart-comparison');
+            const emptyEl = document.getElementById('chart-comparison-empty');
+            if (!canvas) return;
+
+            // Destroy sebelumnya
+            if (chartComparisonInstance) {
+                chartComparisonInstance.destroy();
+                chartComparisonInstance = null;
+            }
+
+            const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+            const incomeData = [];
+            const fuelData = [];
+            const fullLabels = [];
+
+            const isWeekly = insightsPeriodMode === 'weekly';
+            const selectedDayIndex = insightsSelectedDate.getDay(); // 0-6
+
+            let hasData = false;
+            for (let i = 0; i < 7; i++) {
+                const d = new Date(weekStart);
+                d.setDate(weekStart.getDate() + i);
+                const dayEnd = new Date(d);
+                dayEnd.setHours(23, 59, 59, 999);
+
+                const dayOrds = ordersList.filter(o => {
+                    const ts = new Date(o.timestamp);
+                    return ts >= d && ts <= dayEnd;
+                });
+
+                const inc = dayOrds.reduce((s, o) => s + (o.orderIncome || 0), 0);
+                const fuel = dayOrds.reduce((s, o) => s + computeOrderFuelCost(o), 0);
+                incomeData.push(Math.round(inc));
+                fuelData.push(Math.round(fuel));
+                if (inc > 0 || fuel > 0) hasData = true;
+
+                const dateNum = d.getDate();
+                fullLabels.push(`${dayLabels[i]}\n${dateNum}`);
+            }
+
+            if (!hasData) {
+                if (emptyEl) emptyEl.classList.remove('hidden');
+                canvas.style.display = 'none';
+                return;
+            }
+
+            if (emptyEl) emptyEl.classList.add('hidden');
+            canvas.style.display = '';
+
+            // Warna: highlight hari terpilih di mode Harian
+            const incomeColors = incomeData.map((_, i) => {
+                if (!isWeekly && i !== selectedDayIndex) return 'rgba(16,185,129,0.35)';
+                return '#10B981';
+            });
+            const fuelColors = fuelData.map((_, i) => {
+                if (!isWeekly && i !== selectedDayIndex) return 'rgba(244,63,94,0.35)';
+                return '#F43F5E';
+            });
+
+            const ctx = canvas.getContext('2d');
+            chartComparisonInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: fullLabels,
+                    datasets: [
+                        {
+                            label: 'Pendapatan',
+                            data: incomeData,
+                            backgroundColor: incomeColors,
+                            borderRadius: 6,
+                            borderSkipped: false
+                        },
+                        {
+                            label: 'Est. BBM',
+                            data: fuelData,
+                            backgroundColor: fuelColors,
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 10, weight: 'bold' },
+                                boxWidth: 10,
+                                padding: 8,
+                                color: '#64748B'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `Rp${Math.round(ctx.parsed.y).toLocaleString('id-ID')}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(0,0,0,0.04)' },
+                            ticks: {
+                                font: { size: 9 },
+                                color: '#94A3B8',
+                                callback: (v) => v >= 1000 ? `${Math.round(v/1000)}k` : v
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 9 },
+                                color: '#94A3B8'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // WEEKLY ORDERS LIST (grouped per hari)
+        // ============================================================
+        function renderWeeklyOrdersList(weekOrders, weekStart) {
+            const container = document.getElementById('insights-orders-list');
+            if (!container) return;
+
+            if (weekOrders.length === 0) {
+                container.innerHTML = `
+                    <div class="py-6 text-center space-y-2.5">
+                        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-base shadow-sm">
+                            <i class="fa-regular fa-calendar-xmark"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-xs">Belum Ada Pesanan Minggu Ini</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Tambahkan pesanan baru untuk mulai mencatat.</p>
+                        </div>
+                        <button type="button" onclick="switchTab('upload')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-4 py-2 rounded-xl transition inline-flex items-center gap-1.5 shadow-sm shadow-emerald-200 active:scale-95">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Catat Pesanan Baru
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const monthNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+            // Kelompokkan per hari
+            const groups = {};
+            weekOrders.forEach(o => {
+                const d = new Date(o.timestamp);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                if (!groups[key]) groups[key] = { date: d, orders: [] };
+                groups[key].orders.push(o);
+            });
+
+            // Sort hari ascending
+            const sortedKeys = Object.keys(groups).sort((a, b) => groups[a].date - groups[b].date);
+
+            let html = '';
+            sortedKeys.forEach(key => {
+                const g = groups[key];
+                const d = g.date;
+                const dayLabel = `${dayNames[d.getDay()]}, ${d.getDate()} ${monthNames[d.getMonth()]}`;
+                const dayInc = g.orders.reduce((s, o) => s + (o.orderIncome || 0), 0);
+
+                html += `
+                    <div class="space-y-1 pt-2 first:pt-0">
+                        <div class="flex items-center justify-between py-1 border-b border-slate-50">
+                            <span class="text-xs font-extrabold text-slate-800">${dayLabel}</span>
+                            <span class="text-[11px] font-semibold text-emerald-600">Rp${Math.round(dayInc).toLocaleString('id-ID')}</span>
+                        </div>
+                        <div class="divide-y divide-slate-50">
+                            ${g.orders.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)).map(o => createInsightsOrderCardHTML(o)).join('')}
+                        </div>
+                    </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderInsightsWeekStrip() {
+            const stripContainer = document.getElementById('insights-week-strip');
+            if (!stripContainer) return;
+
+            const curr = new Date(insightsSelectedDate);
+            const dayOfWeek = curr.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
+            const startOfWeek = new Date(curr);
+            startOfWeek.setDate(curr.getDate() - dayOfWeek);
+
+            const dayInitials = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            let html = '';
+
+            for (let i = 0; i < 7; i++) {
+                const dateObj = new Date(startOfWeek);
+                dateObj.setDate(startOfWeek.getDate() + i);
+
+                const isSelected = isSameDay(dateObj, insightsSelectedDate);
+                const hasOrders = ordersList.some(o => isSameDay(o.timestamp, dateObj));
+                const dayNum = dateObj.getDate();
+                const dayInit = dayInitials[i];
+                const isoStr = dateObj.toISOString();
+
+                if (isSelected) {
+                    // Pill Vertikal Hijau Toska / Emerald Sesuai Gambar Referensi Asli!
+                    html += `
+                        <div class="bg-emerald-500 text-white rounded-2xl py-2 px-1 flex flex-col items-center justify-between shadow-sm cursor-pointer select-none">
+                            <span class="text-[11px] font-bold text-white/90 leading-none">${dayInit}</span>
+                            <span class="w-6 h-6 rounded-full bg-white text-emerald-600 font-black text-[11px] flex items-center justify-center mt-1.5 shadow-sm">
+                                ${dayNum}
+                            </span>
+                        </div>`;
+                } else {
+                    html += `
+                        <button type="button" onclick="selectInsightsDate('${isoStr}')" class="py-2 px-1 flex flex-col items-center justify-between rounded-2xl hover:bg-slate-50 transition group select-none">
+                            <span class="text-[11px] font-medium text-slate-400 group-hover:text-slate-600 leading-none">${dayInit}</span>
+                            <span class="text-xs font-bold text-slate-800 mt-1.5 leading-none">${dayNum}</span>
+                            <span class="w-1 h-1 rounded-full mt-1.5 ${hasOrders ? 'bg-emerald-500' : 'bg-transparent'}"></span>
+                        </button>`;
+                }
+            }
+
+            stripContainer.innerHTML = html;
+        }
+
+        function renderInsightsOrdersList(orders) {
+            const container = document.getElementById('insights-orders-list');
+            if (!container) return;
+
+            if (orders.length === 0) {
+                const dateFormatted = insightsSelectedDate.toLocaleDateString('id-ID', {
+                    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+                });
+                container.innerHTML = `
+                    <div class="py-6 text-center space-y-2.5">
+                        <div class="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto text-base shadow-sm">
+                            <i class="fa-regular fa-calendar-xmark"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-xs">Belum Ada Pesanan</h4>
+                            <p class="text-[11px] text-slate-400 mt-0.5">${dateFormatted}</p>
+                        </div>
+                        <button type="button" onclick="switchTab('upload')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-4 py-2 rounded-xl transition inline-flex items-center gap-1.5 shadow-sm shadow-emerald-200 active:scale-95">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Catat Pesanan Baru
+                        </button>
+                    </div>`;
+                return;
+            }
+
+            const sortedOrders = [...orders].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            // Kelompokkan waktu seperti Breakfast, Lunch, Dinner di gambar referensi
+            const groups = {
+                morning: { title: 'Breakfast (Pagi)', icon: '☕', items: [] },
+                noon: { title: 'Lunch (Siang)', icon: '🍲', items: [] },
+                night: { title: 'Dinner (Sore / Malam)', icon: '🌙', items: [] }
+            };
+
+            sortedOrders.forEach(o => {
+                const hour = new Date(o.timestamp).getHours();
+                if (hour >= 5 && hour < 12) {
+                    groups.morning.items.push(o);
+                } else if (hour >= 12 && hour < 17) {
+                    groups.noon.items.push(o);
+                } else {
+                    groups.night.items.push(o);
+                }
+            });
+
+            let html = '';
+            for (const key of ['morning', 'noon', 'night']) {
+                const g = groups[key];
+                if (g.items.length > 0) {
+                    html += `
+                        <div class="space-y-1 pt-1 first:pt-0">
+                            <!-- Group Header Sesuai Gambar Referensi -->
+                            <div class="flex items-center justify-between py-1 border-b border-slate-50">
+                                <span class="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
+                                    <span class="text-sm">${g.icon}</span> ${g.title}
+                                </span>
+                                <button type="button" onclick="switchTab('upload')" class="text-slate-400 hover:text-slate-700 text-sm font-bold p-1 transition" title="Tambah Pesanan">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="divide-y divide-slate-50">
+                                ${g.items.map(o => createInsightsOrderCardHTML(o)).join('')}
+                            </div>
+                        </div>`;
+                }
+            }
+
+            if (html === '') {
+                html = `<div class="divide-y divide-slate-50">${sortedOrders.map(o => createInsightsOrderCardHTML(o)).join('')}</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function createInsightsOrderCardHTML(o) {
+            const timeStr = new Date(o.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const isCash = o.cashAmount > 0;
+            const payText = isCash ? `💵 Rp${o.cashAmount.toLocaleString('id-ID')}` : '💳 Non-Tunai';
+
+            // Foto Bulat (Circle) Sesuai Gambar Referensi!
+            let thumbHTML = '';
+            if (o.screenshot && !o.screenshot.startsWith('data:image/svg')) {
+                thumbHTML = `<img src="${o.screenshot}" alt="Order" class="w-full h-full object-cover rounded-full">`;
+            } else {
+                const bgColors = { Food: 'bg-amber-100 text-amber-700', SPX: 'bg-orange-100 text-orange-700', Instan: 'bg-emerald-100 text-emerald-700' };
+                const icons = { Food: 'fa-utensils', SPX: 'fa-box', Instan: 'fa-bolt' };
+                thumbHTML = `<div class="w-full h-full rounded-full flex items-center justify-center text-xs ${bgColors[o.category] || 'bg-indigo-100 text-indigo-700'}">
+                                <i class="fa-solid ${icons[o.category] || 'fa-bag-shopping'}"></i>
+                             </div>`;
+            }
+
+            return `
+                <div onclick="openOrderDetailModal('${o.id}')" class="flex items-center justify-between gap-3 py-2.5 px-1 hover:bg-slate-50 rounded-2xl transition cursor-pointer active:scale-[0.99] group">
+                    <!-- Thumbnail Bulat (Circle) Sesuai Gambar -->
+                    <div class="w-11 h-11 rounded-full overflow-hidden flex-shrink-0 border border-slate-100 shadow-sm bg-slate-50 flex items-center justify-center">
+                        ${thumbHTML}
+                    </div>
+
+                    <!-- Info Order Sesuai Desain Referensi -->
+                    <div class="flex-1 min-w-0 space-y-0.5">
+                        <div class="flex items-center justify-between gap-1">
+                            <h5 class="text-xs font-extrabold text-slate-900 truncate group-hover:text-emerald-600 transition">
+                                ${o.restoName}
+                            </h5>
+                            <span class="text-[10px] font-semibold text-slate-400 flex-shrink-0">${timeStr}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1">
+                            <span class="text-amber-500 font-bold">💰 Rp${(o.orderIncome || 0).toLocaleString('id-ID')}</span>
+                            ${o.distanceKm ? `<span>• 📍 ${o.distanceKm} km</span>` : ''}
+                            <span class="truncate">• ➔ ${o.recipName || 'Penerima'}</span>
+                        </p>
+                    </div>
+
+                    <!-- Tombol Action Kanan (Chevron / Detail) -->
+                    <button type="button" class="w-7 h-7 rounded-full flex items-center justify-center text-slate-300 group-hover:text-slate-600 hover:bg-slate-200/60 transition flex-shrink-0" title="Buka Detail">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>`;
         }
 
         function renderCharts() {
@@ -2931,6 +3871,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
         }
 
         function resetToMockData() {
+            if (!confirm('Muat data contoh? Ini akan MENIMPA semua pesanan yang ada saat ini.')) return;
             ordersList = getInitialMockOrders();
             saveToLocalStorage();
             renderAllViews();
@@ -2938,10 +3879,272 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
         }
 
         function clearAllData() {
+            if (!confirm('Hapus semua pesanan? Tindakan ini tidak dapat dibatalkan. (Profil tetap tersimpan)')) return;
             ordersList = [];
             saveToLocalStorage();
             renderAllViews();
-            showToast("Semua data berhasil dihapus.", "rose");
+            showToast("Semua pesanan berhasil dihapus.", "rose");
+        }
+
+        // ============================================================
+        // PROFILE CONTROLLER
+        // ============================================================
+        function loadUserProfile() {
+            try {
+                const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+                if (saved) {
+                    const p = JSON.parse(saved);
+                    userProfile = {
+                        name: p.name || '',
+                        photo: p.photo || null,
+                        driverTypes: Array.isArray(p.driverTypes) ? p.driverTypes : [],
+                        otherType: p.otherType || ''
+                    };
+                }
+            } catch(e) {
+                userProfile = { name: '', photo: null, driverTypes: [], otherType: '' };
+            }
+            renderProfileUI();
+        }
+
+        function saveUserProfile(profile) {
+            try {
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+                userProfile = profile;
+                renderProfileUI();
+            } catch(e) {
+                showToast('Gagal menyimpan profil. Storage penuh.', 'rose');
+            }
+        }
+
+        function renderProfileUI() {
+            const name = userProfile.name ? userProfile.name.trim() : '';
+            const photo = userProfile.photo;
+            const types = userProfile.driverTypes || [];
+            const otherType = userProfile.otherType || '';
+
+            // ---- Header ----
+            const headerAvatar = document.getElementById('header-driver-avatar');
+            const headerName = document.getElementById('header-driver-name');
+            const headerGreeting = document.getElementById('header-greeting');
+
+            if (headerName) headerName.innerText = name || 'Driver';
+            if (headerGreeting) {
+                const hour = new Date().getHours();
+                const salam = hour < 12 ? 'Selamat Pagi' : hour < 17 ? 'Selamat Siang' : 'Selamat Malam';
+                headerGreeting.innerText = `${salam} 👋`;
+            }
+            if (headerAvatar) {
+                if (photo) {
+                    headerAvatar.innerHTML = `<img src="${photo}" alt="Avatar" class="w-full h-full object-cover">`;
+                } else if (name) {
+                    headerAvatar.innerHTML = `<span class="font-extrabold text-sm">${name.charAt(0).toUpperCase()}</span>`;
+                } else {
+                    headerAvatar.innerHTML = `<i class="fa-solid fa-user"></i>`;
+                }
+            }
+
+            // ---- Profile Card ----
+            const profileAvatarContainer = document.getElementById('profile-avatar-container');
+            const profileName = document.getElementById('profile-driver-name');
+            const profileSubtitle = document.getElementById('profile-driver-subtitle');
+            const profileChips = document.getElementById('profile-driver-chips');
+
+            if (profileName) profileName.innerText = name || 'Driver';
+            if (profileSubtitle) {
+                if (!name) {
+                    profileSubtitle.innerText = 'Ketuk untuk melengkapi profil';
+                    profileSubtitle.classList.add('cursor-pointer');
+                } else if (types.length > 0) {
+                    const labels = types.map(t => t === 'Lainnya' ? otherType || 'Lainnya' : t);
+                    profileSubtitle.innerText = labels.join(' • ');
+                    profileSubtitle.classList.remove('cursor-pointer');
+                } else {
+                    profileSubtitle.innerText = 'Driver';
+                    profileSubtitle.classList.remove('cursor-pointer');
+                }
+            }
+            if (profileAvatarContainer) {
+                if (photo) {
+                    profileAvatarContainer.innerHTML = `<img src="${photo}" alt="Foto Profil" class="w-full h-full object-cover">`;
+                } else if (name) {
+                    profileAvatarContainer.innerHTML = `<span class="font-extrabold text-2xl">${name.charAt(0).toUpperCase()}</span>`;
+                } else {
+                    profileAvatarContainer.innerHTML = `<i class="fa-solid fa-user text-2xl"></i>`;
+                }
+            }
+            if (profileChips) {
+                if (types.length > 0) {
+                    profileChips.innerHTML = types.map(t => {
+                        const label = t === 'Lainnya' ? (otherType || 'Lainnya') : t;
+                        return `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2.5 py-1 rounded-full border border-indigo-100">${label}</span>`;
+                    }).join('');
+                } else {
+                    profileChips.innerHTML = '';
+                }
+            }
+        }
+
+        function openEditProfileModal() {
+            editProfileSelectedTypes = [...(userProfile.driverTypes || [])];
+            editProfileTempPhoto = userProfile.photo || null;
+
+            // Pre-fill nama
+            const nameInput = document.getElementById('edit-profile-name');
+            if (nameInput) nameInput.value = userProfile.name || '';
+
+            // Pre-fill custom type
+            const customInput = document.getElementById('edit-profile-custom-type');
+            if (customInput) customInput.value = userProfile.otherType || '';
+
+            // Render chips
+            renderDriverTypeChips();
+
+            // Foto preview
+            updateEditProfilePhotoPreview();
+
+            document.getElementById('edit-profile-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('edit-profile-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+            editProfileTempPhoto = null;
+        }
+
+        const DRIVER_TYPE_OPTIONS = [
+            'Ojol Motor',
+            'Taksi Online (Mobil)',
+            'Kurir Paket (SPX)',
+            'Food Delivery',
+            'Kurir Instan',
+            'Lainnya'
+        ];
+
+        function renderDriverTypeChips() {
+            const container = document.getElementById('driver-types-chips-container');
+            if (!container) return;
+            container.innerHTML = DRIVER_TYPE_OPTIONS.map(t => {
+                const isActive = editProfileSelectedTypes.includes(t);
+                const activeClass = isActive
+                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm shadow-indigo-200'
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300';
+                return `<button type="button" onclick="toggleDriverType('${t}')" class="text-[11px] font-bold px-3 py-1.5 rounded-full border transition active:scale-95 ${activeClass}">${t}</button>`;
+            }).join('');
+
+            // Toggle custom input untuk 'Lainnya'
+            const customContainer = document.getElementById('custom-driver-type-container');
+            if (customContainer) {
+                if (editProfileSelectedTypes.includes('Lainnya')) {
+                    customContainer.classList.remove('hidden');
+                } else {
+                    customContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        function toggleDriverType(type) {
+            const idx = editProfileSelectedTypes.indexOf(type);
+            if (idx > -1) {
+                editProfileSelectedTypes.splice(idx, 1);
+            } else {
+                editProfileSelectedTypes.push(type);
+            }
+            renderDriverTypeChips();
+        }
+
+        function processProfileImage(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const size = 256;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+
+                    // Square crop dari tengah
+                    const minDim = Math.min(img.width, img.height);
+                    const sx = (img.width - minDim) / 2;
+                    const sy = (img.height - minDim) / 2;
+                    ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size);
+
+                    try {
+                        const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                        callback(base64);
+                    } catch(err) {
+                        showToast('Gagal memproses foto.', 'rose');
+                    }
+                };
+                img.onerror = () => showToast('Foto tidak bisa dibaca.', 'rose');
+                img.src = e.target.result;
+            };
+            reader.onerror = () => showToast('Gagal membaca file foto.', 'rose');
+            reader.readAsDataURL(file);
+        }
+
+        function handleProfilePhotoSelect(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                showToast('File harus berupa gambar.', 'rose');
+                return;
+            }
+            processProfileImage(file, (base64) => {
+                editProfileTempPhoto = base64;
+                updateEditProfilePhotoPreview();
+            });
+            event.target.value = '';
+        }
+
+        function deleteProfilePhoto() {
+            editProfileTempPhoto = null;
+            updateEditProfilePhotoPreview();
+        }
+
+        function updateEditProfilePhotoPreview() {
+            const previewImg = document.getElementById('edit-profile-preview-img');
+            const previewPlaceholder = document.getElementById('edit-profile-preview-placeholder');
+            const deleteBtn = document.getElementById('btn-delete-profile-photo');
+
+            if (editProfileTempPhoto) {
+                if (previewImg) { previewImg.src = editProfileTempPhoto; previewImg.classList.remove('hidden'); }
+                if (previewPlaceholder) previewPlaceholder.classList.add('hidden');
+                if (deleteBtn) deleteBtn.classList.remove('hidden');
+            } else {
+                if (previewImg) { previewImg.src = ''; previewImg.classList.add('hidden'); }
+                if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
+                if (deleteBtn) deleteBtn.classList.add('hidden');
+            }
+        }
+
+        function saveProfileForm(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('edit-profile-name');
+            const name = (nameInput ? nameInput.value : '').trim();
+            if (!name) {
+                showToast('Nama driver tidak boleh kosong.', 'rose');
+                return;
+            }
+            if (name.length > 30) {
+                showToast('Nama maksimal 30 karakter.', 'rose');
+                return;
+            }
+            const customInput = document.getElementById('edit-profile-custom-type');
+            const otherType = (customInput ? customInput.value : '').trim();
+
+            const newProfile = {
+                name,
+                photo: editProfileTempPhoto,
+                driverTypes: [...editProfileSelectedTypes],
+                otherType
+            };
+
+            saveUserProfile(newProfile);
+            closeEditProfileModal();
+            showToast('Profil berhasil disimpan!', 'emerald');
         }
 
         // ============================================================
