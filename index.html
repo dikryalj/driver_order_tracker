@@ -222,7 +222,7 @@
             <div class="bg-white p-3 rounded-2xl card-shadow border border-slate-100 space-y-2">
                 <div class="relative">
                     <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-                    <input type="text" id="search-input" oninput="renderOrdersList()" placeholder="Cari resto, penerima, atau resi..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-indigo-500">
+                    <input type="text" id="search-input" oninput="renderAllViews()" placeholder="Cari resto, penerima, atau resi..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs font-medium text-slate-800 focus:outline-none focus:border-indigo-500">
                 </div>
                 
                 <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
@@ -239,6 +239,7 @@
                     </select>
                     <select id="filter-platform" onchange="renderOrdersList()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 flex-1 min-w-[130px]">
                         <option value="ALL">Semua Platform</option>
+                        <option value="SPX">📦 SPX</option>
                         <option value="ShopeeFood">🛍️ ShopeeFood</option>
                         <option value="Grab">🟢 Grab</option>
                         <option value="Gojek">🟩 Gojek</option>
@@ -380,6 +381,7 @@
                     <div class="bg-violet-50/80 p-2.5 rounded-2xl border border-violet-100 space-y-1">
                         <label class="block text-[11px] font-extrabold text-violet-900">Platform Aplikasi *</label>
                         <select id="form-platform" class="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-700 focus:outline-none">
+                            <option value="SPX">📦 SPX (Shopee Xpress)</option>
                             <option value="ShopeeFood">🛍️ ShopeeFood</option>
                             <option value="Grab">🟢 Grab</option>
                             <option value="Gojek">🟩 Gojek</option>
@@ -689,7 +691,7 @@
                     </div>
 
                     <!-- Mode Selector Buttons -->
-                    <div class="grid grid-cols-3 gap-1 bg-white p-1 rounded-xl border border-indigo-100 text-[11px] font-bold">
+                    <div id="map-mode-selector" class="grid grid-cols-3 gap-1 bg-white p-1 rounded-xl border border-indigo-100 text-[11px] font-bold">
                         <button type="button" onclick="setMapRouteMode('resto')" id="btn-mode-resto" class="py-1.5 px-2 rounded-lg text-slate-600 hover:text-indigo-600 transition flex items-center justify-center gap-1">
                             <i class="fa-solid fa-store text-rose-500"></i> Ke Resto
                         </button>
@@ -702,8 +704,26 @@
                     </div>
 
                     <!-- Interactive Map Viewport -->
-                    <div id="detail-map-container" class="w-full h-56 rounded-xl border border-indigo-200 overflow-hidden relative shadow-inner">
+                    <div id="detail-map-container" class="w-full h-56 rounded-xl border border-indigo-200 overflow-hidden relative shadow-inner bg-slate-100">
                         <div id="detail-map" class="w-full h-full z-0"></div>
+                        <div id="map-checkin-placeholder" class="hidden absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-slate-50 to-indigo-50/60 space-y-2.5">
+                            <div class="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-600 text-lg shadow-sm">
+                                <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
+                            </div>
+                            <div class="space-y-1">
+                                <h5 class="text-xs font-extrabold text-slate-800 flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-shield-halved text-indigo-500"></i> Map Tracking Belum Aktif
+                                </h5>
+                                <p class="text-[10.5px] text-slate-500 max-w-[290px] mx-auto leading-relaxed">
+                                    Titik perkiraan peta dinonaktifkan agar <strong class="text-rose-600">tidak salah alamat</strong>. Tracking rute akan aktif setelah Anda menekan tombol <strong class="text-indigo-700">Checkin Sampai Lokasi</strong>.
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 pt-0.5">
+                                <button type="button" onclick="scrollToCheckinSection()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm">
+                                    <i class="fa-solid fa-location-crosshairs text-amber-300"></i> Checkin Lokasi di Bawah
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Direct Google Maps Navigation Links -->
@@ -805,6 +825,112 @@
         <p class="text-[11px] text-slate-300 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm" onclick="event.stopPropagation()">
             <i class="fa-solid fa-circle-info text-amber-300 mr-1"></i> Sentuh di luar gambar untuk menutup modal.
         </p>
+    </div>
+
+    <!-- Edit Order Modal -->
+    <div id="edit-order-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4" onclick="closeEditModal()">
+        <div class="bg-white rounded-3xl w-full max-w-md my-4 shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]" onclick="event.stopPropagation()">
+            <!-- Modal Header -->
+            <div class="p-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-lg"></i>
+                    <h3 class="font-extrabold text-sm">Edit Pesanan</h3>
+                </div>
+                <button onclick="closeEditModal()" class="p-1.5 rounded-full hover:bg-white/10 text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <!-- Modal Scrollable Form -->
+            <div class="p-4 overflow-y-auto custom-scrollbar flex-1">
+                <form id="edit-order-form" class="space-y-3" onsubmit="saveEditForm(event)">
+                    <input type="hidden" id="edit-form-id">
+
+                    <!-- Category Selector -->
+                    <div class="bg-indigo-50/80 p-2.5 rounded-2xl border border-indigo-100 space-y-1">
+                        <label class="block text-[11px] font-extrabold text-indigo-900">Kategori Pesanan *</label>
+                        <select id="edit-form-category" onchange="onEditCategoryChange()" class="w-full bg-white border border-indigo-200 rounded-xl px-3 py-2 text-xs font-bold text-indigo-700 focus:outline-none">
+                            <option value="Food">🍲 Food</option>
+                            <option value="SPX">📦 SPX / Paket</option>
+                            <option value="Instan">⚡ SPX Instan</option>
+                        </select>
+                    </div>
+
+                    <!-- Platform Selector -->
+                    <div class="bg-violet-50/80 p-2.5 rounded-2xl border border-violet-100 space-y-1">
+                        <label class="block text-[11px] font-extrabold text-violet-900">Platform Aplikasi *</label>
+                        <select id="edit-form-platform" class="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-700 focus:outline-none">
+                            <option value="SPX">📦 SPX (Shopee Xpress)</option>
+                            <option value="ShopeeFood">🛍️ ShopeeFood</option>
+                            <option value="Grab">🟢 Grab</option>
+                            <option value="Gojek">🟩 Gojek</option>
+                            <option value="Lainnya">📱 Lainnya</option>
+                        </select>
+                    </div>
+
+                    <!-- Financial Fields -->
+                    <div class="bg-emerald-50/60 p-2.5 rounded-2xl border border-emerald-200/80 space-y-2">
+                        <label class="block text-[11px] font-extrabold text-emerald-900 flex items-center gap-1.5"><i class="fa-solid fa-sack-dollar"></i> Data Finansial</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Pendapatan / Ongkir (Rp)</label>
+                                <input type="number" id="edit-form-income" value="0" min="0" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Biaya BBM Manual (opsional)</label>
+                                <input type="number" id="edit-form-fuelcost-manual" min="0" placeholder="Kosongkan = auto" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Category Specific Fields -->
+                    <div id="edit-category-specific-fields" class="space-y-2"></div>
+
+                    <!-- Resto / Sender Box -->
+                    <div class="p-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-2">
+                        <span class="text-xs font-extrabold text-amber-700 flex items-center gap-1" id="edit-label-pengirim-title">
+                            <i class="fa-solid fa-utensils"></i> Data Resto / Pengirim
+                        </span>
+                        <input type="text" id="edit-form-restoname" required placeholder="Nama Resto / Pengirim *" class="w-full bg-white border border-amber-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                        <textarea id="edit-form-restoaddr" rows="2" placeholder="Alamat pengirim / resto lengkap..." class="w-full bg-white border border-amber-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none custom-scrollbar"></textarea>
+                    </div>
+
+                    <!-- Recipient Info Box -->
+                    <div class="p-3 bg-emerald-50/60 border border-emerald-200/80 rounded-2xl space-y-2">
+                        <span class="text-xs font-extrabold text-emerald-700 flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot"></i> Data Tujuan / Penerima
+                        </span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="edit-form-recipname" required placeholder="Nama Penerima *" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                            <input type="number" id="edit-form-cashamount" value="0" min="0" placeholder="Rp Tunai" oninput="updateEditPaymentMethod()" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                        </div>
+                        <div class="flex items-center justify-between bg-white/80 p-2 rounded-xl border border-emerald-200 text-xs">
+                            <span class="text-[10px] text-slate-500 font-medium">Status Pembayaran:</span>
+                            <select id="edit-form-payment" disabled class="bg-transparent font-bold text-xs text-emerald-700 focus:outline-none">
+                                <option value="Non-Tunai">Non-Tunai (Rp0)</option>
+                                <option value="Tunai">Tunai (&gt; Rp0)</option>
+                            </select>
+                        </div>
+                        <textarea id="edit-form-recipaddr" rows="2" placeholder="Alamat pengantaran lengkap..." class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none custom-scrollbar"></textarea>
+                        <input type="text" id="edit-form-notes" placeholder="Catatan pemesan (pagar hijau...)" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none">
+                    </div>
+
+                    <!-- Timestamp -->
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-1">Waktu Diterima *</label>
+                        <input type="datetime-local" id="edit-form-ordertime" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800">
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button type="button" onclick="closeEditModal()" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition text-xs">
+                            Batal
+                        </button>
+                        <button type="submit" class="flex-1 py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold rounded-2xl shadow-lg transition active:scale-95 text-xs flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -916,9 +1042,29 @@
                     screenshot: createSVGPlaceholder('Wr. Nasgor Berkah Untung', '#782', 'Food (Non-Tunai)')
                 },
                 {
+                    id: 'ord-spx-4n73',
+                    category: 'SPX',
+                    platform: 'SPX',
+                    orderIncome: 12000,
+                    manualFuelCost: null,
+                    restoName: 'Tokohappys',
+                    restoAddr: 'Jalan Notosuman, Dusun I, Singopuran, Kartasura, Kab. Sukoharjo, Jawa Tengah 57169, Indonesia, KARTASURA, KAB. SUKOHARJO, JAWA TENGAH',
+                    recipName: 'Muhammad Fahri Arrafli',
+                    recipAddr: 'RT.2/RW.3, Hordenasan,No 48 , Pasar Kliwon, PASAR KLIWON, KOTA SURAKARTA (SOLO), JAWA TENGAH',
+                    notes: '(rumah Cat Pink Pager Ijo) Depan Galeri Naladerma ((Rumah yg baru))',
+                    codeOrder: '#4N73',
+                    weight: '1.5 kg',
+                    dimensions: '0x0x0 cm',
+                    cashAmount: 0,
+                    payment: 'Non-Tunai',
+                    orderTime: '2026-09-21T13:11',
+                    timestamp: new Date('2026-09-21T13:11').getTime(),
+                    screenshot: 'spx_4n73_receipt.jpg'
+                },
+                {
                     id: 'ord-102',
                     category: 'SPX',
-                    platform: 'Grab',
+                    platform: 'SPX',
                     orderIncome: 18500,
                     manualFuelCost: null,
                     restoName: 'finesona',
@@ -981,6 +1127,14 @@
                 const saved = localStorage.getItem('drivertrack_orders');
                 if (saved) {
                     ordersList = JSON.parse(saved);
+                    // Pastikan pesanan SPX #4N73 dari screenshot tercatat jika belum ada
+                    if (!ordersList.some(o => o.codeOrder === '#4N73')) {
+                        const spxOrder = getInitialMockOrders().find(o => o.codeOrder === '#4N73');
+                        if (spxOrder) {
+                            ordersList.unshift(spxOrder);
+                            saveToLocalStorage();
+                        }
+                    }
                 } else {
                     ordersList = getInitialMockOrders();
                     saveToLocalStorage();
@@ -1196,22 +1350,24 @@
                         <input type="text" id="form-totalmenu" placeholder="Contoh: 1 x Bakmi Goreng (Total 1 menu)" class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none">
                     </div>`;
             } else if (cat === 'SPX') {
-                labelPengirim.innerHTML = `<i class="fa-solid fa-box"></i> Data Pengirim Paket / Agen`;
+                labelPengirim.innerHTML = `<i class="fa-solid fa-box"></i> Data Pengirim SPX (Toko / Agen)`;
                 fieldsContainer.innerHTML = `
                     <div class="grid grid-cols-3 gap-2">
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Kode Pesanan *</label>
-                            <input type="text" id="form-codeorder" placeholder="#0ESJ" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-bold text-indigo-900 focus:outline-none">
+                            <input type="text" id="form-codeorder" placeholder="#4N73" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-bold text-indigo-900 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Berat Barang</label>
-                            <input type="text" id="form-weight" placeholder="190 g" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                            <input type="text" id="form-weight" placeholder="1.5 kg" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Besar Barang</label>
                             <input type="text" id="form-dimensions" placeholder="0x0x0 cm" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
                         </div>
                     </div>`;
+                const pf = document.getElementById('form-platform');
+                if (pf) pf.value = 'SPX';
             } else if (cat === 'Instan') {
                 labelPengirim.innerHTML = `<i class="fa-solid fa-bolt"></i> Data Pengirim SPX Instan`;
                 fieldsContainer.innerHTML = `
@@ -1404,26 +1560,38 @@
                 const base64Data = base64DataUrl.split(',')[1];
                 const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
 
-                const systemPrompt = `Anda adalah OCR AI ekstraktor screenshot pesanan driver ojek online.
+                const systemPrompt = `Anda adalah OCR AI ekstraktor screenshot pesanan driver ojek online (ShopeeFood, SPX/Shopee Xpress, Grab, Gojek).
 Ekstrak teks gambar menjadi format JSON valid:
 {
   "category": "Food" | "SPX" | "Instan",
-  "restoName": "nama resto/pengirim",
-  "restoAddr": "alamat resto/pengirim",
+  "restoName": "nama resto / pengirim",
+  "restoAddr": "alamat resto / pengirim lengkap",
   "recipName": "nama penerima",
   "recipAddr": "alamat penerima lengkap",
-  "notes": "catatan pemesan jika ada",
-  "cashAmount": angka nominal tunai (0 jika non-tunai/Rp0, misal 22000 atau 124976),
-  "codeOrder": "kode order misal #782 atau #0ESJ",
+  "notes": "catatan pemesan / patokan alamat jika ada",
+  "cashAmount": angka nominal tunai (0 jika non-tunai/Rp0),
+  "codeOrder": "kode order misal #782 atau #4N73",
   "totalMenu": "rincian menu atau barang",
   "orderNo": "nomor pesanan panjang",
-  "weight": "berat barang misal 190 g / 1.0 kg",
-  "dimensions": "besar barang",
+  "weight": "berat barang misal 1.5 kg / 190 g",
+  "dimensions": "besar barang misal 0x0x0 cm",
   "itemCategory": "kategori barang",
   "orderTime": "YYYY-MM-DDTHH:mm"
 }
-Aturan: Jika tagihan/terima tunai > Rp0 maka cashAmount = nominal angka. Jika Rp0 maka cashAmount = 0.
-Hanya balaskan JSON tanpa teks lain.`;
+
+ATURAN KHUSUS FITUR SPX (Shopee Xpress):
+1. CATAT SEMUA INFORMASI KECUALI "STATUS":
+   - "codeOrder": kode pesanan (misal #4N73). JANGAN sertakan status di sebelahnya (seperti "Diambil", "Selesai", "Diantar", "Menuju").
+   - "restoName": Nama Pengirim (misal "Tokohappys").
+   - "restoAddr": Alamat Pengirim lengkap di atas nama pengirim.
+   - "recipName": Nama Penerima (misal "Muhammad Fahri Arrafli").
+   - "recipAddr": Alamat Penerima lengkap.
+   - "notes": patokan alamat rumah penerima jika ada (misal "(rumah Cat Pink Pager Ijo) Depan Galeri Naladerma").
+   - "weight": ambil dari Rincian Paket -> Berat (misal "1.5 kg").
+   - "dimensions": ambil dari Rincian Paket -> Besar (misal "0x0x0 cm").
+   - "cashAmount": jika Pembayaran Tunai -> Tagih dari Penerima adalah Rp0 maka cashAmount = 0. Jika ada nominal, tulis nominal angka.
+   - KECUALI STATUS: Status pesanan ("Diambil", "Selesai", "Diantar", "Menuju", "Pickup", dll) DILARANG dicatat di field manapun!
+2. Hanya balaskan JSON valid tanpa teks markdown atau pengantar lain.`;
 
                 // Model Vision Groq Aktif (qwen/qwen3.8-27b & qwen/qwen3.6-27b)
                 const visionModels = [
@@ -1501,6 +1669,15 @@ Hanya balaskan JSON tanpa teks lain.`;
 
                         if (parsed.category) document.getElementById('form-category').value = parsed.category;
                         onCategoryChange();
+
+                        // Sanitasi khusus SPX: pastikan status tidak bocor ke codeOrder
+                        if (parsed.codeOrder) {
+                            parsed.codeOrder = parsed.codeOrder.replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered)\b/gi, '').trim();
+                        }
+                        if (parsed.category === 'SPX' || parsed.category === 'Instan') {
+                            const pf = document.getElementById('form-platform');
+                            if (pf) pf.value = 'SPX';
+                        }
 
                         if (parsed.restoName) document.getElementById('form-restoname').value = parsed.restoName;
                         if (parsed.restoAddr) document.getElementById('form-restoaddr').value = parsed.restoAddr;
@@ -1817,14 +1994,14 @@ Hanya balaskan JSON tanpa teks lain.`;
             if (o.category === 'Food') {
                 subInfo = `<div class="text-[10px] text-slate-500">Code: <strong class="text-indigo-600">${o.codeOrder || '-'}</strong> • ${o.totalMenu || ''}</div>`;
             } else if (o.category === 'SPX') {
-                subInfo = `<div class="text-[10px] text-slate-500">Kode: <strong class="text-orange-600">${o.codeOrder || '-'}</strong> • Berat: ${o.weight || '-'}</div>`;
+                subInfo = `<div class="text-[10px] text-slate-500">Kode: <strong class="text-orange-600">${o.codeOrder || '-'}</strong> • Berat: ${o.weight || '-'} • Dimensi: ${o.dimensions || '-'}</div>`;
             } else {
                 subInfo = `<div class="text-[10px] text-slate-500">Kat: <strong>${o.itemCategory || 'Barang'}</strong> • Berat: ${o.weight || '-'}</div>`;
             }
 
             const formattedTime = new Date(o.timestamp).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-            const platformLabels = { ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
+            const platformLabels = { SPX: '📦 SPX', ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
             const platformBadge = `<span class="bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-md font-bold text-[10px]">${platformLabels[o.platform] || platformLabels.Lainnya}</span>`;
             const incomeBadge = (o.orderIncome || 0) > 0
                 ? `<span class="text-[10px] font-extrabold text-emerald-600">+Rp${o.orderIncome.toLocaleString('id-ID')}</span>`
@@ -1852,14 +2029,22 @@ Hanya balaskan JSON tanpa teks lain.`;
                     </div>
                 </div>
 
-                <div class="flex items-center justify-between pt-1 border-t border-slate-100">
-                    <div class="flex items-center gap-2">
-                        <span class="text-[10px] text-slate-400 font-mono">ID: ${o.id}</span>
+                <div class="flex items-center justify-between pt-1 border-t border-slate-100 gap-2">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="text-[10px] text-slate-400 font-mono truncate">ID: ${o.id}</span>
                         ${incomeBadge}
                     </div>
-                    <button onclick="openOrderDetailModal('${o.id}')" class="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-3 py-1.5 rounded-xl transition flex items-center gap-1">
-                        <i class="fa-solid fa-route text-indigo-500"></i> Lihat Detail & Map
-                    </button>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <button onclick="openEditModal('${o.id}')" class="text-xs font-extrabold text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1" title="Edit Pesanan">
+                            <i class="fa-solid fa-pen-to-square text-amber-500"></i> Edit
+                        </button>
+                        <button onclick="deleteOrder('${o.id}')" class="text-xs font-extrabold text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1" title="Hapus Pesanan">
+                            <i class="fa-solid fa-trash text-rose-500"></i>
+                        </button>
+                        <button onclick="openOrderDetailModal('${o.id}')" class="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-xl transition flex items-center gap-1" title="Lihat Detail &amp; Peta">
+                            <i class="fa-solid fa-route text-indigo-500"></i> Detail
+                        </button>
+                    </div>
                 </div>
             </div>`;
         }
@@ -1902,7 +2087,14 @@ Hanya balaskan JSON tanpa teks lain.`;
             document.getElementById('detail-resto-addr').innerText = order.restoAddr || '-';
             document.getElementById('detail-recip-name').innerText = order.recipName;
             document.getElementById('detail-recip-addr').innerText = order.recipAddr || '-';
-            document.getElementById('detail-notes-text').innerText = order.notes || '-';
+            const notesVal = order.notes || '-';
+            document.getElementById('detail-notes-text').innerText = notesVal;
+            const notesContainer = document.getElementById('detail-notes-container');
+            if (!notesVal || notesVal === '-' || notesVal.trim() === '') {
+                notesContainer.classList.add('hidden');
+            } else {
+                notesContainer.classList.remove('hidden');
+            }
             document.getElementById('detail-time').innerText = new Date(order.timestamp).toLocaleString('id-ID');
             document.getElementById('detail-id').innerText = order.id;
 
@@ -1915,7 +2107,7 @@ Hanya balaskan JSON tanpa teks lain.`;
                 payBadge.innerText = `💳 Non-Tunai`;
             }
 
-            const platformLabelsModal = { ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
+            const platformLabelsModal = { SPX: '📦 SPX (Shopee Xpress)', ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
             document.getElementById('detail-platform-badge').innerText = platformLabelsModal[order.platform] || platformLabelsModal.Lainnya;
             document.getElementById('detail-income-val').innerText = `Rp${(order.orderIncome || 0).toLocaleString('id-ID')}`;
             const fuelCost = computeOrderFuelCost(order);
@@ -1948,6 +2140,10 @@ Hanya balaskan JSON tanpa teks lain.`;
 
         function closeOrderDetailModal() {
             document.getElementById('order-detail-modal').classList.add('hidden');
+            if (leafletMapInstance) {
+                leafletMapInstance.remove();
+                leafletMapInstance = null;
+            }
         }
 
         function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
@@ -2179,94 +2375,139 @@ Hanya balaskan JSON tanpa teks lain.`;
         }
 
         function doCheckin(orderId, role) {
-            if (!navigator.geolocation) {
-                showToast('Perangkat/browser ini tidak mendukung GPS.', 'rose');
-                return;
-            }
+            const order = ordersList.find(o => o.id === orderId);
+            if (!order) return;
 
             const boxEl = document.getElementById(role === 'resto' ? 'resto-checkin-box' : 'recip-checkin-box');
             if (boxEl) {
                 boxEl.innerHTML = `<div class="text-center text-[10px] text-slate-400 py-2"><i class="fa-solid fa-spinner fa-spin mr-1"></i> Mengambil lokasi GPS...</div>`;
             }
 
+            const applyCheckin = (lat, lon, accuracy) => {
+                const checkinData = {
+                    lat: parseFloat(lat),
+                    lon: parseFloat(lon),
+                    accuracy: accuracy || 10,
+                    timestamp: Date.now()
+                };
+
+                if (role === 'resto') {
+                    order.restoCheckin = checkinData;
+                } else {
+                    order.recipCheckin = checkinData;
+                }
+
+                saveToLocalStorage();
+                renderCheckinBox(orderId, role);
+                showToast(`Checkin ${role === 'resto' ? 'resto/pengirim' : 'penerima'} berhasil dicatat.`, 'emerald');
+
+                // Update peta di modal agar langsung menampilkan titik GPS ini!
+                initOrderMap(order);
+            };
+
+            if (!navigator.geolocation) {
+                const fallback = getFallbackCoordinates(role === 'resto' ? (order.restoAddr || order.restoName) : (order.recipAddr || order.recipName), role === 'resto');
+                if (confirm(`GPS browser tidak didukung. Gunakan titik koordinat estimasi (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin?`)) {
+                    applyCheckin(fallback.lat, fallback.lon, 30);
+                } else {
+                    renderCheckinBox(orderId, role);
+                }
+                return;
+            }
+
             navigator.geolocation.getCurrentPosition(
                 (position) => {
-                    const order = ordersList.find(o => o.id === orderId);
-                    if (!order) return;
-
-                    const checkinData = {
-                        lat: position.coords.latitude,
-                        lon: position.coords.longitude,
-                        accuracy: position.coords.accuracy,
-                        timestamp: Date.now()
-                    };
-
-                    if (role === 'resto') {
-                        order.restoCheckin = checkinData;
-                    } else {
-                        order.recipCheckin = checkinData;
-                    }
-
-                    saveToLocalStorage();
-                    renderCheckinBox(orderId, role);
-                    showToast(`Checkin ${role === 'resto' ? 'resto' : 'penerima'} tersimpan.`, 'emerald');
-
-                    // Update peta di modal supaya langsung pakai titik GPS asli ini.
-                    initOrderMap(order);
+                    applyCheckin(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
                 },
                 (error) => {
                     let msg = 'Gagal mengambil lokasi GPS.';
                     if (error.code === error.PERMISSION_DENIED) {
-                        msg = 'Izin lokasi ditolak. Aktifkan izin lokasi di browser untuk checkin.';
+                        msg = 'Izin lokasi GPS ditolak/tidak aktif di browser.';
                     } else if (error.code === error.TIMEOUT) {
-                        msg = 'Waktu pencarian GPS habis, coba lagi di tempat terbuka.';
+                        msg = 'Waktu pencarian sinyal GPS habis.';
                     } else if (error.code === error.POSITION_UNAVAILABLE) {
                         msg = 'Sinyal GPS tidak tersedia saat ini.';
                     }
-                    showToast(msg, 'rose');
-                    renderCheckinBox(orderId, role);
+                    console.warn("GPS Checkin error:", error);
+
+                    // Fallback konfirmasi cerdas jika pengujian dilakukan di browser tanpa izin GPS / file://
+                    const fallback = getFallbackCoordinates(role === 'resto' ? (order.restoAddr || order.restoName) : (order.recipAddr || order.recipName), role === 'resto');
+                    const useFallback = confirm(`${msg}\n\nApakah Anda ingin menggunakan koordinat area pesanan (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin sekarang?`);
+                    if (useFallback) {
+                        applyCheckin(fallback.lat, fallback.lon, 25);
+                    } else {
+                        showToast(msg, 'rose');
+                        renderCheckinBox(orderId, role);
+                    }
                 },
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
             );
         }
 
+        function scrollToCheckinSection() {
+            const box = document.getElementById('resto-checkin-box');
+            if (box) box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
         async function initOrderMap(order) {
-            const restoAddr = order.restoAddr;
-            const recipAddr = order.recipAddr;
+            const restoAddr = order.restoAddr || order.restoName || 'Resto / Pengirim';
+            const recipAddr = order.recipAddr || order.recipName || 'Tujuan / Penerima';
             const distanceBadge = document.getElementById('detail-calculated-distance');
-            distanceBadge.innerText = "Mencari Rute...";
+            const placeholderEl = document.getElementById('map-checkin-placeholder');
+            const modeSelector = document.getElementById('map-mode-selector');
+            const btnNavRoute = document.getElementById('btn-gmap-route');
+            const btnNavResto = document.getElementById('btn-gmap-resto');
+            const btnNavRecip = document.getElementById('btn-gmap-recip');
 
             if (leafletMapInstance) {
                 leafletMapInstance.remove();
                 leafletMapInstance = null;
             }
+            mapRestoMarker = null;
+            mapRecipMarker = null;
+            mapPolyline = null;
+            mapRestoCoords = null;
+            mapRecipCoords = null;
 
-            // attributionControl diaktifkan (true) karena syarat pemakaian gratis tile CARTO/OSM
-            // mewajibkan atribusi ditampilkan di peta.
-            leafletMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: true }).setView([-7.558, 110.771], 13);
-            // Ganti dari tile.openstreetmap.org (sering blokir 403 untuk aplikasi non-osm.org / dibuka dari file lokal)
-            // ke basemap CARTO yang memang gratis dipakai untuk aplikasi pihak ketiga.
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 19,
-                subdomains: 'abcd',
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            }).addTo(leafletMapInstance);
+            const hasResto = !!(order.restoCheckin && order.restoCheckin.lat && order.restoCheckin.lon);
+            const hasRecip = !!(order.recipCheckin && order.recipCheckin.lat && order.recipCheckin.lon);
 
-            mapRestoCoords = order.restoCheckin
-                ? { lat: order.restoCheckin.lat, lon: order.restoCheckin.lon }
-                : await geocodeAddress(restoAddr, true);
-            mapRecipCoords = order.recipCheckin
-                ? { lat: order.recipCheckin.lat, lon: order.recipCheckin.lon }
-                : await geocodeAddress(recipAddr, false);
+            // ============================================================
+            // KONDISI 1: Belum ada Checkin sama sekali (0/2)
+            // Map tracking dinonaktifkan agar tidak ada titik salah alamat
+            // ============================================================
+            if (!hasResto && !hasRecip) {
+                if (placeholderEl) placeholderEl.classList.remove('hidden');
+                if (modeSelector) modeSelector.classList.add('hidden');
 
-            const lat1 = mapRestoCoords.lat;
-            const lon1 = mapRestoCoords.lon;
-            const lat2 = mapRecipCoords.lat;
-            const lon2 = mapRecipCoords.lon;
+                if (distanceBadge) {
+                    distanceBadge.className = 'bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full font-bold text-[10px] shadow-sm';
+                    distanceBadge.innerHTML = '<i class="fa-solid fa-location-crosshairs mr-1"></i> Menunggu Checkin GPS (0/2)';
+                }
 
-            document.getElementById('btn-gmap-resto').href = `https://www.google.com/maps/dir/?api=1&destination=${lat1},${lon1}`;
-            document.getElementById('btn-gmap-recip').href = `https://www.google.com/maps/dir/?api=1&destination=${lat2},${lon2}`;
-            document.getElementById('btn-gmap-route').href = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=driving`;
+                const qResto = encodeURIComponent(order.restoAddr || order.restoName || '');
+                const qRecip = encodeURIComponent(order.recipAddr || order.recipName || '');
+                if (btnNavResto) {
+                    btnNavResto.href = `https://www.google.com/maps/search/?api=1&query=${qResto}`;
+                    btnNavResto.title = 'Buka Alamat Resto di Google Maps';
+                }
+                if (btnNavRecip) {
+                    btnNavRecip.href = `https://www.google.com/maps/search/?api=1&query=${qRecip}`;
+                    btnNavRecip.title = 'Buka Alamat Penerima di Google Maps';
+                }
+                if (btnNavRoute) {
+                    btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&destination=${qRecip}`;
+                    btnNavRoute.innerHTML = `<i class="fa-solid fa-magnifying-glass text-amber-300 mr-1"></i> Cari Rute di Google Maps`;
+                }
+                return;
+            }
+
+            // ============================================================
+            // KONDISI 2: Sudah ada Checkin (1 kali atau 2 kali)
+            // Sembunyikan placeholder, tampilkan Leaflet map dan selector
+            // ============================================================
+            if (placeholderEl) placeholderEl.classList.add('hidden');
+            if (modeSelector) modeSelector.classList.remove('hidden');
 
             const redIcon = L.divIcon({
                 className: 'custom-pin-red',
@@ -2288,11 +2529,109 @@ Hanya balaskan JSON tanpa teks lain.`;
                 iconAnchor: [16, 42]
             });
 
-            const restoSrcLabel = order.restoCheckin ? '📍 Titik GPS Checkin Driver' : '🌐 Estimasi dari alamat';
-            const recipSrcLabel = order.recipCheckin ? '📍 Titik GPS Checkin Driver' : '🌐 Estimasi dari alamat';
+            // ============================================================
+            // KASUS 2A: HANYA Checkin Sampai Lokasi Resto/Pengirim (1 Checkin)
+            // Memunculkan map dan menampilkan 1 titik map Resto yang sudah dicheckin
+            // ============================================================
+            if (hasResto && !hasRecip) {
+                mapRestoCoords = { lat: order.restoCheckin.lat, lon: order.restoCheckin.lon };
 
-            mapRestoMarker = L.marker([lat1, lon1], { icon: redIcon }).addTo(leafletMapInstance).bindPopup(`<b>1. Resto / Pengirim</b><br>${restoAddr}<br><i>${restoSrcLabel}</i>`);
-            mapRecipMarker = L.marker([lat2, lon2], { icon: greenIcon }).addTo(leafletMapInstance).bindPopup(`<b>2. Tujuan / Penerima</b><br>${recipAddr}<br><i>${recipSrcLabel}</i>`);
+                leafletMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: true }).setView([mapRestoCoords.lat, mapRestoCoords.lon], 16);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    subdomains: 'abcd',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                }).addTo(leafletMapInstance);
+
+                mapRestoMarker = L.marker([mapRestoCoords.lat, mapRestoCoords.lon], { icon: redIcon }).addTo(leafletMapInstance)
+                    .bindPopup(`<div class="space-y-1"><b>1. ${order.restoName || 'Resto / Pengirim'}</b><div class="text-[11px] text-slate-600">${restoAddr}</div><span class="inline-block bg-rose-50 text-rose-700 font-bold text-[10px] px-2 py-0.5 rounded border border-rose-200">📍 Titik GPS Resto Checkin (1/2)</span></div>`).openPopup();
+
+                if (distanceBadge) {
+                    distanceBadge.className = 'bg-rose-600 text-white px-2.5 py-0.5 rounded-full font-bold text-[10px] shadow-sm';
+                    distanceBadge.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Titik Resto Terverifikasi (Checkin 1/2)';
+                }
+
+                if (btnNavResto) btnNavResto.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRestoCoords.lat},${mapRestoCoords.lon}`;
+                const qRecip = encodeURIComponent(order.recipAddr || order.recipName || '');
+                if (btnNavRecip) btnNavRecip.href = `https://www.google.com/maps/search/?api=1&query=${qRecip}`;
+                if (btnNavRoute) {
+                    btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&origin=${mapRestoCoords.lat},${mapRestoCoords.lon}&destination=${qRecip}`;
+                    btnNavRoute.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Rute ke Penerima (Maps)`;
+                }
+
+                updateMapModeButtons(true, false, 'resto');
+
+                setTimeout(() => { if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, 150);
+                setTimeout(() => { if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, 350);
+                return;
+            }
+
+            // ============================================================
+            // KASUS 2B: HANYA Checkin Sampai Lokasi Penerima (1 Checkin)
+            // Memunculkan map dan menampilkan 1 titik map Penerima yang sudah dicheckin
+            // ============================================================
+            if (!hasResto && hasRecip) {
+                mapRecipCoords = { lat: order.recipCheckin.lat, lon: order.recipCheckin.lon };
+
+                leafletMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: true }).setView([mapRecipCoords.lat, mapRecipCoords.lon], 16);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    maxZoom: 19,
+                    subdomains: 'abcd',
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                }).addTo(leafletMapInstance);
+
+                mapRecipMarker = L.marker([mapRecipCoords.lat, mapRecipCoords.lon], { icon: greenIcon }).addTo(leafletMapInstance)
+                    .bindPopup(`<div class="space-y-1"><b>2. ${order.recipName || 'Tujuan / Penerima'}</b><div class="text-[11px] text-slate-600">${recipAddr}</div><span class="inline-block bg-emerald-50 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded border border-emerald-200">📍 Titik GPS Penerima Checkin (1/2)</span></div>`).openPopup();
+
+                if (distanceBadge) {
+                    distanceBadge.className = 'bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-bold text-[10px] shadow-sm';
+                    distanceBadge.innerHTML = '<i class="fa-solid fa-location-dot mr-1"></i> Titik Penerima Terverifikasi (Checkin 1/2)';
+                }
+
+                const qResto = encodeURIComponent(order.restoAddr || order.restoName || '');
+                if (btnNavResto) btnNavResto.href = `https://www.google.com/maps/search/?api=1&query=${qResto}`;
+                if (btnNavRecip) btnNavRecip.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
+                if (btnNavRoute) {
+                    btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
+                    btnNavRoute.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Menuju Titik Penerima`;
+                }
+
+                updateMapModeButtons(false, true, 'recip');
+
+                setTimeout(() => { if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, 150);
+                setTimeout(() => { if (leafletMapInstance) leafletMapInstance.invalidateSize(); }, 350);
+                return;
+            }
+
+            // ============================================================
+            // KASUS 2C: SUDAH CHECKIN 2 KALI (Resto DAN Penerima)
+            // Memunculkan map dengan kedua titik dan garis rute tracking lengkap
+            // ============================================================
+            mapRestoCoords = { lat: order.restoCheckin.lat, lon: order.restoCheckin.lon };
+            mapRecipCoords = { lat: order.recipCheckin.lat, lon: order.recipCheckin.lon };
+
+            leafletMapInstance = L.map('detail-map', { zoomControl: false, attributionControl: true }).setView([-7.558, 110.771], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19,
+                subdomains: 'abcd',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            }).addTo(leafletMapInstance);
+
+            const lat1 = mapRestoCoords.lat;
+            const lon1 = mapRestoCoords.lon;
+            const lat2 = mapRecipCoords.lat;
+            const lon2 = mapRecipCoords.lon;
+
+            if (btnNavResto) btnNavResto.href = `https://www.google.com/maps/dir/?api=1&destination=${lat1},${lon1}`;
+            if (btnNavRecip) btnNavRecip.href = `https://www.google.com/maps/dir/?api=1&destination=${lat2},${lon2}`;
+            if (btnNavRoute) btnNavRoute.href = `https://www.google.com/maps/dir/?api=1&origin=${lat1},${lon1}&destination=${lat2},${lon2}&travelmode=driving`;
+
+            mapRestoMarker = L.marker([lat1, lon1], { icon: redIcon }).addTo(leafletMapInstance)
+                .bindPopup(`<div class="space-y-1"><b>1. ${order.restoName || 'Resto / Pengirim'}</b><div class="text-[11px] text-slate-600">${restoAddr}</div><span class="inline-block bg-rose-50 text-rose-700 font-bold text-[10px] px-2 py-0.5 rounded border border-rose-200">📍 Titik GPS Checkin Resto</span></div>`);
+            mapRecipMarker = L.marker([lat2, lon2], { icon: greenIcon }).addTo(leafletMapInstance)
+                .bindPopup(`<div class="space-y-1"><b>2. ${order.recipName || 'Tujuan / Penerima'}</b><div class="text-[11px] text-slate-600">${recipAddr}</div><span class="inline-block bg-emerald-50 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded border border-emerald-200">📍 Titik GPS Checkin Penerima</span></div>`);
+
+            updateMapModeButtons(true, true, 'full');
 
             try {
                 const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
@@ -2315,11 +2654,12 @@ Hanya balaskan JSON tanpa teks lain.`;
                         const distKm = (route.distance / 1000).toFixed(1);
                         const durMin = Math.ceil(route.duration / 60);
 
-                        distanceBadge.innerText = `📍 Jarak: ${distKm} km (${durMin} min)`;
+                        if (distanceBadge) {
+                            distanceBadge.className = 'bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-bold text-[10px] shadow-sm';
+                            distanceBadge.innerHTML = `<i class="fa-solid fa-route mr-1"></i> Rute GPS: ${distKm} km (${durMin} min) (2/2)`;
+                        }
                         leafletMapInstance.fitBounds(mapPolyline.getBounds(), { padding: [35, 35] });
 
-                        // Simpan jarak rute ke order supaya bisa dipakai kalkulasi BBM
-                        // otomatis di Dashboard/Insight tanpa perlu buka peta lagi.
                         order.distanceKm = parseFloat(distKm);
                         order.routeDurationMin = durMin;
                         saveToLocalStorage();
@@ -2339,10 +2679,11 @@ Hanya balaskan JSON tanpa teks lain.`;
             }
 
             const distKm = calculateHaversineDistance(lat1, lon1, lat2, lon2);
-            distanceBadge.innerText = `📍 Jarak: ~${distKm} km`;
+            if (distanceBadge) {
+                distanceBadge.className = 'bg-emerald-600 text-white px-2.5 py-0.5 rounded-full font-bold text-[10px] shadow-sm';
+                distanceBadge.innerHTML = `<i class="fa-solid fa-route mr-1"></i> Jarak GPS: ~${distKm} km (2/2)`;
+            }
 
-            // Simpan estimasi jarak (fallback Haversine) ke order juga, supaya
-            // tetap ada nilai untuk kalkulasi BBM meskipun OSRM tidak tersedia.
             order.distanceKm = parseFloat(distKm);
             order.routeDurationMin = null;
             saveToLocalStorage();
@@ -2364,37 +2705,91 @@ Hanya balaskan JSON tanpa teks lain.`;
             setMapRouteMode('full');
         }
 
-        function setMapRouteMode(mode) {
-            if (!leafletMapInstance || !mapRestoCoords || !mapRecipCoords) return;
-
+        function updateMapModeButtons(hasResto, hasRecip, activeMode) {
             const btnResto = document.getElementById('btn-mode-resto');
             const btnRecip = document.getElementById('btn-mode-recip');
             const btnFull = document.getElementById('btn-mode-full');
+
+            if (!btnResto || !btnRecip || !btnFull) return;
+
+            // Tombol Resto
+            if (hasResto) {
+                btnResto.disabled = false;
+                btnResto.title = 'Fokus Titik Resto';
+                btnResto.className = activeMode === 'resto'
+                    ? 'py-1.5 px-2 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1 shadow-sm font-bold'
+                    : 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition flex items-center justify-center gap-1 font-bold';
+            } else {
+                btnResto.disabled = true;
+                btnResto.title = 'Resto belum dicheckin';
+                btnResto.className = 'py-1.5 px-2 rounded-lg text-slate-300 bg-slate-50 cursor-not-allowed transition flex items-center justify-center gap-1 font-normal';
+            }
+
+            // Tombol Penerima
+            if (hasRecip) {
+                btnRecip.disabled = false;
+                btnRecip.title = 'Fokus Titik Penerima';
+                btnRecip.className = activeMode === 'recip'
+                    ? 'py-1.5 px-2 rounded-lg bg-emerald-600 text-white transition flex items-center justify-center gap-1 shadow-sm font-bold'
+                    : 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition flex items-center justify-center gap-1 font-bold';
+            } else {
+                btnRecip.disabled = true;
+                btnRecip.title = 'Penerima belum dicheckin';
+                btnRecip.className = 'py-1.5 px-2 rounded-lg text-slate-300 bg-slate-50 cursor-not-allowed transition flex items-center justify-center gap-1 font-normal';
+            }
+
+            // Tombol Rute Lengkap (perlu kedua titik)
+            if (hasResto && hasRecip) {
+                btnFull.disabled = false;
+                btnFull.title = 'Lihat Rute Lengkap';
+                btnFull.className = activeMode === 'full'
+                    ? 'py-1.5 px-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1 shadow-sm font-bold'
+                    : 'py-1.5 px-2 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition flex items-center justify-center gap-1 font-bold';
+            } else {
+                btnFull.disabled = true;
+                btnFull.title = 'Perlu 2 checkin untuk melihat rute';
+                btnFull.className = 'py-1.5 px-2 rounded-lg text-slate-300 bg-slate-50 cursor-not-allowed transition flex items-center justify-center gap-1 font-normal';
+            }
+        }
+
+        function setMapRouteMode(mode) {
+            if (!leafletMapInstance) return;
+
+            const hasResto = !!mapRestoCoords;
+            const hasRecip = !!mapRecipCoords;
             const btnNavMain = document.getElementById('btn-gmap-route');
 
-            [btnResto, btnRecip, btnFull].forEach(btn => {
-                btn.className = "py-1.5 px-2 rounded-lg text-slate-600 hover:text-indigo-600 transition flex items-center justify-center gap-1";
-            });
-
-            if (mode === 'resto') {
-                btnResto.className = "py-1.5 px-2 rounded-lg bg-rose-600 text-white transition flex items-center justify-center gap-1 shadow-sm";
+            if (mode === 'resto' && mapRestoCoords) {
+                updateMapModeButtons(hasResto, hasRecip, 'resto');
                 leafletMapInstance.setView([mapRestoCoords.lat, mapRestoCoords.lon], 16);
                 if (mapRestoMarker) mapRestoMarker.openPopup();
-                btnNavMain.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRestoCoords.lat},${mapRestoCoords.lon}`;
-                btnNavMain.innerHTML = `<i class="fa-solid fa-store text-amber-300"></i> Navigasi Ke Resto (#1)`;
-            } else if (mode === 'recip') {
-                btnRecip.className = "py-1.5 px-2 rounded-lg bg-emerald-600 text-white transition flex items-center justify-center gap-1 shadow-sm";
+                if (btnNavMain) {
+                    btnNavMain.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRestoCoords.lat},${mapRestoCoords.lon}`;
+                    btnNavMain.innerHTML = `<i class="fa-solid fa-store text-amber-300 mr-1"></i> Navigasi Ke Resto (#1)`;
+                }
+            } else if (mode === 'recip' && mapRecipCoords) {
+                updateMapModeButtons(hasResto, hasRecip, 'recip');
                 leafletMapInstance.setView([mapRecipCoords.lat, mapRecipCoords.lon], 16);
                 if (mapRecipMarker) mapRecipMarker.openPopup();
-                btnNavMain.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
-                btnNavMain.innerHTML = `<i class="fa-solid fa-location-dot text-amber-300"></i> Navigasi Ke Penerima (#2)`;
-            } else {
-                btnFull.className = "py-1.5 px-2 rounded-lg bg-indigo-600 text-white transition flex items-center justify-center gap-1 shadow-sm";
-                if (mapPolyline) {
-                    leafletMapInstance.fitBounds(mapPolyline.getBounds(), { padding: [35, 35] });
+                if (btnNavMain) {
+                    btnNavMain.href = `https://www.google.com/maps/dir/?api=1&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}`;
+                    btnNavMain.innerHTML = `<i class="fa-solid fa-location-dot text-amber-300 mr-1"></i> Navigasi Ke Penerima (#2)`;
                 }
-                btnNavMain.href = `https://www.google.com/maps/dir/?api=1&origin=${mapRestoCoords.lat},${mapRestoCoords.lon}&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}&travelmode=driving`;
-                btnNavMain.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300"></i> Navigasi Rute Lengkap`;
+            } else if (mode === 'full') {
+                if (mapRestoCoords && mapRecipCoords) {
+                    updateMapModeButtons(hasResto, hasRecip, 'full');
+                    if (mapPolyline) {
+                        leafletMapInstance.fitBounds(mapPolyline.getBounds(), { padding: [35, 35] });
+                    }
+                    if (btnNavMain) {
+                        btnNavMain.href = `https://www.google.com/maps/dir/?api=1&origin=${mapRestoCoords.lat},${mapRestoCoords.lon}&destination=${mapRecipCoords.lat},${mapRecipCoords.lon}&travelmode=driving`;
+                        btnNavMain.innerHTML = `<i class="fa-solid fa-diamond-turn-right text-amber-300 mr-1"></i> Navigasi Rute Lengkap`;
+                    }
+                } else if (mapRestoCoords) {
+                    setMapRouteMode('resto');
+                } else if (mapRecipCoords) {
+                    setMapRouteMode('recip');
+                }
             }
 
             setTimeout(() => {
@@ -2474,8 +2869,8 @@ Hanya balaskan JSON tanpa teks lain.`;
 
         function renderPlatformChart(filtered) {
             const breakdown = computePlatformBreakdown(filtered);
-            const platforms = ['ShopeeFood', 'Grab', 'Gojek', 'Lainnya'].filter(p => breakdown[p]);
-            const platformColors = { ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' };
+            const platforms = ['SPX', 'ShopeeFood', 'Grab', 'Gojek', 'Lainnya'].filter(p => breakdown[p]);
+            const platformColors = { SPX: '#F97316', ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' };
 
             if (chartPlatformInstance) chartPlatformInstance.destroy();
 
@@ -2547,6 +2942,193 @@ Hanya balaskan JSON tanpa teks lain.`;
             saveToLocalStorage();
             renderAllViews();
             showToast("Semua data berhasil dihapus.", "rose");
+        }
+
+        // ============================================================
+        // CRUD: DELETE ORDER
+        // ============================================================
+        function deleteOrder(orderId) {
+            if (!confirm('Hapus pesanan ini? Tindakan tidak dapat dibatalkan.')) return;
+            ordersList = ordersList.filter(o => o.id !== orderId);
+            saveToLocalStorage();
+            renderAllViews();
+            showToast('Pesanan berhasil dihapus.', 'rose');
+        }
+
+        // ============================================================
+        // CRUD: EDIT ORDER — Render dynamic fields for edit modal
+        // ============================================================
+        function onEditCategoryChange() {
+            const cat = document.getElementById('edit-form-category').value;
+            const fieldsContainer = document.getElementById('edit-category-specific-fields');
+            const labelPengirim = document.getElementById('edit-label-pengirim-title');
+
+            if (cat === 'Food') {
+                if (labelPengirim) labelPengirim.innerHTML = `<i class="fa-solid fa-utensils"></i> Data Resto / Pengirim`;
+                fieldsContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Code Orderan *</label>
+                            <input type="text" id="edit-form-codeorder" placeholder="Contoh: #782" class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-indigo-900 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">No. Pesanan *</label>
+                            <input type="text" id="edit-form-orderno" placeholder="325241133197056..." class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Total Menu / Rincian Barang *</label>
+                        <input type="text" id="edit-form-totalmenu" placeholder="Contoh: 1 x Bakmi Goreng (Total 1 menu)" class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-medium text-slate-800 focus:outline-none">
+                    </div>`;
+            } else if (cat === 'SPX') {
+                if (labelPengirim) labelPengirim.innerHTML = `<i class="fa-solid fa-box"></i> Data Pengirim SPX (Toko / Agen)`;
+                fieldsContainer.innerHTML = `
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Kode Pesanan *</label>
+                            <input type="text" id="edit-form-codeorder" placeholder="#4N73" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-bold text-indigo-900 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Berat Barang</label>
+                            <input type="text" id="edit-form-weight" placeholder="1.5 kg" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Besar Barang</label>
+                            <input type="text" id="edit-form-dimensions" placeholder="0x0x0 cm" class="w-full bg-white border border-indigo-200 rounded-xl px-2 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                        </div>
+                    </div>`;
+            } else if (cat === 'Instan') {
+                if (labelPengirim) labelPengirim.innerHTML = `<i class="fa-solid fa-bolt"></i> Data Pengirim SPX Instan`;
+                fieldsContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Kategori Barang</label>
+                            <input type="text" id="edit-form-itemcategory" placeholder="Makanan / Paket" class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Berat Barang</label>
+                            <input type="text" id="edit-form-weight" placeholder="1.0 kg" class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-500 mb-0.5">No. Pesanan Instan *</label>
+                        <input type="text" id="edit-form-orderno" placeholder="3248025614224384096" class="w-full bg-white border border-indigo-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
+                    </div>`;
+            }
+        }
+
+        function updateEditPaymentMethod() {
+            const amount = parseFloat(document.getElementById('edit-form-cashamount').value) || 0;
+            const paymentSelect = document.getElementById('edit-form-payment');
+            if (paymentSelect) paymentSelect.value = amount > 0 ? 'Tunai' : 'Non-Tunai';
+        }
+
+        // ============================================================
+        // CRUD: EDIT ORDER — Open Modal & Populate Form
+        // ============================================================
+        function openEditModal(orderId) {
+            const order = ordersList.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('edit-form-id').value = order.id;
+            document.getElementById('edit-form-category').value = order.category || 'Food';
+            onEditCategoryChange(); // render dynamic fields first
+
+            document.getElementById('edit-form-platform').value = order.platform || 'Lainnya';
+            document.getElementById('edit-form-income').value = order.orderIncome || 0;
+            const fuelInput = document.getElementById('edit-form-fuelcost-manual');
+            fuelInput.value = (order.manualFuelCost !== null && order.manualFuelCost !== undefined) ? order.manualFuelCost : '';
+
+            document.getElementById('edit-form-restoname').value = order.restoName || '';
+            document.getElementById('edit-form-restoaddr').value = order.restoAddr || '';
+            document.getElementById('edit-form-recipname').value = order.recipName || '';
+            document.getElementById('edit-form-cashamount').value = order.cashAmount || 0;
+            document.getElementById('edit-form-recipaddr').value = order.recipAddr || '';
+            document.getElementById('edit-form-notes').value = (order.notes && order.notes !== '-') ? order.notes : '';
+            document.getElementById('edit-form-ordertime').value = order.orderTime || '';
+            updateEditPaymentMethod();
+
+            // Populate category-specific fields after they are rendered
+            if (order.category === 'Food') {
+                const co = document.getElementById('edit-form-codeorder');
+                const tm = document.getElementById('edit-form-totalmenu');
+                const on = document.getElementById('edit-form-orderno');
+                if (co) co.value = order.codeOrder || '';
+                if (tm) tm.value = order.totalMenu || '';
+                if (on) on.value = order.orderNo || '';
+            } else if (order.category === 'SPX') {
+                const co = document.getElementById('edit-form-codeorder');
+                const wt = document.getElementById('edit-form-weight');
+                const dm = document.getElementById('edit-form-dimensions');
+                if (co) co.value = order.codeOrder || '';
+                if (wt) wt.value = order.weight || '';
+                if (dm) dm.value = order.dimensions || '';
+            } else if (order.category === 'Instan') {
+                const ic = document.getElementById('edit-form-itemcategory');
+                const wt = document.getElementById('edit-form-weight');
+                const on = document.getElementById('edit-form-orderno');
+                if (ic) ic.value = order.itemCategory || '';
+                if (wt) wt.value = order.weight || '';
+                if (on) on.value = order.orderNo || '';
+            }
+
+            document.getElementById('edit-order-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-order-modal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        // ============================================================
+        // CRUD: EDIT ORDER — Save Changes
+        // ============================================================
+        function saveEditForm(e) {
+            e.preventDefault();
+            const orderId = document.getElementById('edit-form-id').value;
+            const idx = ordersList.findIndex(o => o.id === orderId);
+            if (idx === -1) { showToast('Order tidak ditemukan.', 'rose'); return; }
+
+            const order = ordersList[idx];
+            const cat = document.getElementById('edit-form-category').value;
+            const cashVal = parseFloat(document.getElementById('edit-form-cashamount').value) || 0;
+            const manualFuelRaw = document.getElementById('edit-form-fuelcost-manual').value;
+            const manualFuelVal = manualFuelRaw !== '' ? parseFloat(manualFuelRaw) : null;
+            const orderTimeVal = document.getElementById('edit-form-ordertime').value;
+
+            order.category = cat;
+            order.platform = document.getElementById('edit-form-platform').value;
+            order.orderIncome = parseFloat(document.getElementById('edit-form-income').value) || 0;
+            order.manualFuelCost = (manualFuelVal !== null && !isNaN(manualFuelVal)) ? manualFuelVal : null;
+            order.restoName = document.getElementById('edit-form-restoname').value;
+            order.restoAddr = document.getElementById('edit-form-restoaddr').value;
+            order.recipName = document.getElementById('edit-form-recipname').value;
+            order.recipAddr = document.getElementById('edit-form-recipaddr').value;
+            order.notes = document.getElementById('edit-form-notes').value || '-';
+            order.cashAmount = cashVal;
+            order.payment = cashVal > 0 ? 'Tunai' : 'Non-Tunai';
+            order.orderTime = orderTimeVal;
+            order.timestamp = new Date(orderTimeVal).getTime();
+
+            if (cat === 'Food') {
+                order.codeOrder = document.getElementById('edit-form-codeorder')?.value || '-';
+                order.totalMenu = document.getElementById('edit-form-totalmenu')?.value || '-';
+                order.orderNo = document.getElementById('edit-form-orderno')?.value || '-';
+            } else if (cat === 'SPX') {
+                order.codeOrder = document.getElementById('edit-form-codeorder')?.value || '-';
+                order.weight = document.getElementById('edit-form-weight')?.value || '-';
+                order.dimensions = document.getElementById('edit-form-dimensions')?.value || '-';
+            } else if (cat === 'Instan') {
+                order.orderNo = document.getElementById('edit-form-orderno')?.value || '-';
+                order.itemCategory = document.getElementById('edit-form-itemcategory')?.value || 'Barang';
+                order.weight = document.getElementById('edit-form-weight')?.value || '-';
+            }
+
+            saveToLocalStorage();
+            closeEditModal();
+            renderAllViews();
+            showToast('Pesanan berhasil diperbarui!', 'emerald');
         }
 
         function showToast(message, color = "indigo") {
