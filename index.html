@@ -399,7 +399,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div id="form-income-wrapper">
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Pendapatan / Ongkir (Rp)</label>
-                                <input type="number" id="form-income" value="0" min="0" placeholder="Contoh: 12000" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                                <input type="number" id="form-income" value="" min="0" placeholder="Contoh: 12000" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Biaya BBM Manual (opsional)</label>
@@ -432,7 +432,7 @@
                         </span>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="form-recipname" required placeholder="Nama Penerima *" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
-                            <input type="number" id="form-cashamount" value="0" min="0" placeholder="Rp Tunai" oninput="updatePaymentMethodFromAmount()" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                            <input type="number" id="form-cashamount" value="" min="0" placeholder="Rp Tunai" oninput="updatePaymentMethodFromAmount()" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
                         </div>
                         
                         <!-- Auto Payment Status Rule -->
@@ -464,7 +464,7 @@
                          pesanan berdasarkan jarak Ambil->Antar masing-masing. -->
                     <div id="form-combined-total-income-wrapper" class="hidden bg-emerald-50/70 p-2.5 rounded-2xl border-2 border-emerald-300 space-y-1.5">
                         <label class="block text-[11px] font-extrabold text-emerald-900 flex items-center gap-1.5"><i class="fa-solid fa-sack-dollar"></i> Pendapatan / Ongkir Total Gabungan (Rp) *</label>
-                        <input type="number" id="form-combined-total-income" value="0" min="0" placeholder="Contoh: 13600" class="w-full bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                        <input type="number" id="form-combined-total-income" value="" min="0" placeholder="Contoh: 13600" class="w-full bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
                         <p class="text-[9.5px] text-emerald-700 leading-snug"><i class="fa-solid fa-circle-info"></i> Total ongkir dari platform untuk seluruh pesanan dobel ini. Sistem akan membagi otomatis ke tiap pesanan sesuai jarak Ambil→Antar masing-masing.</p>
                     </div>
 
@@ -1150,7 +1150,7 @@
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Pendapatan / Ongkir (Rp)</label>
-                                <input type="number" id="edit-form-income" value="0" min="0" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                                <input type="number" id="edit-form-income" value="" min="0" placeholder="Contoh: 12000" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
                             </div>
                             <div>
                                 <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Biaya BBM Manual (opsional)</label>
@@ -1178,7 +1178,7 @@
                         </span>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="edit-form-recipname" required placeholder="Nama Penerima *" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
-                            <input type="number" id="edit-form-cashamount" value="0" min="0" placeholder="Rp Tunai" oninput="updateEditPaymentMethod()" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                            <input type="number" id="edit-form-cashamount" value="" min="0" placeholder="Rp Tunai" oninput="updateEditPaymentMethod()" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
                         </div>
                         <div class="flex items-center justify-between bg-white/80 p-2 rounded-xl border border-emerald-200 text-xs">
                             <span class="text-[10px] text-slate-500 font-medium">Status Pembayaran:</span>
@@ -1305,87 +1305,94 @@
             updateGrokKeyUI();
         };
 
+        // Data CONTOH murni fiktif untuk fitur "Muat data contoh" di Settings.
+        // Semua nama/alamat di bawah ini SENGAJA dibuat generik (bukan nama
+        // orang/alamat asli) supaya kalau file ini di-inspect/dibedah siapa pun,
+        // langsung jelas ini cuma placeholder demo — bukan data pelanggan nyata.
+        // Data asli yang diinput user TIDAK PERNAH ditulis ke file ini; semua
+        // tersimpan di localStorage browser masing-masing user, terpisah total
+        // dari source code ini.
         function getInitialMockOrders() {
             return [
                 {
-                    id: 'ord-101',
+                    id: 'ord-contoh-101',
                     category: 'Food',
                     platform: 'ShopeeFood',
                     orderIncome: 11000,
                     manualFuelCost: null,
-                    restoName: 'Wr. Nasgor Berkah Untung',
-                    restoAddr: 'Toko Bu Dalmanto, Jalan Diponegoro, No.105, Dusun I, Wirogunan, KARTASURA, KAB. SUKOHARJO, JAWA TENGAH',
-                    recipName: 'anne',
-                    recipAddr: 'Jalan Diponegoro, Wirocanan, Kertonatan, KARTASURA, KAB. SUKOHARJO, JAWA TENGAH',
-                    notes: 'rumah keramik warna hijau, depan tulisan posyandu pas (digantung di pagar atas sj kalau gada orang)',
-                    codeOrder: '#782',
-                    totalMenu: '1 x Bakmi Goreng (Rp22.000) - Total 1 menu',
-                    orderNo: '3252411331970560841',
+                    restoName: 'Contoh Warung Makan A',
+                    restoAddr: 'Jalan Contoh Raya No. 1, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    recipName: 'Pelanggan Contoh 1',
+                    recipAddr: 'Jalan Contoh Dua No. 2, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    notes: 'Contoh catatan: rumah cat hijau, dekat gapura',
+                    codeOrder: '#CONTOH1',
+                    totalMenu: '1 x Menu Contoh (Rp22.000) - Total 1 menu',
+                    orderNo: '0000000000000000001',
                     cashAmount: 0,
                     payment: 'Non-Tunai',
                     orderTime: '2026-09-08T21:04',
                     timestamp: new Date('2026-09-08T21:04').getTime(),
-                    screenshot: createSVGPlaceholder('Wr. Nasgor Berkah Untung', '#782', 'Food (Non-Tunai)')
+                    screenshot: createSVGPlaceholder('Contoh Warung Makan A', '#CONTOH1', 'Food (Non-Tunai)')
                 },
                 {
-                    id: 'ord-spx-4n73',
+                    id: 'ord-contoh-102',
                     category: 'SPX',
                     platform: 'SPX',
                     orderIncome: 12000,
                     manualFuelCost: null,
-                    restoName: 'Tokohappys',
-                    restoAddr: 'Jalan Notosuman, Dusun I, Singopuran, Kartasura, Kab. Sukoharjo, Jawa Tengah 57169, Indonesia, KARTASURA, KAB. SUKOHARJO, JAWA TENGAH',
-                    recipName: 'Muhammad Fahri Arrafli',
-                    recipAddr: 'RT.2/RW.3, Hordenasan,No 48 , Pasar Kliwon, PASAR KLIWON, KOTA SURAKARTA (SOLO), JAWA TENGAH',
-                    notes: '(rumah Cat Pink Pager Ijo) Depan Galeri Naladerma ((Rumah yg baru))',
-                    codeOrder: '#4N73',
+                    restoName: 'Contoh Toko Online B',
+                    restoAddr: 'Jalan Contoh Tiga No. 3, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    recipName: 'Pelanggan Contoh 2',
+                    recipAddr: 'Jalan Contoh Empat No. 4, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    notes: 'Contoh catatan: titip satpam',
+                    codeOrder: '#CONTOH2',
                     weight: '1.5 kg',
                     dimensions: '0x0x0 cm',
                     cashAmount: 0,
                     payment: 'Non-Tunai',
                     orderTime: '2026-09-21T13:11',
                     timestamp: new Date('2026-09-21T13:11').getTime(),
-                    screenshot: 'spx_4n73_receipt.jpg'
+                    screenshot: createSVGPlaceholder('Contoh Toko Online B', '#CONTOH2', 'SPX (Non-Tunai)')
                 },
                 {
-                    id: 'ord-102',
+                    id: 'ord-contoh-103',
                     category: 'SPX',
                     platform: 'SPX',
                     orderIncome: 18500,
                     manualFuelCost: null,
-                    restoName: 'finesona',
-                    restoAddr: 'Jalan Pandan II No. 11, RT.4/RW.3, Baturan, Laweyan, LAWEYAN, KOTA SURAKARTA (SOLO), JAWA TENGAH',
-                    recipName: 'Deka (Bu Widya)',
-                    recipAddr: 'Perum Villa Bukit Cemara, Jalan II No. 12a, RT.5/RW.6, Mojosongo, Kota Surakarta (Solo) (CII-17), JEBRES, KOTA SURAKARTA (SOLO), JAWA TENGAH',
-                    notes: 'Paket ditaruh teras',
-                    codeOrder: '#0ESJ',
+                    restoName: 'Contoh Toko Online C',
+                    restoAddr: 'Jalan Contoh Lima No. 5, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    recipName: 'Pelanggan Contoh 3',
+                    recipAddr: 'Jalan Contoh Enam No. 6, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    notes: 'Contoh catatan: paket ditaruh teras',
+                    codeOrder: '#CONTOH3',
                     weight: '190 g',
                     dimensions: '0x0x0 cm',
                     cashAmount: 124976,
                     payment: 'Tunai',
                     orderTime: '2026-09-07T14:29',
                     timestamp: new Date('2026-09-07T14:29').getTime(),
-                    screenshot: createSVGPlaceholder('SPX Paket finesona', '#0ESJ', 'SPX (Tunai Rp124.976)')
+                    screenshot: createSVGPlaceholder('Contoh Paket C', '#CONTOH3', 'SPX (Tunai Rp124.976)')
                 },
                 {
-                    id: 'ord-103',
+                    id: 'ord-contoh-104',
                     category: 'Instan',
                     platform: 'Gojek',
                     orderIncome: 9500,
                     manualFuelCost: null,
-                    restoName: 'kalani (Pawon`e Kalani)',
-                    restoAddr: 'Pawon`e Kalani, FP4H+4VP, Dusun I, Wirogunan, KARTASURA, KAB. SUKOHARJO, JAWA TENGAH',
-                    recipName: 'Wuri Ngasem',
-                    recipAddr: 'Abani Chicken, Perum ngasem baru D02 rt 02/11, Sembung, Ngasem, COLOMADU, KAB. KARANGANYAR, JAWA TENGAH',
-                    notes: 'Titip pos satpam',
-                    orderNo: '3248025614224384096',
+                    restoName: 'Contoh Warung Makan D',
+                    restoAddr: 'Jalan Contoh Tujuh No. 7, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    recipName: 'Pelanggan Contoh 4',
+                    recipAddr: 'Jalan Contoh Delapan No. 8, Kecamatan Contoh, Kota Contoh, Provinsi Contoh',
+                    notes: 'Contoh catatan: titip pos satpam',
+                    orderNo: '0000000000000000002',
                     itemCategory: 'Makanan',
                     weight: '1.0 kg',
                     cashAmount: 0,
                     payment: 'Non-Tunai',
                     orderTime: '2026-09-06T18:58',
                     timestamp: new Date('2026-09-06T18:58').getTime(),
-                    screenshot: createSVGPlaceholder('Pawon`e Kalani', '3248025614224384096', 'Instan (Non-Tunai)')
+                    screenshot: createSVGPlaceholder('Contoh Warung Makan D', '0000000000000000002', 'Instan (Non-Tunai)')
                 }
             ];
         }
@@ -1781,7 +1788,7 @@
                     <div class="grid grid-cols-2 gap-2">
                         <div id="form-income-wrapper-${idx}">
                             <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Pendapatan / Ongkir (Rp)</label>
-                            <input type="number" id="form-income-${idx}" value="0" min="0" placeholder="Contoh: 12000" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                            <input type="number" id="form-income-${idx}" value="" min="0" placeholder="Contoh: 12000" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
                         </div>
                         <div>
                             <label class="block text-[10px] font-semibold text-slate-500 mb-0.5">Biaya BBM Manual (opsional)</label>
@@ -1810,7 +1817,7 @@
                     </span>
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" id="form-recipname-${idx}" required placeholder="Nama Penerima *" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
-                        <input type="number" id="form-cashamount-${idx}" value="0" min="0" placeholder="Rp Tunai" oninput="updateExtraPaymentMethod(${idx})" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                        <input type="number" id="form-cashamount-${idx}" value="" min="0" placeholder="Rp Tunai" oninput="updateExtraPaymentMethod(${idx})" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
                     </div>
                     <div class="flex items-center justify-between bg-white/80 p-2 rounded-xl border border-emerald-200 text-xs">
                         <span class="text-[10px] text-slate-500 font-medium">Status Pembayaran:</span>
@@ -1875,7 +1882,7 @@
             extraOrderIndexes = [];
             extraOrderImages = {};
             const totalIncomeInput = document.getElementById('form-combined-total-income');
-            if (totalIncomeInput) totalIncomeInput.value = 0;
+            if (totalIncomeInput) totalIncomeInput.value = '';
             updateCombinedIncomeModeUI();
         }
 
@@ -2249,11 +2256,11 @@ Ekstrak teks gambar menjadi format JSON valid:
 ATURAN KHUSUS FITUR SPX (Shopee Xpress):
 1. CATAT SEMUA INFORMASI KECUALI "STATUS":
    - "codeOrder": kode pesanan (misal #4N73). JANGAN sertakan status di sebelahnya (seperti "Diambil", "Selesai", "Diantar", "Menuju").
-   - "restoName": Nama Pengirim (misal "Tokohappys").
+   - "restoName": Nama Pengirim (misal "Toko Contoh").
    - "restoAddr": Alamat Pengirim lengkap di atas nama pengirim.
-   - "recipName": Nama Penerima (misal "Muhammad Fahri Arrafli").
+   - "recipName": Nama Penerima (misal "Nama Penerima Contoh").
    - "recipAddr": Alamat Penerima lengkap.
-   - "notes": patokan alamat rumah penerima jika ada (misal "(rumah Cat Pink Pager Ijo) Depan Galeri Naladerma").
+   - "notes": patokan alamat rumah penerima jika ada (misal "(rumah cat hijau) depan gapura").
    - "weight": ambil dari Rincian Paket -> Berat (misal "1.5 kg").
    - "dimensions": ambil dari Rincian Paket -> Besar (misal "0x0x0 cm").
    - "cashAmount": jika Pembayaran Tunai -> Tagih dari Penerima adalah Rp0 maka cashAmount = 0. Jika ada nominal, tulis nominal angka.
@@ -5646,7 +5653,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
 
                 <div class="bg-emerald-50/70 p-3 rounded-2xl border-2 border-emerald-300 space-y-1.5">
                     <label class="block text-[11px] font-extrabold text-emerald-900 flex items-center gap-1.5"><i class="fa-solid fa-sack-dollar"></i> Pendapatan / Ongkir Total Gabungan (Rp) *</label>
-                    <input type="number" id="ec-total-income" value="0" min="0" class="w-full bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
+                    <input type="number" id="ec-total-income" value="" min="0" placeholder="Contoh: 13600" class="w-full bg-white border border-emerald-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none">
                     <p class="text-[9.5px] text-emerald-700 leading-snug"><i class="fa-solid fa-circle-info"></i> Total ongkir dari platform untuk seluruh pesanan dobel ini. Sistem membagi otomatis ke tiap pesanan sesuai jarak Ambil→Antar masing-masing.</p>
                 </div>
 
@@ -5770,7 +5777,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                         <span class="text-xs font-extrabold text-emerald-700 flex items-center gap-1"><i class="fa-solid fa-location-dot"></i> Data Tujuan / Penerima</span>
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="ec-recipname-${key}" required placeholder="Nama Penerima *" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
-                            <input type="number" id="ec-cashamount-${key}" value="0" min="0" placeholder="Rp Tunai" oninput="updateEditCombinedPaymentMethod('${key}')" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
+                            <input type="number" id="ec-cashamount-${key}" value="" min="0" placeholder="Rp Tunai" oninput="updateEditCombinedPaymentMethod('${key}')" class="w-full bg-white border border-emerald-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 focus:outline-none font-semibold">
                         </div>
                         <div class="flex items-center justify-between bg-white/80 p-2 rounded-xl border border-emerald-200 text-xs">
                             <span class="text-[10px] text-slate-500 font-medium">Status Pembayaran:</span>
