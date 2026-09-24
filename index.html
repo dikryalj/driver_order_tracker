@@ -1305,7 +1305,13 @@
             updateGrokKeyUI();
         };
 
-
+        // Data CONTOH murni fiktif untuk fitur "Muat data contoh" di Settings.
+        // Semua nama/alamat di bawah ini SENGAJA dibuat generik (bukan nama
+        // orang/alamat asli) supaya kalau file ini di-inspect/dibedah siapa pun,
+        // langsung jelas ini cuma placeholder demo — bukan data pelanggan nyata.
+        // Data asli yang diinput user TIDAK PERNAH ditulis ke file ini; semua
+        // tersimpan di localStorage browser masing-masing user, terpisah total
+        // dari source code ini.
         function getInitialMockOrders() {
             return [
                 {
@@ -2890,6 +2896,56 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             }
         }
 
+        // Foto asli vs placeholder: createSVGPlaceholder() selalu menghasilkan
+        // data URI berawalan 'data:image/svg+xml', sementara foto asli hasil
+        // upload user selalu 'data:image/<jpeg|png|...>' dari FileReader.
+        // Dipakai supaya "Screenshots" cuma menghitung foto yang BENERAN
+        // tersimpan, bukan placeholder otomatis.
+        function isRealScreenshot(src) {
+            return !!src && !src.startsWith('data:image/svg+xml');
+        }
+
+        // Menghitung total foto asli di semua order dalam daftar, termasuk
+        // tiap sub-pesanan di order gabungan (yang masing-masing punya
+        // screenshot sendiri) — bukan sekadar jumlah kartu order.
+        function countRealScreenshots(orders) {
+            let count = 0;
+            orders.forEach(o => {
+                if (o.isCombined) {
+                    (o.subOrders || []).forEach(s => {
+                        if (isRealScreenshot(s.screenshot)) count++;
+                    });
+                } else if (isRealScreenshot(o.screenshot)) {
+                    count++;
+                }
+            });
+            return count;
+        }
+
+        // Jumlah unit order HARI INI (kalender lokal, mulai 00:00), diambil dari
+        // SELURUH ordersList — bukan cuma yang lolos filter tab 7/30/Semua Hari.
+        // "Target Harian" secara definisi selalu soal progres HARI INI, jadi
+        // tidak boleh ikut berubah kalau user switch tab periode di Insights.
+        function getTodayOrderUnitCount() {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const cutoff = startOfToday.getTime();
+            return countOrderUnits(ordersList.filter(o => o.timestamp >= cutoff));
+        }
+
+        // Pembagi rata-rata order/hari: pakai rentang HARI AKTUAL dari order
+        // tertua di data terfilter sampai sekarang, dibatasi maksimal panjang
+        // tab filter yang dipilih. Ini mencegah rata-rata under-estimate kalau
+        // history order user lebih pendek dari panjang tab (misal baru pakai
+        // app 2 hari tapi tab yang aktif "7 Hari").
+        function computeDaysSpan(filteredOrders, filterDays) {
+            if (filteredOrders.length === 0) return 1;
+            const earliest = Math.min(...filteredOrders.map(o => o.timestamp));
+            const daysSinceEarliest = Math.max(1, Math.ceil((Date.now() - earliest) / 86400000));
+            if (filterDays === 'all') return daysSinceEarliest;
+            return Math.min(filterDays, daysSinceEarliest);
+        }
+
         function renderAllViews() {
             const filtered = getFilteredOrders();
             
@@ -2904,13 +2960,19 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 targetLabelEl.innerText = `Target Harian (${target} Order)`;
             }
             
-            const progress = target > 0 ? Math.min(100, Math.round((unitCount / target) * 100)) : 0;
-            document.getElementById('hero-progress-text').innerText = `${progress}% Reached`;
+            // PENTING: progress Target Harian dihitung dari order HARI INI saja
+            // (getTodayOrderUnitCount), TIDAK dari unitCount periode filter di
+            // atas. Sebelumnya total order 7/30 hari dibandingkan langsung ke
+            // target harian, jadi persentasenya menyesatkan (mis. "80% Reached"
+            // padahal rata-rata harian sebenarnya jauh di bawah target).
+            const todayCount = getTodayOrderUnitCount();
+            const progress = target > 0 ? Math.min(100, Math.round((todayCount / target) * 100)) : 0;
+            document.getElementById('hero-progress-text').innerText = `${todayCount}/${target} (${progress}%)`;
             document.getElementById('hero-progress-bar').style.width = `${progress}%`;
 
-            const daysCount = activeFilterDays === 'all' ? 30 : activeFilterDays;
+            const daysCount = computeDaysSpan(filtered, activeFilterDays);
             document.getElementById('kpi-avg-daily').innerText = (unitCount / daysCount).toFixed(1);
-            document.getElementById('kpi-screenshot-count').innerText = filtered.length;
+            document.getElementById('kpi-screenshot-count').innerText = countRealScreenshots(filtered);
 
             // Compute Peak Hour
             const hoursCount = {};
