@@ -724,6 +724,24 @@
                 <div id="profile-driver-chips" class="flex flex-wrap justify-center gap-1.5 pt-1"></div>
             </div>
 
+            <!-- Indikator Kapasitas Penyimpanan -->
+            <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-hard-drive text-indigo-600"></i> Kapasitas Penyimpanan</p>
+                    <span id="storage-status-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Menghitung...</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="storage-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width:0%"></div>
+                </div>
+                <p id="storage-usage-text" class="text-[11px] font-semibold text-slate-600">Menghitung penggunaan...</p>
+                <div class="grid grid-cols-3 gap-2 text-center">
+                    <div class="bg-slate-50 rounded-xl py-2"><p id="storage-orders-count" class="text-sm font-extrabold text-slate-800">-</p><p class="text-[9.5px] text-slate-400 font-medium">Pesanan</p></div>
+                    <div class="bg-slate-50 rounded-xl py-2"><p id="storage-shots-count" class="text-sm font-extrabold text-slate-800">-</p><p class="text-[9.5px] text-slate-400 font-medium">Screenshot</p></div>
+                    <div class="bg-slate-50 rounded-xl py-2"><p id="storage-app-size" class="text-sm font-extrabold text-slate-800">-</p><p class="text-[9.5px] text-slate-400 font-medium">Ukuran data</p></div>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed">Screenshot otomatis dibersihkan setelah 60 hari untuk menghemat ruang. Data pesanan (pendapatan, jarak, alamat) tetap tersimpan.</p>
+            </div>
+
             <!-- Backup & Restore -->
             <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-2.5">
                 <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-database text-indigo-600"></i> Backup & Restore Data</p>
@@ -736,6 +754,15 @@
                         <i class="fa-solid fa-upload"></i> Import Data
                     </button>
                     <input type="file" id="import-file-input" accept="application/json,.json" class="hidden" onchange="handleImportFile(event)">
+                </div>
+                <div class="border-t border-slate-100 pt-2.5 space-y-1.5">
+                    <p class="text-[11px] font-bold text-slate-700 flex items-center gap-1.5"><i class="fa-solid fa-feather text-indigo-500"></i> Backup Ringan <span class="font-medium text-slate-400">(tanpa screenshot, file kecil)</span></p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="exportLightData(7)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 rounded-xl transition active:scale-95">7 Hari</button>
+                        <button onclick="exportLightData(14)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 rounded-xl transition active:scale-95">14 Hari</button>
+                        <button onclick="exportLightData(30)" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold py-2 rounded-xl transition active:scale-95">30 Hari</button>
+                    </div>
+                    <p id="last-light-backup-info" class="text-[10px] text-slate-400 text-center">Belum pernah backup ringan.</p>
                 </div>
                 <p id="last-backup-info" class="text-[10px] text-slate-400 text-center pt-1">Belum pernah backup.</p>
             </div>
@@ -1320,10 +1347,14 @@
         window.onload = async function() {
             loadUserProfile();
             await initStorage();
+            const purged = purgeOldScreenshots();
+            if (purged > 0) setTimeout(() => showToast(`🧹 ${purged} screenshot lama (>${SCREENSHOT_RETENTION_DAYS} hari) dibersihkan. Data pesanan tetap aman.`, 'indigo'), 600);
             initInsightsDate();
             onCategoryChange();
             renderAllViews();
             updateBackupWarningUI();
+            updateLightBackupInfo();
+            updateStorageIndicator();
             loadFuelRateIntoSettingInput();
             updateGrokKeyUI();
         };
@@ -1603,6 +1634,187 @@
         }
 
         // ============================================================
+        // AUTO-BERSIH SCREENSHOT LAMA (> 60 hari) + INDIKATOR KAPASITAS
+        // Yang dihapus hanya gambarnya (diganti placeholder kecil); data
+        // pesanan, pendapatan & statistik tidak berubah.
+        // ============================================================
+        const SCREENSHOT_RETENTION_DAYS = 60;
+
+        function hasRealScreenshot(src) {
+            return !!src && !String(src).startsWith('data:image/svg+xml');
+        }
+
+        let _purgedPlaceholderCache = null;
+        function makePurgedPlaceholder() {
+            if (_purgedPlaceholderCache) return _purgedPlaceholderCache;
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+                <rect width="400" height="300" fill="#f1f5f9"/>
+                <text x="200" y="140" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold" fill="#64748b">Screenshot tidak tersedia</text>
+                <text x="200" y="170" text-anchor="middle" font-family="Arial" font-size="12" fill="#94a3b8">Dibersihkan otomatis / tidak ikut backup ringan</text>
+            </svg>`;
+            _purgedPlaceholderCache = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+            return _purgedPlaceholderCache;
+        }
+
+        function getOrderTs(o) {
+            const t = Number(o.timestamp);
+            if (t && !isNaN(t)) return t;
+            const d = new Date(o.timestamp).getTime();
+            return isNaN(d) ? 0 : d;
+        }
+
+        function purgeOldScreenshots() {
+            const cutoff = Date.now() - SCREENSHOT_RETENTION_DAYS * 86400000;
+            let count = 0;
+            ordersList.forEach(o => {
+                const ts = getOrderTs(o);
+                if (!ts || ts >= cutoff) return;
+                if (hasRealScreenshot(o.screenshot)) { o.screenshot = makePurgedPlaceholder(); count++; }
+                if (Array.isArray(o.subOrders)) {
+                    o.subOrders.forEach(s => {
+                        if (hasRealScreenshot(s.screenshot)) { s.screenshot = makePurgedPlaceholder(); count++; }
+                    });
+                }
+            });
+            if (count > 0) saveToLocalStorage();
+            return count;
+        }
+
+        function formatBytes(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+            if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+        }
+
+        async function updateStorageIndicator() {
+            const $ = id => document.getElementById(id);
+            if (!$('storage-bar')) return;
+
+            // Hitung isi data aplikasi sendiri (perkiraan, gambar base64 ~ 0,75 byte/karakter)
+            let shots = 0, imgChars = 0;
+            const countShot = s => { if (hasRealScreenshot(s)) { shots++; imgChars += String(s).length; } };
+            ordersList.forEach(o => {
+                if (Array.isArray(o.subOrders) && o.subOrders.length) o.subOrders.forEach(s => countShot(s.screenshot));
+                else countShot(o.screenshot);
+            });
+            let textBytes = 0;
+            try {
+                textBytes = JSON.stringify(ordersList, (k, v) => (k === 'screenshot' ? undefined : v)).length;
+            } catch (e) {}
+            const appBytes = Math.round(imgChars * 0.75) + textBytes;
+
+            $('storage-orders-count').innerText = ordersList.length;
+            $('storage-shots-count').innerText = shots;
+            $('storage-app-size').innerText = formatBytes(appBytes);
+
+            let usage = appBytes, quota = 0;
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    const est = await navigator.storage.estimate();
+                    if (est.usage) usage = est.usage;
+                    if (est.quota) quota = est.quota;
+                }
+            } catch (e) {}
+
+            const bar = $('storage-bar'), badge = $('storage-status-badge'), text = $('storage-usage-text');
+            if (quota > 0) {
+                const pct = Math.min(100, (usage / quota) * 100);
+                bar.style.width = Math.max(pct, usage > 0 ? 1.5 : 0) + '%';
+                text.innerText = `Terpakai ${formatBytes(usage)} dari ${formatBytes(quota)} (${pct < 0.1 ? '<0,1' : pct.toFixed(1)}%)`;
+                let level = ['bg-emerald-500', 'Aman', 'bg-emerald-50 text-emerald-600'];
+                if (pct >= 90) level = ['bg-rose-500', 'Hampir penuh', 'bg-rose-50 text-rose-600'];
+                else if (pct >= 80) level = ['bg-amber-500', 'Perlu dibersihkan', 'bg-amber-50 text-amber-600'];
+                bar.className = `h-full ${level[0]} rounded-full transition-all duration-500`;
+                badge.className = `text-[10px] font-bold px-2 py-0.5 rounded-full ${level[2]}`;
+                badge.innerText = level[1];
+            } else {
+                bar.style.width = '0%';
+                text.innerText = `Data aplikasi ≈ ${formatBytes(appBytes)} (kapasitas browser tidak bisa dibaca)`;
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500';
+                badge.innerText = 'Tidak diketahui';
+            }
+        }
+
+        // ============================================================
+        // BACKUP RINGAN (tanpa screenshot) — 7 / 14 / 30 hari terakhir
+        // ============================================================
+        const LIGHT_BACKUP_TIMESTAMP_KEY = 'drivertrack_last_light_backup';
+
+        function exportLightData(days) {
+            try {
+                const cutoff = Date.now() - days * 86400000;
+                const subset = ordersList
+                    .filter(o => getOrderTs(o) >= cutoff)
+                    .map(o => {
+                        const c = JSON.parse(JSON.stringify(Object.assign({}, o, { screenshot: null })));
+                        c.screenshot = makePurgedPlaceholder();
+                        if (Array.isArray(c.subOrders)) c.subOrders.forEach(s => { s.screenshot = makePurgedPlaceholder(); });
+                        return c;
+                    });
+
+                if (subset.length === 0) {
+                    showToast(`Tidak ada pesanan dalam ${days} hari terakhir.`, 'amber');
+                    return;
+                }
+
+                const now = new Date();
+                const payload = {
+                    app: 'DriverTrack',
+                    exportVersion: 2,
+                    light: true,
+                    rangeDays: days,
+                    exportedAt: now.toISOString(),
+                    profile: userProfile,
+                    totalOrders: subset.length,
+                    ordersList: subset
+                };
+                const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `drivertrack-backup-ringan-${days}hari-${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                localStorage.setItem(LIGHT_BACKUP_TIMESTAMP_KEY, JSON.stringify({ at: now.toISOString(), days }));
+                updateLightBackupInfo();
+                showToast(`Backup ringan ${days} hari: ${subset.length} pesanan (${formatBytes(blob.size)}).`, 'emerald');
+            } catch (e) {
+                console.error(e);
+                showToast('Gagal membuat backup ringan.', 'rose');
+            }
+        }
+
+        function updateLightBackupInfo() {
+            const el = document.getElementById('last-light-backup-info');
+            if (!el) return;
+            try {
+                const raw = localStorage.getItem(LIGHT_BACKUP_TIMESTAMP_KEY);
+                if (!raw) { el.innerText = 'Belum pernah backup ringan.'; return; }
+                const { at, days } = JSON.parse(raw);
+                const f = new Date(at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                el.innerText = `Backup ringan terakhir: ${f} (${days} hari)`;
+            } catch (e) { el.innerText = 'Belum pernah backup ringan.'; }
+        }
+
+        // Saat gabung (merge), jangan timpa screenshot asli dengan placeholder dari backup ringan.
+        function mergeKeepScreenshots(incoming, existing) {
+            if (!existing) return incoming;
+            if (!hasRealScreenshot(incoming.screenshot) && hasRealScreenshot(existing.screenshot)) incoming.screenshot = existing.screenshot;
+            if (Array.isArray(incoming.subOrders) && Array.isArray(existing.subOrders)) {
+                incoming.subOrders.forEach((s, i) => {
+                    const es = existing.subOrders[i];
+                    if (es && !hasRealScreenshot(s.screenshot) && hasRealScreenshot(es.screenshot)) s.screenshot = es.screenshot;
+                });
+            }
+            return incoming;
+        }
+
+        // ============================================================
         // 1.1 BACKUP & RESTORE MANUAL
         // Export/Import ordersList (termasuk restoCheckin/recipCheckin & profil)
         // sebagai file .json. Tidak merusak format lama.
@@ -1610,6 +1822,7 @@
         const BACKUP_TIMESTAMP_KEY = 'drivertrack_last_backup';
         let pendingImportOrders = null;
         let pendingImportProfile = null;
+        let pendingImportLight = false;
 
         function exportData() {
             try {
@@ -1662,6 +1875,7 @@
                 }
 
                 let candidateList = null;
+                pendingImportLight = !!(parsed && !Array.isArray(parsed) && parsed.light);
                 if (Array.isArray(parsed)) {
                     candidateList = parsed;
                     pendingImportProfile = null;
@@ -1686,7 +1900,7 @@
 
                 pendingImportOrders = candidateList;
                 document.getElementById('import-modal-desc').innerText =
-                    `File valid, berisi ${candidateList.length} pesanan${invalidCount > 0 ? ` (${invalidCount} item terlewati karena tidak lengkap)` : ''}${pendingImportProfile ? ' & profil driver' : ''}.`;
+                    `File valid, berisi ${candidateList.length} pesanan${invalidCount > 0 ? ` (${invalidCount} item terlewati karena tidak lengkap)` : ''}${pendingImportProfile ? ' & profil driver' : ''}.${pendingImportLight ? ' Ini backup ringan (tanpa screenshot) — disarankan pilih GABUNG agar screenshot yang ada tidak hilang.' : ''}`;
                 document.getElementById('import-modal').classList.remove('hidden');
                 event.target.value = '';
             };
@@ -1715,7 +1929,7 @@
                 // item baru ditambahkan. restoCheckin/recipCheckin ikut terbawa apa adanya.
                 const existingById = {};
                 ordersList.forEach(o => { existingById[o.id] = o; });
-                validIncoming.forEach(o => { existingById[o.id] = o; });
+                validIncoming.forEach(o => { existingById[o.id] = mergeKeepScreenshots(o, existingById[o.id]); });
                 ordersList = Object.values(existingById).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
             }
 
@@ -1731,6 +1945,7 @@
 
             saveToLocalStorage();
             renderAllViews();
+            updateStorageIndicator();
             closeImportModal();
             showToast(`Import berhasil (${mode === 'overwrite' ? 'timpa' : 'gabung'}): ${validIncoming.length} pesanan diproses.`, "emerald");
         }
@@ -1786,6 +2001,8 @@
             if (tab === 'profile') {
                 updateBackupWarningUI();
                 loadFuelRateIntoSettingInput();
+                updateStorageIndicator();
+                updateLightBackupInfo();
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
