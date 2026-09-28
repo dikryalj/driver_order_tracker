@@ -87,6 +87,13 @@
             background: transparent !important;
             border: none !important;
         }
+        /* Peta: di perangkat sentuh (HP/tablet) peta TIDAK membuka Google Maps saat diketuk */
+        .map-hint-mobile { display: none; }
+        @media (pointer: coarse) {
+            .map-hint-desktop { display: none; }
+            .map-hint-mobile { display: inline; }
+            #detail-map-container, #map-checkin-placeholder { cursor: default !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between pb-32 selection:bg-indigo-500 selection:text-white relative">
@@ -990,7 +997,7 @@
                     <!-- Interactive Map Viewport -->
                     <div id="detail-map-container" class="w-full h-56 rounded-xl border border-indigo-200 overflow-hidden relative shadow-inner bg-slate-100 cursor-pointer">
                         <div id="detail-map" class="w-full h-full z-0"></div>
-                        <div id="map-checkin-placeholder" onclick="openGmapsDirect('full')" class="hidden absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-slate-50 to-indigo-50/60 space-y-2.5 cursor-pointer">
+                        <div id="map-checkin-placeholder" onclick="if (!isTouchDevice()) openGmapsDirect('full')" class="hidden absolute inset-0 z-10 w-full h-full flex flex-col items-center justify-center p-4 text-center bg-gradient-to-b from-slate-50 to-indigo-50/60 space-y-2.5 cursor-pointer">
                             <div class="w-11 h-11 rounded-2xl bg-amber-100 border border-amber-300 flex items-center justify-center text-amber-600 text-lg shadow-sm">
                                 <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
                             </div>
@@ -1010,7 +1017,7 @@
                         </div>
                         <!-- Hint Ketuk Peta -->
                         <div class="absolute bottom-2 left-2 z-20 pointer-events-none bg-slate-900/75 text-white text-[9.5px] font-semibold px-2 py-0.5 rounded-md backdrop-blur-xs shadow flex items-center gap-1">
-                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-amber-300"></i> Ketuk peta untuk buka Google Maps
+                            <i class="fa-solid fa-arrow-up-right-from-square text-[9px] text-amber-300"></i> <span class="map-hint-desktop">Klik peta untuk buka Google Maps</span><span class="map-hint-mobile">Gunakan tombol Navigasi Google Maps di bawah</span>
                         </div>
                     </div>
 
@@ -4032,7 +4039,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 subdomains: 'abcd',
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
             }).addTo(leafletMapInstance);
-            leafletMapInstance.on('click', () => { openGmapsDirectCombined(); });
+            leafletMapInstance.on('click', () => { if (isTouchDevice()) return; openGmapsDirectCombined(); });
 
             const markers = [];
             checkedPoints.forEach(({ p, i, checkin }) => {
@@ -4518,6 +4525,15 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             }
         }
 
+        // Perangkat sentuh (HP/tablet): peta tidak boleh langsung membuka Google Maps
+        // karena mudah tersentuh tidak sengaja saat scroll/geser. Navigasi hanya lewat tombol.
+        function isTouchDevice() {
+            try {
+                if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return true;
+            } catch (e) {}
+            return (navigator.maxTouchPoints || 0) > 0 && window.innerWidth <= 820;
+        }
+
         function openGmapsDirect(mode) {
             const targetOrder = currentDetailOrder;
             if (!targetOrder) return;
@@ -4648,7 +4664,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 }).addTo(leafletMapInstance);
 
                 // Leaflet click membuka Google Maps sesuai mode
-                leafletMapInstance.on('click', () => { openGmapsDirect(currentMapRouteMode || 'resto'); });
+                leafletMapInstance.on('click', () => { if (isTouchDevice()) return; openGmapsDirect(currentMapRouteMode || 'resto'); });
 
                 mapRestoMarker = L.marker([mapRestoCoords.lat, mapRestoCoords.lon], { icon: redIcon }).addTo(leafletMapInstance)
                     .bindPopup(`<div class="space-y-1"><b>1. ${order.restoName || 'Resto / Pengirim'}</b><div class="text-[11px] text-slate-600">${restoAddr}</div><span class="inline-block bg-rose-50 text-rose-700 font-bold text-[10px] px-2 py-0.5 rounded border border-rose-200">📍 Titik GPS Resto Checkin (1/2)</span></div>`).openPopup();
@@ -4686,7 +4702,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 }).addTo(leafletMapInstance);
 
                 // Leaflet click membuka Google Maps sesuai mode
-                leafletMapInstance.on('click', () => { openGmapsDirect(currentMapRouteMode || 'recip'); });
+                leafletMapInstance.on('click', () => { if (isTouchDevice()) return; openGmapsDirect(currentMapRouteMode || 'recip'); });
 
                 mapRecipMarker = L.marker([mapRecipCoords.lat, mapRecipCoords.lon], { icon: greenIcon }).addTo(leafletMapInstance)
                     .bindPopup(`<div class="space-y-1"><b>2. ${order.recipName || 'Tujuan / Penerima'}</b><div class="text-[11px] text-slate-600">${recipAddr}</div><span class="inline-block bg-emerald-50 text-emerald-700 font-bold text-[10px] px-2 py-0.5 rounded border border-emerald-200">📍 Titik GPS Penerima Checkin (1/2)</span></div>`).openPopup();
@@ -4724,7 +4740,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             }).addTo(leafletMapInstance);
 
             // Leaflet click membuka Google Maps sesuai mode
-            leafletMapInstance.on('click', () => { openGmapsDirect(currentMapRouteMode || 'full'); });
+            leafletMapInstance.on('click', () => { if (isTouchDevice()) return; openGmapsDirect(currentMapRouteMode || 'full'); });
 
             const lat1 = mapRestoCoords.lat;
             const lon1 = mapRestoCoords.lon;
