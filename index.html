@@ -214,12 +214,144 @@
     /* kartu grafik */
     html body .h-48{border-radius:22px}
     </style>
+    <style id="theme-focus" media="not all">
+    /* Tema FOCUS (mengikuti referensi FocusFlow): putih bersih, biru, lime, lavender, tombol hitam pil. Hanya tampilan */
+    :root{--fb:#3E5BFF;--fl:#D2F44A;--fv:#DFDDF8;--fk:#111318;--fm:#8A8FA3;--fe:cubic-bezier(.2,.8,.2,1)}
+    html body{font-family:'Plus Jakarta Sans',sans-serif!important;color:var(--fk)!important;background:linear-gradient(180deg,#fff 0%,#F3F6FD 100%) fixed!important}
+    html body ::selection{background:var(--fl);color:var(--fk)}
+    html body::before,html body::after{content:"";position:fixed;width:70vw;height:70vw;max-width:520px;max-height:520px;border-radius:50%;z-index:-1;pointer-events:none}
+    html body::before{top:-18%;right:-25%;background:radial-gradient(circle,rgba(62,91,255,.09),transparent 65%);animation:fx-drift 14s ease-in-out infinite alternate}
+    html body::after{left:-30%;bottom:-18%;background:radial-gradient(circle,rgba(210,244,74,.2),transparent 65%);animation:fx-drift 18s ease-in-out infinite alternate-reverse}
+    html body .rounded-3xl{border-radius:26px!important}
+    html body .rounded-2xl{border-radius:20px!important}
+    html body .card-shadow,html body .shadow-xl,html body .shadow-md{box-shadow:0 8px 28px rgba(40,55,120,.06)!important}
+    html body .card-shadow{transition:transform .3s var(--fe),box-shadow .3s}
+    html body .card-shadow:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(40,55,120,.1)!important}
+    html body .bg-white{background:#fff!important}
+    html body .bg-slate-50,html body .bg-slate-100{background:#F3F4FA!important}
+    html body .border-slate-100,html body .border-slate-50{border-color:rgba(20,30,80,.06)!important}
+    html body .border-slate-200,html body .border-slate-300{border-color:rgba(20,30,80,.1)!important}
+    html body :is(h2,h3,h4){letter-spacing:-.02em}
+    html body .text-slate-900,html body .text-slate-800,html body .text-slate-700,html body .text-slate-950{color:var(--fk)!important}
+    html body .text-slate-500,html body .text-slate-400{color:var(--fm)!important}
+    /* warna */
+    html body :is(.text-indigo-500,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-indigo-900,.text-violet-600,.text-violet-700){color:var(--fb)!important}
+    html body :is(.bg-indigo-50,.bg-indigo-100,[class*="bg-indigo-50/"],[class*="bg-violet-50"],.hover\:bg-indigo-100:hover,.hover\:bg-indigo-50:hover){background:rgba(62,91,255,.09)!important}
+    html body :is(.border-indigo-100,.border-indigo-200,.border-indigo-300){border-color:rgba(62,91,255,.18)!important}
+    html body .ring-indigo-100{--tw-ring-color:rgba(62,91,255,.2)!important}
+    html body :is(.bg-indigo-600,.hover\:bg-indigo-700:hover){background:var(--fk)!important;color:#fff!important}
+    html body button.bg-indigo-600{border-radius:999px!important}
+    html body .bg-indigo-600 :is(.text-white,i){color:#fff!important}
+    html body :is(input,select,textarea):focus{outline:none!important;border-color:var(--fb)!important;box-shadow:0 0 0 3px rgba(62,91,255,.18)!important}
+    html body :is(.from-indigo-600,.from-indigo-700,.to-purple-600,.to-purple-700){--tw-gradient-from:#3E5BFF!important;--tw-gradient-to:#5F7BFF!important;--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)!important}
+    html body :is(.bg-emerald-600,.bg-emerald-500,.hover\:bg-emerald-700:hover){background:var(--fl)!important;color:var(--fk)!important}
+    html body :is(.bg-emerald-50,.bg-emerald-100,[class*="bg-emerald-50/"]){background:rgba(210,244,74,.3)!important}
+    html body :is(.text-emerald-500,.text-emerald-600,.text-emerald-700,.text-emerald-800){color:#4C6300!important}
+    /* header: sapaan besar kiri, lonceng + avatar bulat kanan */
+    html body header.sticky{background:rgba(255,255,255,.86)!important;border-color:transparent!important;backdrop-filter:blur(14px);padding-top:14px;padding-bottom:6px}
+    html body header.sticky>div{gap:10px}
+    html body header.sticky>div>div:first-child{display:contents}
+    html body header.sticky>div>div:first-child>div:last-child{order:1;margin-right:auto}
+    html body header.sticky>div>div:last-child{order:2}
+    html body header.sticky>div>div:first-child>div:first-child{order:3}
+    html body #header-greeting{font-size:0!important;line-height:0!important}
+    html body #header-greeting::before{content:"Selamat datang,";display:block;font-size:1.3rem;line-height:1.2;font-weight:600;color:var(--fk);letter-spacing:-.02em}
+    html body #header-driver-name{font-size:1.3rem!important;font-weight:600!important;line-height:1.2!important;letter-spacing:-.02em}
+    html body #header-driver-name::after{content:"!"}
+    html body header.sticky button{width:42px;height:42px;padding:0!important;border-radius:50%!important;background:#fff!important;color:var(--fk)!important;box-shadow:0 0 0 1px rgba(20,30,80,.09);display:flex;align-items:center;justify-content:center}
+    html body header.sticky .bg-rose-500{background:#FF5B5B!important}
+    html body #header-driver-avatar{width:42px;height:42px;background:var(--fl);color:var(--fk);--tw-ring-color:transparent}
+    /* dashboard: urutan seperti referensi (tombol, ringkasan, filter, kartu biru, kartu kecil, daftar) */
+    html body .fx-only{display:flex}
+    html body #tab-dashboard:not(.hidden){display:flex;flex-direction:column;gap:18px}
+    html body #tab-dashboard>*{margin:0!important}
+    html body #tab-dashboard>:nth-child(1){order:1}
+    html body #tab-dashboard>:nth-child(2){order:2}
+    html body #tab-dashboard>:nth-child(4){order:3}
+    html body #tab-dashboard>:nth-child(3){order:4}
+    html body #tab-dashboard>:nth-child(5){order:5}
+    html body #tab-dashboard>:nth-child(6){order:6}
+    html body #tab-dashboard>:nth-child(7){order:7}
+    html body #tab-dashboard>:nth-child(8){order:8}
+    html body button.fx-cta{background:var(--fk)!important;color:#fff!important;border-radius:999px!important;width:100%;height:56px;align-items:center;justify-content:center;gap:8px;box-shadow:0 14px 28px rgba(17,19,24,.22);font-weight:700;font-size:.9rem;transition:transform .2s var(--fe)}
+    html body button.fx-cta:active{transform:scale(.97)}
+    html body .fx-title{font-size:1.05rem;font-weight:700;color:var(--fk)}
+    html body .fx-link{font-size:.75rem;font-weight:700;color:var(--fb);text-decoration:underline;text-underline-offset:3px}
+    /* kartu biru utama */
+    html body .purple-card-gradient{background:var(--fb)!important;box-shadow:0 18px 40px rgba(62,91,255,.28)!important;border-radius:26px!important;padding:18px!important;isolation:isolate;overflow:hidden}
+    html body .purple-card-gradient::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+      background:radial-gradient(circle at 72% 22%,rgba(255,255,255,.13) 0 34%,transparent 34.4%),radial-gradient(circle at 104% 88%,rgba(255,255,255,.11) 0 36%,transparent 36.4%);animation:fx-float 9s ease-in-out infinite alternate}
+    html body .purple-card-gradient>.absolute{display:none}
+    html body .purple-card-gradient>.flex.items-center.justify-between{align-items:flex-start!important;margin-bottom:0!important}
+    html body .purple-card-gradient .uppercase{text-transform:none;letter-spacing:0;font-size:.75rem;font-weight:500;color:rgba(255,255,255,.88)!important}
+    html body #hero-total-orders{font-size:2.9rem!important;font-weight:500!important;letter-spacing:-.04em;line-height:1;margin-top:26px!important}
+    html body .purple-card-gradient .glass-pill{width:30px;height:30px;padding:0!important;border:0!important;border-radius:50%!important;background:var(--fl)!important;font-size:0!important;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    html body .purple-card-gradient .glass-pill::after{content:"\2197";font-size:.9rem;font-weight:800;color:var(--fk)}
+    html body .purple-card-gradient :is(.text-indigo-100,.text-indigo-200){color:rgba(255,255,255,.82)!important}
+    html body .purple-card-gradient :is(.text-emerald-300,.text-amber-300){color:var(--fl)!important}
+    html body div:has(>#hero-progress-bar){background:rgba(255,255,255,.22)!important;height:8px!important;padding:0!important;border-radius:999px!important}
+    html body #hero-progress-bar{background:linear-gradient(90deg,var(--fl),#EEFF9E,var(--fl))!important;background-size:200% 100%!important;border-radius:999px!important;animation:fx-shimmer 2.4s linear infinite;transition:width 1s var(--fe)!important}
+    html body .purple-card-gradient .grid{border:0!important;padding-top:0!important}
+    html body .purple-card-gradient .grid>div{position:relative;text-align:left!important;padding:12px!important;border-radius:18px!important;background:rgba(255,255,255,.14)!important;border:0!important}
+    html body .purple-card-gradient .grid>div::after{content:"\2197";position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--fl);color:var(--fk);font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+    /* kartu kecil ala "Unfulfilled / Team tasks": lavender berpola titik + putih */
+    html body div:has(>.grid #finance-gross){background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}
+    html body .grid:has(#finance-gross){grid-template-columns:1fr 1fr!important;gap:12px!important}
+    html body .grid:has(#finance-gross)>div{position:relative;text-align:left!important;min-height:118px;padding:14px!important;border-radius:22px!important;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;border:1px solid transparent!important;transition:transform .3s var(--fe)}
+    html body .grid:has(#finance-gross)>div:hover{transform:translateY(-3px)}
+    html body .grid:has(#finance-gross)>div::after{content:"\2197";position:absolute;top:10px;right:10px;width:24px;height:24px;border-radius:50%;background:var(--fl);color:var(--fk);font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+    html body div:has(>#finance-gross){background:var(--fv)!important}
+    html body div:has(>#finance-gross)::before{content:"";position:absolute;right:0;bottom:0;width:75%;height:65%;pointer-events:none;background-image:radial-gradient(rgba(62,91,255,.3) 1.3px,transparent 1.6px);background-size:9px 9px;-webkit-mask-image:radial-gradient(circle at 100% 100%,#000,transparent 72%);mask-image:radial-gradient(circle at 100% 100%,#000,transparent 72%)}
+    html body div:has(>#finance-fuel){background:#fff!important;border-color:rgba(20,30,80,.09)!important}
+    html body div:has(>#finance-net){background:var(--fl)!important;grid-column:1/-1;min-height:86px!important}
+    html body div:has(>#finance-net)::after{background:#fff!important}
+    html body div:has(>:is(#finance-gross,#finance-net,#finance-fuel))>span:first-child{color:rgba(17,19,24,.62)!important;font-size:.75rem!important;font-weight:500}
+    html body div:has(>:is(#finance-gross,#finance-net,#finance-fuel))>span:nth-child(2){color:var(--fk)!important;font-size:1.15rem!important;font-weight:600;letter-spacing:-.02em}
+    /* filter pil: aktif lime, lainnya lavender muda */
+    html body div:has(>:is(#filter-7d,#filter-orders-7d)){background:transparent!important;box-shadow:none!important;border:0!important;padding:0!important;gap:8px;justify-content:flex-start!important}
+    html body :is(#filter-7d,#filter-30d,#filter-all,#filter-orders-7d,#filter-orders-30d,#filter-orders-all,[id^="cat-filter-"]){border-radius:999px!important;flex:0 0 auto!important;padding:8px 16px!important;font-size:.75rem;font-weight:600;transition:all .3s var(--fe)}
+    html body :is(#filter-7d,#filter-30d,#filter-all,#filter-orders-7d,#filter-orders-30d,#filter-orders-all,[id^="cat-filter-"]).bg-indigo-600{background:var(--fl)!important;color:var(--fk)!important;box-shadow:none!important}
+    html body :is(#filter-7d,#filter-30d,#filter-all,#filter-orders-7d,#filter-orders-30d,#filter-orders-all,[id^="cat-filter-"]):not(.bg-indigo-600){background:#F0F0F8!important;color:#8A8FA3!important;border-color:transparent!important}
+    /* judul besar "Pesanan Terbaru" + lingkaran jumlah */
+    html body #tab-dashboard>:nth-child(7)>button{display:none}
+    html body #tab-dashboard>:nth-child(7)>h3{flex:1;justify-content:space-between;font-size:1.65rem;font-weight:500;letter-spacing:-.03em;line-height:1.1}
+    html body #home-count-badge{width:46px;height:46px;border-radius:50%!important;background:#F7F8FC!important;border:1px solid rgba(20,30,80,.12)!important;color:var(--fk)!important;font-size:1rem!important;font-weight:500!important;display:inline-flex;align-items:center;justify-content:center;padding:0!important}
+    /* nav melayang + FAB lime */
+    html body nav.fixed.bottom-0{left:14px!important;right:14px!important;bottom:14px!important;max-width:27rem;margin:0 auto;border-radius:30px;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(16px);border:1px solid rgba(20,30,80,.06)!important;box-shadow:0 16px 40px rgba(40,55,120,.16);padding:10px 20px!important}
+    html body nav .text-indigo-600{color:var(--fk)!important}
+    html body nav .text-indigo-600 i{animation:fx-pop .5s var(--fe)}
+    html body nav .text-slate-400{color:#A2A7BB!important}
+    html body nav .border-slate-50{border-color:#fff!important}
+    html body .purple-gradient{background:var(--fl)!important;color:var(--fk)!important;animation:fx-pulse 2.8s infinite}
+    html body .fab-shadow{box-shadow:0 10px 26px rgba(210,244,74,.6)!important}
+    /* insights: tanggal terpilih biru seperti kalender referensi */
+    html body #tab-insights>div:first-child h2{font-size:1.6rem;font-weight:500;letter-spacing:-.03em}
+    html body #insights-week-strip .bg-emerald-500.rounded-2xl{background:var(--fb)!important;color:#fff!important;border-radius:999px!important}
+    html body #insights-week-strip .bg-emerald-500 .bg-white{background:var(--fl)!important;color:var(--fk)!important}
+    html body #insights-week-strip button .bg-emerald-500{background:var(--fb)!important}
+    html body .theme-opt.is-active{border-color:var(--fb);box-shadow:0 0 0 3px rgba(62,91,255,.25)}
+    /* animasi */
+    @keyframes fx-rise{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
+    @keyframes fx-pop{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+    @keyframes fx-shimmer{to{background-position:-200% 0}}
+    @keyframes fx-float{from{transform:translate(0,0) scale(1)}to{transform:translate(-14px,10px) scale(1.06)}}
+    @keyframes fx-drift{from{transform:translate(0,0)}to{transform:translate(-30px,24px)}}
+    @keyframes fx-pulse{0%{box-shadow:0 0 0 0 rgba(210,244,74,.6)}70%{box-shadow:0 0 0 16px rgba(210,244,74,0)}100%{box-shadow:0 0 0 0 rgba(210,244,74,0)}}
+    html body section[id^="tab-"]:not(.hidden)>*{animation:fx-rise .6s var(--fe) both}
+    html body section[id^="tab-"]:not(.hidden)>*:nth-child(2){animation-delay:.06s}
+    html body section[id^="tab-"]:not(.hidden)>*:nth-child(3){animation-delay:.12s}
+    html body section[id^="tab-"]:not(.hidden)>*:nth-child(4){animation-delay:.18s}
+    html body section[id^="tab-"]:not(.hidden)>*:nth-child(5){animation-delay:.24s}
+    html body section[id^="tab-"]:not(.hidden)>*:nth-child(n+6){animation-delay:.3s}
+    @media (prefers-reduced-motion:reduce){html body *,html body *::before,html body *::after{animation:none!important;transition:none!important}}
+    </style>
     <style id="theme-switcher-ui">
+    .fx-only{display:none}
     .theme-opt{display:flex;flex-direction:column;align-items:stretch;gap:8px;padding:10px;border-radius:18px;
       border:2px solid rgba(100,116,139,.22);background:transparent;text-align:left;cursor:pointer;transition:.15s}
     .theme-opt:active{transform:scale(.97)}
     .theme-opt .sw{height:44px;border-radius:12px;position:relative;overflow:hidden}
-    .theme-opt .lbl{font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:space-between}
+    .theme-opt .lbl{font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:space-between}
     .theme-opt .chk{display:none;font-size:11px}
     .theme-opt.is-active{border-color:#4F46E5;box-shadow:0 0 0 3px rgba(99,102,241,.25)}
     .theme-opt.is-active .chk{display:inline}
@@ -230,7 +362,7 @@
     (function(){
       var KEY='drivertrack_ui_theme';
       var current='default';
-      try{ if(localStorage.getItem(KEY)==='sales') current='sales'; }catch(e){}
+      try{ var _t=localStorage.getItem(KEY); if(_t==='sales'||_t==='focus') current=_t; }catch(e){}
 
       /* pola arsir untuk grafik tema Sales */
       var cache={};
@@ -247,11 +379,12 @@
           usePointStyle:l.usePointStyle,pointStyle:l.pointStyle,boxWidth:l.boxWidth,
           tb:t.backgroundColor,tt:t.titleColor,tbc:t.bodyColor,tr:t.cornerRadius,tp:t.padding,td:t.displayColors,tc:t.caretSize};
       }
-      function applyChart(on){
+      function applyChart(name){
+        var on = name==='sales'||name==='focus';
         if(!window.Chart||!orig) return;
         var d=Chart.defaults, l=d.plugins.legend.labels, t=d.plugins.tooltip;
         if(on){
-          d.font.family="'Urbanist','Plus Jakarta Sans',sans-serif"; d.color='#7E807B';
+          d.font.family = name==='focus' ? "'Plus Jakarta Sans',sans-serif" : "'Urbanist','Plus Jakarta Sans',sans-serif"; d.color='#7E807B';
           d.scale.grid.color='rgba(27,29,26,.05)'; d.scale.border.display=false;
           l.usePointStyle=true; l.pointStyle='circle'; l.boxWidth=8;
           t.backgroundColor='#1E211D'; t.titleColor='#DDFF00'; t.bodyColor='#fff';
@@ -263,12 +396,14 @@
           t.cornerRadius=orig.tr; t.padding=orig.tp; t.displayColors=orig.td; t.caretSize=orig.tc;
         }
       }
-      function applyCss(on){
+      function applyCss(name){
+        var on = name==='sales', fe=document.getElementById('theme-focus');
+        if(fe) fe.media = name==='focus' ? 'all' : 'not all';
         ['theme-override','theme-override-2'].forEach(function(id){
           var el=document.getElementById(id); if(el) el.media = on ? 'all' : 'not all';
         });
-        document.documentElement.setAttribute('data-ui-theme', on ? 'sales' : 'default');
-        var mt=document.getElementById('meta-theme-color'); if(mt) mt.setAttribute('content', on ? '#E8E6EE' : '#F4F5FB');
+        document.documentElement.setAttribute('data-ui-theme', name);
+        var mt=document.getElementById('meta-theme-color'); if(mt) mt.setAttribute('content', on ? '#E8E6EE' : (name==='focus' ? '#FFFFFF' : '#F4F5FB'));
       }
       function syncButtons(){
         document.querySelectorAll('[data-theme-opt]').forEach(function(b){
@@ -276,20 +411,31 @@
         });
       }
       window.__isSales=function(){return current==='sales';};
+      window.__isFocus=function(){return current==='focus';};
+      /* Tema Focus: petakan warna grafik bawaan ke palet biru/lime/lavender (tanpa mengubah fungsi grafik) */
+      if(window.Chart&&Chart.register){
+        var FM={'#10B981':'#3E5BFF','rgba(16,185,129,0.35)':'rgba(62,91,255,0.3)','#F43F5E':'#D2F44A','rgba(244,63,94,0.35)':'rgba(210,244,74,0.45)',
+          '#6366F1':'#3E5BFF','#F97316':'#3E5BFF','#EA580C':'#D2F44A','#16A34A':'#B9B8F2','#059669':'#111318'};
+        var mp=function(c){return Array.isArray(c)?c.map(mp):(FM[c]||c);};
+        Chart.register({id:'focusRecolor',beforeUpdate:function(ch){
+          if(!window.__isFocus()) return;
+          ch.data.datasets.forEach(function(ds){ if(ds.backgroundColor) ds.backgroundColor=mp(ds.backgroundColor); if(typeof ds.borderRadius==='number') ds.borderRadius=10; });
+        }});
+      }
       window.getUITheme=function(){return current;};
       window.syncThemeButtons=syncButtons;
       window.setUITheme=function(name){
-        current = (name==='sales') ? 'sales' : 'default';
+        current = (name==='sales'||name==='focus') ? name : 'default';
         try{ localStorage.setItem(KEY,current); }catch(e){}
-        applyCss(current==='sales'); applyChart(current==='sales'); syncButtons();
+        applyCss(current); applyChart(current); syncButtons();
         /* gambar ulang grafik agar warna mengikuti tema (memakai fungsi render yang sudah ada) */
         try{ if(typeof renderAllViews==='function') renderAllViews(); }catch(e){ console.warn(e); }
         try{ if(typeof activeTab!=='undefined' && activeTab==='insights' && typeof renderInsightsView==='function') renderInsightsView(); }catch(e){ console.warn(e); }
-        if(typeof showToast==='function'){ try{ showToast(current==='sales' ? 'Tema Sales aktif' : 'Tema Default aktif'); }catch(e){} }
+        if(typeof showToast==='function'){ try{ showToast({sales:'Tema Sales aktif',focus:'Tema Focus aktif','default':'Tema Default aktif'}[current]); }catch(e){} }
       };
 
       /* terapkan tema tersimpan sedini mungkin (sebelum render pertama) */
-      applyCss(current==='sales'); applyChart(current==='sales');
+      applyCss(current); applyChart(current);
       document.addEventListener('DOMContentLoaded', syncButtons);
     })();
     </script>
@@ -316,10 +462,10 @@
                     <i class="fa-solid fa-wand-magic-sparkles text-sm"></i>
                 </button>
                 <div class="relative">
-                    <button class="p-2.5 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                    <button type="button" onclick="openNotifPanel()" class="p-2.5 rounded-2xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Notifikasi">
                         <i class="fa-regular fa-bell text-sm"></i>
                     </button>
-                    <span class="absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
+                    <span id="notif-dot" class="hidden absolute top-2 right-2 w-2 h-2 bg-rose-500 rounded-full"></span>
                 </div>
             </div>
         </div>
@@ -329,6 +475,8 @@
         <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 space-y-2 w-full max-w-xs pointer-events-none px-4"></div>
 
         <section id="tab-dashboard" class="space-y-5">
+            <button type="button" onclick="switchTab('upload')" class="fx-only fx-cta"><i class="fa-solid fa-plus"></i> Tambah pesanan baru</button>
+            <div class="fx-only items-center justify-between"><h3 class="fx-title">Ringkasan pesanan</h3><button type="button" onclick="switchTab('orders')" class="fx-link">Lihat semua</button></div>
             <!-- Hero Progress Card -->
             <div class="purple-card-gradient text-white rounded-3xl p-5 shadow-xl shadow-indigo-500/10 relative overflow-hidden">
                 <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
@@ -933,7 +1081,7 @@
             <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-3">
                 <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-palette text-indigo-600"></i> Tema Tampilan</p>
                 <p class="text-[11px] text-slate-400 leading-relaxed">Pilih gaya tampilan aplikasi. Hanya mengubah warna dan gaya, data serta fitur tidak terpengaruh. Pilihan tersimpan di perangkat ini.</p>
-                <div class="grid grid-cols-2 gap-2.5">
+                <div class="grid grid-cols-3 gap-2">
                     <button type="button" data-theme-opt="default" onclick="setUITheme('default')" class="theme-opt">
                         <span class="sw" style="background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%)"><span style="position:absolute;right:8px;bottom:8px;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.35)"></span></span>
                         <span class="lbl"><span>Default (Indigo)</span><i class="fa-solid fa-circle-check chk"></i></span>
@@ -942,6 +1090,32 @@
                         <span class="sw" style="background:#1E211D"><span style="position:absolute;right:8px;bottom:8px;width:16px;height:16px;border-radius:50%;background:#DDFF00"></span><span style="position:absolute;left:8px;top:8px;width:34px;height:8px;border-radius:99px;background:#DDFF00"></span></span>
                         <span class="lbl"><span>Sales (Lime)</span><i class="fa-solid fa-circle-check chk"></i></span>
                     </button>
+                    <button type="button" data-theme-opt="focus" onclick="setUITheme('focus')" class="theme-opt">
+                        <span class="sw" style="background:#3E5BFF"><span style="position:absolute;right:8px;bottom:8px;width:16px;height:16px;border-radius:50%;background:#D2F44A"></span><span style="position:absolute;left:8px;top:8px;width:34px;height:8px;border-radius:99px;background:#DFDDF8"></span></span>
+                        <span class="lbl"><span>Focus (Biru)</span><i class="fa-solid fa-circle-check chk"></i></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pengaturan Notifikasi -->
+            <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-3">
+                <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-bell text-indigo-600"></i> Notifikasi</p>
+                <p class="text-[11px] text-slate-400 leading-relaxed">Popup otomatis untuk penyimpanan penuh, pesanan baru, dan rangkuman pendapatan harian. Riwayatnya ada di ikon lonceng.</p>
+                <label class="flex items-center justify-between gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
+                    <span class="text-[11px] font-bold text-slate-700">Popup saat pesanan baru ditambahkan</span>
+                    <input type="checkbox" id="np-order" onchange="saveNotifPrefs()" class="w-4 h-4 accent-indigo-600">
+                </label>
+                <label class="flex items-center justify-between gap-3 bg-slate-50 rounded-xl px-3 py-2">
+                    <span class="text-[11px] font-bold text-slate-700">Rangkuman pendapatan otomatis jam</span>
+                    <input type="time" id="np-time" onchange="saveNotifPrefs()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700">
+                </label>
+                <div class="flex items-center justify-between gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
+                    <span class="text-[11px] font-bold text-slate-700">Notifikasi browser <span id="np-sys-status" class="font-medium text-slate-400">(nonaktif)</span></span>
+                    <button type="button" onclick="enableSystemNotif()" class="text-[10px] font-bold px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 active:scale-95 transition">Aktifkan</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="openSummary(new Date(),{title:'Rangkuman pendapatan hari ini'})" class="bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Rangkuman hari ini</button>
+                    <button type="button" onclick="checkStorageAlert(true)" class="bg-slate-100 text-slate-700 text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Cek penyimpanan</button>
                 </div>
             </div>
 
@@ -2225,6 +2399,7 @@
                 updateStorageIndicator();
                 updateLightBackupInfo();
                 if (window.syncThemeButtons) window.syncThemeButtons();
+                if (window.syncNotifPrefs) window.syncNotifPrefs();
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -6842,6 +7017,200 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             renderAllViews();
             showToast('Orderan gabungan berhasil diperbarui!', 'emerald');
         }
+    </script>
+
+    <style id="notif-css">
+    @keyframes nt-in{from{opacity:0;transform:translateY(-14px) scale(.97)}to{opacity:1;transform:none}}
+    @keyframes nt-up{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+    .nt-pop{animation:nt-in .4s cubic-bezier(.2,.8,.2,1) both}
+    #notif-panel>div,#notif-modal>div{animation:nt-up .35s cubic-bezier(.2,.8,.2,1) both}
+    .nt-out{opacity:0!important;transform:translateY(-10px)!important;transition:all .3s}
+    @media (prefers-reduced-motion:reduce){.nt-pop,#notif-panel>div,#notif-modal>div{animation:none}}
+    </style>
+    <div id="notif-popups" class="fixed top-3 left-1/2 -translate-x-1/2 z-[80] w-[calc(100%-24px)] max-w-sm space-y-2 pointer-events-none"></div>
+    <div id="notif-modal" class="hidden fixed inset-0 z-[75] flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm px-4 pb-4" onclick="closeNotifModal()">
+        <div id="notif-modal-body" class="bg-white rounded-3xl w-full max-w-sm max-h-[88vh] overflow-y-auto shadow-2xl" onclick="event.stopPropagation()"></div>
+    </div>
+    <div id="notif-panel" class="hidden fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm px-3 pb-3" onclick="closeNotifPanel()">
+        <div class="bg-white rounded-3xl w-full max-w-md max-h-[80vh] flex flex-col shadow-2xl overflow-hidden" onclick="event.stopPropagation()">
+            <div class="p-4 flex items-center justify-between border-b border-slate-100">
+                <h3 class="font-extrabold text-slate-900 text-sm flex items-center gap-2"><i class="fa-regular fa-bell text-indigo-600"></i> Notifikasi</h3>
+                <button type="button" onclick="closeNotifPanel()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center"><i class="fa-solid fa-xmark text-xs"></i></button>
+            </div>
+            <div id="notif-list" class="flex-1 overflow-y-auto p-3 space-y-2"></div>
+            <div class="p-3 grid grid-cols-2 gap-2 border-t border-slate-100">
+                <button type="button" onclick="closeNotifPanel();openSummary(new Date(),{title:'Rangkuman pendapatan hari ini'})" class="bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Rangkuman hari ini</button>
+                <button type="button" onclick="clearNotifs()" class="bg-slate-100 text-slate-700 text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Hapus semua</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    /* ===== Sistem notifikasi: penyimpanan penuh, pesanan baru, rangkuman pendapatan harian ===== */
+    (function(){
+      var NK='drivertrack_notifs', PK='drivertrack_notif_prefs', SK='drivertrack_storage_alert', LK='drivertrack_summary_last', TK='drivertrack_target_notified';
+      var $=function(id){return document.getElementById(id);};
+      var rp=function(n){return 'Rp'+Math.round(n||0).toLocaleString('id-ID');};
+      var esc=function(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+      var ymd=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+      var lsGet=function(k,def){try{var v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}};
+      var lsSet=function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
+      var prefs=function(){var p=lsGet(PK,{}); return {order:p.order!==false,summaryTime:p.summaryTime||'21:00',sys:!!p.sys};};
+      var TYPES={order:['fa-receipt','bg-emerald-50 text-emerald-600'],storage:['fa-hard-drive','bg-rose-50 text-rose-600'],summary:['fa-sack-dollar','bg-indigo-50 text-indigo-600']};
+      var known=null, lastStorageCheck=0, lastFailPopup=0;
+
+      /* ---------- riwayat ---------- */
+      function list(){return lsGet(NK,[]);}
+      function updateDot(){var d=$('notif-dot'); if(d) d.classList.toggle('hidden',!list().some(function(n){return !n.read;}));}
+      function timeAgo(ts){var m=Math.round((Date.now()-ts)/60000); if(m<1)return 'baru saja'; if(m<60)return m+' mnt lalu'; var d=new Date(ts); return (new Date().toDateString()===d.toDateString()?'':d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' ')+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});}
+      function pushNotif(n,opt){
+        n.id=Date.now()+'-'+Math.random().toString(36).slice(2,6); n.ts=Date.now(); n.read=false;
+        var a=list(); a.unshift(n); lsSet(NK,a.slice(0,50)); updateDot();
+        if(opt&&opt.silent) return;
+        var p=prefs();
+        if(!(n.type==='order'&&!p.order)) showPopup(n);
+        if(p.sys&&document.hidden&&window.Notification&&Notification.permission==='granted'){try{new Notification(n.title,{body:n.body});}catch(e){}}
+      }
+      function showPopup(n){
+        var box=$('notif-popups'); if(!box) return;
+        var t=TYPES[n.type]||TYPES.order, el=document.createElement('div');
+        el.className='nt-pop pointer-events-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-3 flex items-start gap-3 cursor-pointer';
+        el.innerHTML='<span class="w-9 h-9 rounded-full '+t[1]+' flex items-center justify-center flex-shrink-0"><i class="fa-solid '+t[0]+' text-sm"></i></span>'+
+          '<div class="flex-1 min-w-0"><p class="text-xs font-extrabold text-slate-900">'+esc(n.title)+'</p><p class="text-[11px] text-slate-500 mt-0.5 leading-snug">'+esc(n.body)+'</p></div>'+
+          '<button type="button" class="text-slate-400 text-xs p-1" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>';
+        var kill=function(){el.classList.add('nt-out'); setTimeout(function(){el.remove();},300);};
+        el.onclick=function(e){ if(e.target.closest('button')){kill();return;} kill(); openPanel(); };
+        box.appendChild(el); setTimeout(kill,6500);
+        while(box.children.length>3) box.firstChild.remove();
+      }
+      function renderList(){
+        var a=list(), el=$('notif-list'); if(!el) return;
+        if(!a.length){el.innerHTML='<div class="text-center py-10 text-xs text-slate-400"><i class="fa-regular fa-bell-slash text-2xl block mb-2"></i>Belum ada notifikasi</div>';return;}
+        el.innerHTML=a.map(function(n){var t=TYPES[n.type]||TYPES.order;
+          return '<button type="button" data-nid="'+n.id+'" class="w-full text-left flex items-start gap-3 p-3 rounded-2xl '+(n.read?'bg-slate-50':'bg-indigo-50')+' active:scale-[.98] transition">'+
+          '<span class="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 '+t[1].split(' ')[1]+'"><i class="fa-solid '+t[0]+' text-sm"></i></span>'+
+          '<span class="flex-1 min-w-0"><span class="block text-xs font-extrabold text-slate-900">'+esc(n.title)+'</span><span class="block text-[11px] text-slate-500 mt-0.5 leading-snug">'+esc(n.body)+'</span><span class="block text-[10px] text-slate-400 mt-1">'+timeAgo(n.ts)+'</span></span></button>';}).join('');
+        el.querySelectorAll('[data-nid]').forEach(function(b){b.onclick=function(){
+          var n=list().filter(function(x){return x.id===b.getAttribute('data-nid');})[0]; if(!n) return; closePanel();
+          if(n.type==='summary'&&n.date) openSummary(new Date(n.date+'T12:00:00'),{title:n.title});
+          else if(n.type==='storage'){ if(typeof switchTab==='function') switchTab('profile'); }
+          else if(typeof switchTab==='function') switchTab('orders');
+        };});
+      }
+      function openPanel(){renderList(); $('notif-panel').classList.remove('hidden'); var a=list(); a.forEach(function(n){n.read=true;}); lsSet(NK,a); updateDot();}
+      function closePanel(){$('notif-panel').classList.add('hidden');}
+      function modal(html){$('notif-modal-body').innerHTML=html; $('notif-modal').classList.remove('hidden');}
+      window.openNotifPanel=openPanel; window.closeNotifPanel=closePanel;
+      window.closeNotifModal=function(){$('notif-modal').classList.add('hidden');};
+      window.clearNotifs=function(){lsSet(NK,[]); updateDot(); renderList();};
+
+      /* ---------- penyimpanan penuh ---------- */
+      function storageModal(o){
+        var pct=o.pct, full=o.fail||pct>=90, col=full?'rose':(pct>=80?'amber':'emerald');
+        var title=o.fail?'Penyimpanan penuh, data gagal tersimpan':(full?'Penyimpanan hampir penuh':(pct>=80?'Penyimpanan perlu dibersihkan':'Penyimpanan masih aman'));
+        var msg=o.fail?'Perubahan terakhir belum tersimpan. Backup data sekarang, lalu hapus pesanan atau screenshot lama.':(pct>=80?'Backup data lalu kurangi pesanan atau screenshot lama agar data baru tetap bisa tersimpan.':'Ruang penyimpanan browser masih cukup.');
+        var used=o.usage!=null&&typeof formatBytes==='function'?formatBytes(o.usage)+' dari '+formatBytes(o.quota):'';
+        modal('<div class="p-5 space-y-4"><div class="flex items-start gap-3"><span class="w-11 h-11 rounded-2xl bg-'+col+'-50 text-'+col+'-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-hard-drive"></i></span>'+
+          '<div><h3 class="font-extrabold text-slate-900 text-sm">'+title+'</h3><p class="text-[11px] text-slate-500 mt-1 leading-relaxed">'+msg+'</p></div></div>'+
+          (pct!=null?'<div class="space-y-1.5"><div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-'+col+'-500 rounded-full" style="width:'+Math.min(100,Math.max(pct,1.5))+'%"></div></div><p class="text-[11px] font-semibold text-slate-600">Terpakai '+pct.toFixed(1)+'%'+(used?' ('+used+')':'')+'</p></div>':'')+
+          '<div class="grid grid-cols-2 gap-2"><button type="button" onclick="closeNotifModal();exportData()" class="bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition"><i class="fa-solid fa-download mr-1"></i> Backup sekarang</button>'+
+          '<button type="button" onclick="closeNotifModal();switchTab(\'profile\')" class="bg-slate-100 text-slate-700 text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Buka Profil</button></div>'+
+          '<button type="button" onclick="closeNotifModal()" class="w-full text-[11px] font-bold text-slate-400 py-1">Tutup</button></div>');
+      }
+      window.checkStorageAlert=async function(force){
+        try{
+          if(!navigator.storage||!navigator.storage.estimate){ if(force&&typeof showToast==='function') showToast('Kapasitas browser tidak bisa dibaca di perangkat ini.','amber'); return; }
+          var e=await navigator.storage.estimate(); if(!e.quota) return;
+          var pct=e.usage/e.quota*100, level=pct>=90?2:(pct>=80?1:0);
+          if(force){storageModal({pct:pct,usage:e.usage,quota:e.quota}); return;}
+          if(!level) return;
+          var st=lsGet(SK,{level:0,at:0});
+          if(st.level>=level&&Date.now()-st.at<86400000) return;
+          lsSet(SK,{level:level,at:Date.now()});
+          pushNotif({type:'storage',title:level===2?'Penyimpanan hampir penuh':'Penyimpanan perlu dibersihkan',body:'Terpakai '+pct.toFixed(1)+'%. Backup data lalu bersihkan pesanan atau screenshot lama.'},{silent:true});
+          storageModal({pct:pct,usage:e.usage,quota:e.quota});
+        }catch(err){console.warn(err);}
+      };
+      function scheduleCheck(){ if(Date.now()-lastStorageCheck<20000) return; lastStorageCheck=Date.now(); setTimeout(function(){window.checkStorageAlert(false);},1200); }
+
+      /* ---------- rangkuman pendapatan ---------- */
+      function dayOrders(d){var k=d.toDateString(); return ordersList.filter(function(o){return new Date(getOrderTs(o)).toDateString()===k;});}
+      window.openSummary=function(d,opt){
+        var os=dayOrders(d), f=computeFinancialSummary(os), units=countOrderUnits(os), pb=computePlatformBreakdown(os), cash=0, hrs={}, peak=null;
+        os.forEach(function(o){cash+=(o.cashAmount||0); var h=new Date(getOrderTs(o)).getHours(); hrs[h]=(hrs[h]||0)+1;});
+        Object.keys(hrs).forEach(function(h){if(peak===null||hrs[h]>hrs[peak]) peak=h;});
+        var isToday=d.toDateString()===new Date().toDateString(), target=(typeof insightsDailyTarget!=='undefined'?insightsDailyTarget:10)||10, pct=Math.min(100,Math.round(units/target*100));
+        var label=d.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+        var row=function(a,b){return '<div class="flex items-center justify-between text-xs"><span class="text-slate-500 font-medium">'+a+'</span><span class="font-extrabold text-slate-900">'+b+'</span></div>';};
+        var plat=Object.keys(pb).map(function(p){return row(esc(p)+' <span class="text-slate-400">· '+pb[p].orders+' order</span>',rp(pb[p].income));}).join('');
+        var km=f.kmKnownCount>0?(f.totalKm||0).toFixed(1)+' km':'belum dipetakan';
+        var body=os.length?
+          '<div class="grid grid-cols-3 gap-2 text-center"><div class="bg-emerald-50 rounded-2xl p-2.5"><span class="text-[9.5px] text-emerald-600 font-semibold block">Kotor</span><span class="text-xs font-extrabold text-emerald-700 block mt-0.5">'+rp(f.grossIncome)+'</span></div>'+
+          '<div class="bg-rose-50 rounded-2xl p-2.5"><span class="text-[9.5px] text-rose-600 font-semibold block">Est. BBM</span><span class="text-xs font-extrabold text-rose-700 block mt-0.5">'+rp(f.estFuelCost)+'</span></div>'+
+          '<div class="bg-indigo-50 rounded-2xl p-2.5"><span class="text-[9.5px] text-indigo-600 font-semibold block">Bersih</span><span class="text-xs font-extrabold text-indigo-700 block mt-0.5">'+rp(f.netIncome)+'</span></div></div>'+
+          '<div class="space-y-2 bg-slate-50 rounded-2xl p-3">'+row('Total order',units+' order')+row('Rata-rata per order',rp(units?f.grossIncome/units:0))+row('Tunai diterima',rp(cash))+row('Jarak tempuh',km)+(peak!==null?row('Jam tersibuk',String(peak).padStart(2,'0')+':00'):'')+'</div>'+
+          '<div class="space-y-2"><p class="text-[11px] font-extrabold text-slate-900">Per platform</p>'+plat+'</div>'+
+          (isToday?'<div class="space-y-1"><div class="flex justify-between text-[11px] font-bold text-slate-600"><span>Target harian</span><span>'+units+'/'+target+' ('+pct+'%)</span></div><div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full bg-emerald-500 rounded-full" style="width:'+pct+'%"></div></div></div>':''):
+          '<p class="text-xs text-slate-400 text-center py-6">Belum ada pesanan pada hari ini.</p>';
+        modal('<div class="p-5 space-y-4"><div class="flex items-start gap-3"><span class="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-sack-dollar"></i></span><div><h3 class="font-extrabold text-slate-900 text-sm">'+esc((opt&&opt.title)||'Rangkuman pendapatan')+'</h3><p class="text-[11px] text-slate-400 mt-0.5">'+label+'</p></div></div>'+body+
+          '<div class="grid grid-cols-2 gap-2"><button type="button" onclick="closeNotifModal();switchTab(\'orders\')" class="bg-slate-100 text-slate-700 text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Lihat pesanan</button><button type="button" onclick="closeNotifModal()" class="bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Tutup</button></div></div>');
+        return {os:os,f:f,units:units};
+      };
+      function autoSummary(d,title){
+        var os=dayOrders(d); if(!os.length) return false;
+        var f=computeFinancialSummary(os), u=countOrderUnits(os);
+        pushNotif({type:'summary',date:ymd(d),title:title,body:u+' order · Kotor '+rp(f.grossIncome)+' · Bersih '+rp(f.netIncome)},{silent:true});
+        window.openSummary(d,{title:title}); return true;
+      }
+      function tickSummary(){
+        try{
+          if(known===null) return;
+          var now=new Date(), hm=prefs().summaryTime.split(':'), at=new Date(now); at.setHours(+hm[0]||21,+hm[1]||0,0,0);
+          if(now>=at&&lsGet(LK,'')!==ymd(now)&&dayOrders(now).length){ lsSet(LK,ymd(now)); autoSummary(now,'Rangkuman pendapatan hari ini'); }
+        }catch(e){console.warn(e);}
+      }
+      function catchUp(){
+        try{
+          var y=new Date(); y.setDate(y.getDate()-1); var last=lsGet(LK,'');
+          if(last<ymd(y)&&dayOrders(y).length){ lsSet(LK,ymd(y)); autoSummary(y,'Rangkuman pendapatan kemarin'); }
+        }catch(e){console.warn(e);}
+      }
+      function checkTarget(){
+        try{
+          var t=(typeof insightsDailyTarget!=='undefined'?insightsDailyTarget:10)||10, now=new Date();
+          if(getTodayOrderUnitCount()>=t&&lsGet(TK,'')!==ymd(now)){ lsSet(TK,ymd(now)); autoSummary(now,'Target harian tercapai 🎉'); }
+        }catch(e){console.warn(e);}
+      }
+
+      /* ---------- pesanan baru ---------- */
+      function notifyNew(o){
+        var name=o.isCombined?('Gabungan '+((o.subOrders||[]).length)+' pesanan'):((o.restoName&&o.restoName!=='-')?o.restoName:(o.platform||'Pesanan'));
+        var todays=dayOrders(new Date()), f=computeFinancialSummary(todays);
+        pushNotif({type:'order',title:'Pesanan baru ditambahkan',body:name+' · '+rp(o.orderIncome)+' · Hari ini '+countOrderUnits(todays)+' order, kotor '+rp(f.grossIncome)});
+      }
+      function seed(){ if(known===null) known=new Set(ordersList.map(function(o){return o.id;})); }
+      function onSaved(){
+        if(known===null) return;
+        var added=ordersList.filter(function(o){return !known.has(o.id);});
+        known=new Set(ordersList.map(function(o){return o.id;}));
+        if(added.length&&added.length<=3){ added.forEach(notifyNew); checkTarget(); }
+        scheduleCheck();
+      }
+      var _save=saveToLocalStorage; saveToLocalStorage=function(){var r=_save.apply(this,arguments); try{onSaved();}catch(e){console.warn(e);} return r;};
+      var _fail=reportSaveFailure; reportSaveFailure=function(e){ _fail(e); if(Date.now()-lastFailPopup>60000){lastFailPopup=Date.now(); pushNotif({type:'storage',title:'Penyimpanan penuh, data gagal tersimpan',body:'Backup data lalu hapus pesanan atau screenshot lama.'},{silent:true}); storageModal({fail:true,pct:null});} };
+      var _init=initStorage; initStorage=async function(){var r=await _init.apply(this,arguments); seed(); setTimeout(function(){catchUp();window.checkStorageAlert(false);},1500); return r;};
+      setTimeout(seed,4000); setInterval(tickSummary,30000); setInterval(function(){window.checkStorageAlert(false);},300000);
+
+      /* ---------- pengaturan ---------- */
+      function syncPrefs(){var p=prefs(); if($('np-order')) $('np-order').checked=p.order; if($('np-time')) $('np-time').value=p.summaryTime;
+        var st=$('np-sys-status'); if(st) st.innerText=!window.Notification?'(tidak didukung)':(p.sys&&Notification.permission==='granted'?'(aktif)':'(nonaktif)');}
+      window.saveNotifPrefs=function(){var p=prefs(); p.order=$('np-order').checked; p.summaryTime=$('np-time').value||'21:00'; lsSet(PK,p); syncPrefs();};
+      window.enableSystemNotif=function(){
+        if(!window.Notification){ if(typeof showToast==='function') showToast('Browser ini tidak mendukung notifikasi sistem.','amber'); return; }
+        Notification.requestPermission().then(function(r){var p=prefs(); p.sys=(r==='granted'); lsSet(PK,p); syncPrefs(); if(typeof showToast==='function') showToast(r==='granted'?'Notifikasi browser aktif':'Izin notifikasi ditolak',r==='granted'?'emerald':'amber');});
+      };
+      document.addEventListener('DOMContentLoaded',function(){syncPrefs(); updateDot();});
+      window.syncNotifPrefs=syncPrefs;
+    })();
     </script>
 </body>
 </html>
