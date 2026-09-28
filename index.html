@@ -1317,9 +1317,9 @@
             return null;
         }
 
-        window.onload = function() {
+        window.onload = async function() {
             loadUserProfile();
-            loadFromLocalStorage();
+            await initStorage();
             initInsightsDate();
             onCategoryChange();
             renderAllViews();
@@ -1438,9 +1438,121 @@
             return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
         }
 
+        // ============================================================
+        // PENYIMPANAN DATA PESANAN (IndexedDB + fallback localStorage)
+        // Kenapa bukan localStorage saja: localStorage dibatasi ~5 MB, sedangkan
+        // tiap screenshot (base64) bisa ratusan KB. Orderan gabungan (2+ pesanan)
+        // cepat melewati batas itu, setItem melempar error, dan data baru
+        // tidak tersimpan -> hilang setelah refresh. IndexedDB kapasitasnya
+        // jauh lebih besar, dan kegagalan simpan sekarang selalu diberi tahu.
+        // ============================================================
+        const DB_NAME = 'drivertrack_db';
+        const DB_STORE = 'kv';
+        const ORDERS_KEY = 'orders';
+        const LS_ORDERS_KEY = 'drivertrack_orders';
+        let idbInstance = null;
+        let idbAvailable = false;
+        let saveQueue = Promise.resolve();
+        let lastSaveErrorToastAt = 0;
+
+        function openOrdersDB() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) return reject(new Error('IndexedDB tidak tersedia'));
+                const req = indexedDB.open(DB_NAME, 1);
+                req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+                req.onblocked = () => reject(new Error('IndexedDB terblokir'));
+            });
+        }
+        function idbGet(key) {
+            return new Promise((resolve, reject) => {
+                const r = idbInstance.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).get(key);
+                r.onsuccess = () => resolve(r.result);
+                r.onerror = () => reject(r.error);
+            });
+        }
+        function idbPut(key, value) {
+            return new Promise((resolve, reject) => {
+                const tx = idbInstance.transaction(DB_STORE, 'readwrite');
+                tx.objectStore(DB_STORE).put(value, key);
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+                tx.onabort = () => reject(tx.error || new Error('Transaksi dibatalkan'));
+            });
+        }
+
+        // Thumbnail orderan gabungan identik dengan screenshot sub-pesanan #1,
+        // jadi tidak perlu disimpan dua kali (hemat ukuran).
+        function packOrders(list) {
+            return list.map(o => {
+                if (o && o.isCombined && Array.isArray(o.subOrders) && o.subOrders[0] &&
+                    o.screenshot && o.screenshot === o.subOrders[0].screenshot) {
+                    const c = Object.assign({}, o);
+                    delete c.screenshot;
+                    c.__thumbFromSub = true;
+                    return c;
+                }
+                return o;
+            });
+        }
+        function unpackOrders(list) {
+            list.forEach(o => {
+                if (o && o.__thumbFromSub) {
+                    o.screenshot = (o.subOrders && o.subOrders[0]) ? o.subOrders[0].screenshot : null;
+                    delete o.__thumbFromSub;
+                }
+            });
+            return list;
+        }
+
+        async function initStorage() {
+            try {
+                idbInstance = await openOrdersDB();
+                idbAvailable = true;
+            } catch (e) {
+                console.warn('IndexedDB tidak bisa dipakai, pakai localStorage', e);
+                idbAvailable = false;
+            }
+
+            // Minta browser agar data tidak dihapus otomatis saat ruang HP menipis.
+            try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
+            if (!idbAvailable) { loadFromLocalStorage(); return; }
+
+            let stored = null;
+            try { stored = await idbGet(ORDERS_KEY); } catch (e) { console.warn(e); }
+
+            let lsList = null;
+            try {
+                const raw = localStorage.getItem(LS_ORDERS_KEY);
+                if (raw) { const p = JSON.parse(raw); if (Array.isArray(p)) lsList = p; }
+            } catch (e) {}
+
+            if (Array.isArray(stored)) {
+                ordersList = unpackOrders(stored);
+                if (lsList && lsList.length) {
+                    // data lama di localStorage yang belum ada di IndexedDB -> gabungkan
+                    const ids = new Set(ordersList.map(o => o.id));
+                    lsList.forEach(o => { if (o && !ids.has(o.id)) ordersList.push(o); });
+                    ordersList.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                }
+            } else {
+                ordersList = lsList || [];
+            }
+
+            // Migrasi: pastikan sudah tertulis di IndexedDB, baru hapus salinan localStorage
+            if (lsList) {
+                try {
+                    await idbPut(ORDERS_KEY, packOrders(ordersList));
+                    localStorage.removeItem(LS_ORDERS_KEY);
+                } catch (e) { console.warn('Migrasi gagal, data lama tetap di localStorage', e); }
+            }
+        }
+
         function loadFromLocalStorage() {
             try {
-                const saved = localStorage.getItem('drivertrack_orders');
+                const saved = localStorage.getItem(LS_ORDERS_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     ordersList = Array.isArray(parsed) ? parsed : [];
@@ -1452,12 +1564,42 @@
             }
         }
 
+        function reportSaveFailure(e) {
+            console.error('Gagal menyimpan data pesanan', e);
+            const now = Date.now();
+            if (now - lastSaveErrorToastAt < 4000) return;
+            lastSaveErrorToastAt = now;
+            showToast('⚠️ Data GAGAL tersimpan (penyimpanan penuh). Segera Backup lalu kurangi/hapus pesanan lama!', 'rose');
+        }
+
+        // Nama fungsi dipertahankan agar semua pemanggil lama tetap jalan.
         function saveToLocalStorage() {
-            try {
-                localStorage.setItem('drivertrack_orders', JSON.stringify(ordersList));
-            } catch (e) {
-                console.warn("Storage full, trimming old screenshots", e);
+            if (idbAvailable) {
+                // Antrian: tulisan selalu berurutan, dan tiap tulis memakai kondisi ordersList TERBARU.
+                saveQueue = saveQueue
+                    .then(() => idbPut(ORDERS_KEY, packOrders(ordersList)))
+                    .catch(reportSaveFailure);
+            } else {
+                try {
+                    localStorage.setItem(LS_ORDERS_KEY, JSON.stringify(ordersList));
+                } catch (e) {
+                    reportSaveFailure(e);
+                }
             }
+        }
+
+        // Kompres screenshot untuk DISIMPAN (lebih kecil dari versi yang dikirim ke AI).
+        function makeStorageImage(rawImg) {
+            const maxDim = 1000;
+            let w = rawImg.width, h = rawImg.height;
+            if (w > maxDim || h > maxDim) {
+                if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                else { w = Math.round((w * maxDim) / h); h = maxDim; }
+            }
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            c.getContext('2d').drawImage(rawImg, 0, 0, w, h);
+            return c.toDataURL('image/jpeg', 0.7);
         }
 
         // ============================================================
@@ -1947,7 +2089,8 @@
                     canvas.height = h;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(rawImg, 0, 0, w, h);
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const aiDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const dataUrl = makeStorageImage(rawImg);
                     extraOrderImages[idx] = dataUrl;
 
                     const previewImg = document.getElementById(`extra-uploaded-image-preview-${idx}`);
@@ -1955,7 +2098,7 @@
                     if (previewImg) previewImg.src = dataUrl;
                     if (previewContainer) previewContainer.classList.remove('hidden');
 
-                    processImageWithGrok(dataUrl, idx);
+                    processImageWithGrok(aiDataUrl, idx);
                 };
                 rawImg.src = evt.target.result;
             };
@@ -2115,12 +2258,13 @@
                     canvas.height = h;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(rawImg, 0, 0, w, h);
-                    uploadedImageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const aiDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    uploadedImageDataUrl = makeStorageImage(rawImg);
 
                     document.getElementById('uploaded-image-preview').src = uploadedImageDataUrl;
                     document.getElementById('image-preview-container').classList.remove('hidden');
 
-                    processImageWithGrok(uploadedImageDataUrl);
+                    processImageWithGrok(aiDataUrl);
                 };
                 rawImg.src = evt.target.result;
             };
