@@ -607,7 +607,7 @@
                     </select>
                     <select id="filter-platform" onchange="renderOrdersList()" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 flex-1 min-w-[130px]">
                         <option value="ALL">Semua Platform</option>
-                        <option value="SPX">📦 SPX</option>
+                        <option value="SPX">📦 SPX</option><option value="SPX Instan">⚡ SPX Instan</option>
                         <option value="ShopeeFood">🛍️ ShopeeFood</option>
                         <option value="Grab">🟢 Grab</option>
                         <option value="Gojek">🟩 Gojek</option>
@@ -754,7 +754,7 @@
                     <div class="bg-violet-50/80 p-2.5 rounded-2xl border border-violet-100 space-y-1">
                         <label class="block text-[11px] font-extrabold text-violet-900">Platform Aplikasi *</label>
                         <select id="form-platform" class="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-700 focus:outline-none">
-                            <option value="SPX">📦 SPX (Shopee Xpress)</option>
+                            <option value="SPX">📦 SPX (Shopee Xpress)</option><option value="SPX Instan">⚡ SPX Instan</option>
                             <option value="ShopeeFood">🛍️ ShopeeFood</option>
                             <option value="Grab">🟢 Grab</option>
                             <option value="Gojek">🟩 Gojek</option>
@@ -1095,6 +1095,14 @@
                         <span class="lbl"><span>Focus (Biru)</span><i class="fa-solid fa-circle-check chk"></i></span>
                     </button>
                 </div>
+            </div>
+
+            <!-- Titik Awal & Pelacakan Driver -->
+            <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
+                <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-location-crosshairs text-indigo-600"></i> Titik Awal &amp; Pelacakan Driver</p>
+                <label class="flex items-center justify-between gap-3"><span><span class="block text-xs font-bold text-slate-800">Check point titik awal driver</span><span class="block text-[10px] text-slate-400 leading-snug">Est. BBM ikut menghitung jarak lokasi awal → resto, bukan hanya resto → penerima.</span></span><input type="checkbox" id="dp-start" onchange="saveDriverPrefs()" class="w-4 h-4 accent-indigo-600 flex-shrink-0"></label>
+                <label class="flex items-center justify-between gap-3"><span><span class="block text-xs font-bold text-slate-800">Limnas (pelacak pergerakan)</span><span class="block text-[10px] text-slate-400 leading-snug">Catat semua pergerakan hari ini; rekap Est. BBM tampil di Home tiap pukul 00.00. Aktif saat aplikasi terbuka.</span></span><input type="checkbox" id="dp-track" onchange="saveDriverPrefs()" class="w-4 h-4 accent-indigo-600 flex-shrink-0"></label>
+                <p id="dp-status" class="text-[10px] font-semibold text-slate-500 bg-slate-50 rounded-xl px-3 py-2"></p>
             </div>
 
             <!-- Pengaturan Notifikasi -->
@@ -1581,7 +1589,7 @@
                     <div class="bg-violet-50/80 p-2.5 rounded-2xl border border-violet-100 space-y-1">
                         <label class="block text-[11px] font-extrabold text-violet-900">Platform Aplikasi *</label>
                         <select id="edit-form-platform" class="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-700 focus:outline-none">
-                            <option value="SPX">📦 SPX (Shopee Xpress)</option>
+                            <option value="SPX">📦 SPX (Shopee Xpress)</option><option value="SPX Instan">⚡ SPX Instan</option>
                             <option value="ShopeeFood">🛍️ ShopeeFood</option>
                             <option value="Grab">🟢 Grab</option>
                             <option value="Gojek">🟩 Gojek</option>
@@ -1641,6 +1649,7 @@
                         <label class="block text-[10px] font-bold text-slate-500 mb-1">Waktu Diterima *</label>
                         <input type="datetime-local" id="edit-form-ordertime" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800">
                     </div>
+                    <button type="button" onclick="convertSingleToCombinedEdit()" class="w-full py-2.5 bg-white border-2 border-dashed border-indigo-300 text-indigo-600 font-bold rounded-2xl text-xs hover:bg-indigo-50 transition"><i class="fa-solid fa-plus"></i> Tambah Pesanan Lain (jadi Gabungan)</button>
 
                     <div class="flex gap-2 pt-1">
                         <button type="button" onclick="closeEditModal()" class="flex-1 py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl transition text-xs">
@@ -2554,7 +2563,7 @@
                 <div class="bg-violet-50/80 p-2.5 rounded-2xl border border-violet-100 space-y-1">
                     <label class="block text-[11px] font-extrabold text-violet-900">Platform Aplikasi *</label>
                     <select id="form-platform-${idx}" class="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-700 focus:outline-none">
-                        <option value="SPX">📦 SPX (Shopee Xpress)</option>
+                        <option value="SPX">📦 SPX (Shopee Xpress)</option><option value="SPX Instan">⚡ SPX Instan</option>
                         <option value="ShopeeFood">🛍️ ShopeeFood</option>
                         <option value="Grab">🟢 Grab</option>
                         <option value="Gojek">🟩 Gojek</option>
@@ -2985,198 +2994,182 @@
         // Base URL: https://api.groq.com/openai/v1/chat/completions
         // Models: llama-3.2-11b-vision-preview, qwen/qwen3.6-27b
         // ============================================================
+                const AI_MODELS = ['qwen/qwen3.8-27b', 'qwen/qwen3.6-27b'];
+        const AI_PROMPT = `Anda OCR AI untuk screenshot pesanan driver ojol Indonesia (ShopeeFood, SPX/Shopee Xpress, SPX Instan, Grab, Gojek).
+Balas HANYA satu objek JSON valid (tanpa markdown/penjelasan/<think>) dengan kunci:
+{"category":"Food|SPX|Instan","platform":"ShopeeFood|Grab|Gojek|SPX|SPX Instan","restoName":"","restoAddr":"","recipName":"","recipAddr":"","notes":"","cashAmount":0,"codeOrder":"","totalMenu":"","orderNo":"","weight":"","dimensions":"","itemCategory":""}
+ATURAN:
+- Food = pesanan makanan (menu/resto). SPX = paket reguler dengan kode pesanan/berat/dimensi. Instan = pengiriman instan/same-day (ada "Instan"/"Instant").
+- restoName/restoAddr = RESTO atau PENGIRIM (titik ambil). recipName/recipAddr = PENERIMA (titik antar). Jangan tertukar.
+- Alamat tulis selengkap yang tampak (jalan, no, RT/RW, kelurahan, kecamatan, kota). Jangan menebak.
+- cashAmount = ANGKA tunai yang ditagih ke penerima/customer (tanpa Rp/titik). Non-tunai/Rp0 = 0.
+- codeOrder = kode pendek (#782 / #4N73) TANPA status (Diambil, Selesai, Diantar, Menuju, Pickup, Delivered).
+- totalMenu = ringkasan menu + jumlah (mis. "2 x Nasi Goreng, 1 x Es Teh"). orderNo = nomor pesanan panjang.
+- weight mis. "1.5 kg"; dimensions mis. "20x10x5 cm"; itemCategory = jenis barang. notes = catatan/patokan pemesan.
+- Teks tidak terlihat/tidak ada = "" (string kosong) atau 0. Status pesanan JANGAN dicatat.`;
+
+        function aiClean(v) {
+            if (v === null || v === undefined) return '';
+            const t = String(v).replace(/\s+/g, ' ').trim();
+            return /^(-|—|null|n\/a|none|tidak ada|undefined)$/i.test(t) ? '' : t;
+        }
+        function aiParseJson(text) {
+            const t = String(text || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json|```/gi, '');
+            for (let st = t.indexOf('{'); st !== -1; st = t.indexOf('{', st + 1)) {
+                let d = 0, inStr = false, esc = false;
+                for (let i = st; i < t.length; i++) {
+                    const c = t[i];
+                    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+                    if (c === '"') inStr = true; else if (c === '{') d++; else if (c === '}' && --d === 0) {
+                        try { return JSON.parse(t.slice(st, i + 1)); } catch (e) { break; }
+                    }
+                }
+            }
+            return null;
+        }
+        function aiNormalize(p) {
+            const o = {};
+            ['restoName','restoAddr','recipName','recipAddr','notes','codeOrder','totalMenu','orderNo','weight','dimensions','itemCategory'].forEach(k => o[k] = aiClean(p[k]));
+            o.codeOrder = o.codeOrder.replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered|Dalam perjalanan)\b/gi, '').trim();
+            const c = aiClean(p.category).toLowerCase();
+            o.category = c.includes('instan') || c.includes('instant') ? 'Instan' : (c.startsWith('spx') || c.includes('paket') ? 'SPX' : (c.includes('food') ? 'Food' : ''));
+            if (!o.category) o.category = o.totalMenu ? 'Food' : (o.weight ? 'SPX' : '');
+            const pl = aiClean(p.platform).toLowerCase();
+            o.platform = pl.includes('grab') ? 'Grab' : (pl.includes('gojek') ? 'Gojek' : (pl.includes('shopee') && o.category === 'Food' ? 'ShopeeFood' : ''));
+            let cash = typeof p.cashAmount === 'number' ? p.cashAmount : parseInt(String(p.cashAmount || '0').replace(/[^\d]/g, ''), 10);
+            o.cashAmount = isNaN(cash) ? 0 : cash;
+            return o;
+        }
+        // Return data ter-normalisasi, atau null (pesan error sudah ditampilkan)
+        async function aiExtract(dataUrl) {
+            const apiKey = getGrokApiKey();
+            if (!apiKey) { showToast('API Key Groq belum diatur. Masukkan key terlebih dahulu.', 'rose'); updateGrokKeyUI(); return null; }
+            let lastErr = null;
+            for (const model of AI_MODELS) {
+                let res;
+                try {
+                    res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                        body: JSON.stringify({ model, temperature: 0, max_tokens: 1400, messages: [
+                            { role: 'system', content: AI_PROMPT },
+                            { role: 'user', content: [ { type: 'image_url', image_url: { url: dataUrl } }, { type: 'text', text: 'Ekstrak screenshot ini ke JSON.' } ] }
+                        ] })
+                    });
+                } catch (e) { lastErr = { network: true }; continue; }
+                if (res.ok) {
+                    const data = await res.json();
+                    const parsed = aiParseJson(data.choices?.[0]?.message?.content);
+                    if (parsed) return aiNormalize(parsed);
+                    lastErr = { parse: true }; continue; // coba model berikutnya
+                }
+                const err = await res.json().catch(() => ({}));
+                lastErr = { status: res.status, msg: err?.error?.message || res.statusText };
+                if (res.status === 401 || res.status === 403) break;
+            }
+            if (lastErr?.status === 401 || lastErr?.status === 403) { showToast('API Key Groq tidak valid. Periksa key Anda di console.groq.com.', 'rose'); clearGrokApiKey(); }
+            else if (lastErr?.status === 429) showToast('Rate limit Groq tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
+            else if (lastErr?.network) showToast('Koneksi gagal. Periksa internet & coba lagi.', 'rose');
+            else if (lastErr?.parse) showToast('AI tidak dapat membaca screenshot. Isi form manual.', 'amber');
+            else showToast(`Groq API Error (${lastErr?.status || 500}): ${lastErr?.msg || ''}`, 'rose');
+            return null;
+        }
+        // Terapkan hasil ke form. get(nama) -> elemen input
+        function aiApply(p, get, onCat, onCash) {
+            const set = (n, v) => { const el = get(n); if (el && v !== '' && v !== undefined) el.value = v; };
+            if (p.category) { get('category').value = p.category; onCat(); }
+            if (p.platform) set('platform', p.platform);
+            ['restoname:restoName','restoaddr:restoAddr','recipname:recipName','recipaddr:recipAddr','notes:notes','codeorder:codeOrder','totalmenu:totalMenu','orderno:orderNo','weight:weight','dimensions:dimensions','itemcategory:itemCategory']
+                .forEach(x => { const [f, k] = x.split(':'); set(f, p[k]); });
+            const cash = get('cashamount'); if (cash) { cash.value = p.cashAmount || 0; onCash(); }
+        }
+        function aiResizeFile(file) {
+            return new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = e => { const img = new Image(); img.onload = () => {
+                    const m = 1600; let w = img.width, h = img.height;
+                    if (w > m || h > m) { if (w > h) { h = Math.round(h * m / w); w = m; } else { w = Math.round(w * m / h); h = m; } }
+                    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, 0, 0, w, h);
+                    resolve({ ai: c.toDataURL('image/jpeg', 0.85), store: makeStorageImage(img) });
+                }; img.onerror = reject; img.src = e.target.result; };
+                r.onerror = reject; r.readAsDataURL(file);
+            });
+        }
+
         async function processImageWithGrok(base64DataUrl, idx = 0) {
             const suffix = idx === 0 ? '' : `-${idx}`;
-            const get = (id) => document.getElementById(id + suffix);
-
-            const loading = get('ocr-loading') || document.getElementById(`extra-ocr-loading-${idx}`);
+            const loading = document.getElementById('ocr-loading' + suffix) || document.getElementById(`extra-ocr-loading-${idx}`);
             if (loading) loading.classList.remove('hidden');
-
-            const setOrderTimeNow = () => {
-                // "Waktu Diterima" cuma satu field untuk seluruh orderan gabungan,
-                // jadi hanya diisi otomatis dari hasil scan pesanan #1.
-                if (idx !== 0) return;
-                const now = new Date();
-                now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                const ot = document.getElementById('form-ordertime');
-                if (ot) ot.value = now.toISOString().slice(0, 16);
-            };
-
-            const apiKey = getGrokApiKey();
-            if (!apiKey) {
-                if (loading) loading.classList.add('hidden');
-                showToast('API Key Groq belum diatur. Masukkan key terlebih dahulu.', 'rose');
-                updateGrokKeyUI(); // pastikan banner muncul
-                setOrderTimeNow();
-                return;
-            }
-
             try {
-                const base64Data = base64DataUrl.split(',')[1];
-                const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-
-                const systemPrompt = `Anda adalah OCR AI ekstraktor screenshot pesanan driver ojek online (ShopeeFood, SPX/Shopee Xpress, Grab, Gojek).
-Ekstrak teks gambar menjadi format JSON valid:
-{
-  "category": "Food" | "SPX" | "Instan",
-  "restoName": "nama resto / pengirim",
-  "restoAddr": "alamat resto / pengirim lengkap",
-  "recipName": "nama penerima",
-  "recipAddr": "alamat penerima lengkap",
-  "notes": "catatan pemesan / patokan alamat jika ada",
-  "cashAmount": angka nominal tunai (0 jika non-tunai/Rp0),
-  "codeOrder": "kode order misal #782 atau #4N73",
-  "totalMenu": "rincian menu atau barang",
-  "orderNo": "nomor pesanan panjang",
-  "weight": "berat barang misal 1.5 kg / 190 g",
-  "dimensions": "besar barang misal 0x0x0 cm",
-  "itemCategory": "kategori barang",
-  "orderTime": "YYYY-MM-DDTHH:mm"
-}
-
-ATURAN KHUSUS FITUR SPX (Shopee Xpress):
-1. CATAT SEMUA INFORMASI KECUALI "STATUS":
-   - "codeOrder": kode pesanan (misal #4N73). JANGAN sertakan status di sebelahnya (seperti "Diambil", "Selesai", "Diantar", "Menuju").
-   - "restoName": Nama Pengirim (misal "Toko Contoh").
-   - "restoAddr": Alamat Pengirim lengkap di atas nama pengirim.
-   - "recipName": Nama Penerima (misal "Nama Penerima Contoh").
-   - "recipAddr": Alamat Penerima lengkap.
-   - "notes": patokan alamat rumah penerima jika ada (misal "(rumah cat hijau) depan gapura").
-   - "weight": ambil dari Rincian Paket -> Berat (misal "1.5 kg").
-   - "dimensions": ambil dari Rincian Paket -> Besar (misal "0x0x0 cm").
-   - "cashAmount": jika Pembayaran Tunai -> Tagih dari Penerima adalah Rp0 maka cashAmount = 0. Jika ada nominal, tulis nominal angka.
-   - KECUALI STATUS: Status pesanan ("Diambil", "Selesai", "Diantar", "Menuju", "Pickup", dll) DILARANG dicatat di field manapun!
-2. Hanya balaskan JSON valid tanpa teks markdown atau pengantar lain.`;
-
-                // Model Vision Groq Aktif (qwen/qwen3.8-27b & qwen/qwen3.6-27b)
-                const visionModels = [
-                    'qwen/qwen3.8-27b',
-                    'qwen/qwen3.6-27b'
-                ];
-
-                let res = null;
-                let lastErrData = null;
-
-                for (const modelName of visionModels) {
-                    const payload = {
-                        model: modelName,
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            {
-                                role: 'user',
-                                content: [
-                                    {
-                                        type: 'image_url',
-                                        image_url: {
-                                            url: `data:image/jpeg;base64,${base64Data}`
-                                        }
-                                    },
-                                    {
-                                        type: 'text',
-                                        text: 'Ekstrak data screenshot pesanan driver ini ke JSON sesuai format di atas:'
-                                    }
-                                ]
-                            }
-                        ],
-                        temperature: 0.1,
-                        max_tokens: 800
-                    };
-
-                    res = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${apiKey}`
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (res.ok) break;
-
-                    lastErrData = await res.json().catch(() => ({}));
-                    console.warn(`Groq model ${modelName} returned status ${res.status}:`, lastErrData);
-
-                    // Jika error 401 atau 403, key salah — jangan coba model lain
-                    if (res.status === 401 || res.status === 403) break;
-                }
-
-                if (!res || !res.ok) {
-                    const errMsg = lastErrData?.error?.message || lastErrData?.message || res?.statusText;
-                    console.error('Groq API Error Response:', lastErrData);
-                    if (res?.status === 401 || res?.status === 403) {
-                        showToast('API Key Groq tidak valid. Periksa key Anda di console.groq.com.', 'rose');
-                        clearGrokApiKey();
-                    } else if (res?.status === 429) {
-                        showToast('Rate limit Groq tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
-                    } else {
-                        showToast(`Groq API Error (${res?.status || 500}): ${errMsg}`, 'rose');
-                    }
-                    return;
-                }
-
-                const data = await res.json();
-                const textRes = data.choices?.[0]?.message?.content;
-
-                if (textRes) {
-                    const jsonMatch = textRes.match(/\{[\s\S]*\}/);
-                    if (jsonMatch) {
-                        const parsed = JSON.parse(jsonMatch[0]);
-
-                        if (parsed.category) get('form-category').value = parsed.category;
-                        if (idx === 0) onCategoryChange(); else onExtraCategoryChange(idx);
-
-                        // Sanitasi khusus SPX: pastikan status tidak bocor ke codeOrder
-                        if (parsed.codeOrder) {
-                            parsed.codeOrder = parsed.codeOrder.replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered)\b/gi, '').trim();
-                        }
-                        if (parsed.category === 'SPX' || parsed.category === 'Instan') {
-                            const pf = get('form-platform');
-                            if (pf) pf.value = 'SPX';
-                        }
-
-                        if (parsed.restoName) get('form-restoname').value = parsed.restoName;
-                        if (parsed.restoAddr) get('form-restoaddr').value = parsed.restoAddr;
-                        if (parsed.recipName) get('form-recipname').value = parsed.recipName;
-                        if (parsed.recipAddr) get('form-recipaddr').value = parsed.recipAddr;
-                        if (parsed.notes) get('form-notes').value = parsed.notes;
-
-                        if (parsed.cashAmount !== undefined) {
-                            get('form-cashamount').value = parsed.cashAmount;
-                            if (idx === 0) updatePaymentMethodFromAmount(); else updateExtraPaymentMethod(idx);
-                        }
-
-                        if (get('form-codeorder') && parsed.codeOrder) {
-                            get('form-codeorder').value = parsed.codeOrder;
-                        }
-                        if (get('form-totalmenu') && parsed.totalMenu) {
-                            get('form-totalmenu').value = parsed.totalMenu;
-                        }
-                        if (get('form-orderno') && parsed.orderNo) {
-                            get('form-orderno').value = parsed.orderNo;
-                        }
-                        if (get('form-weight') && parsed.weight) {
-                            get('form-weight').value = parsed.weight;
-                        }
-                        if (get('form-dimensions') && parsed.dimensions) {
-                            get('form-dimensions').value = parsed.dimensions;
-                        }
-                        if (get('form-itemcategory') && parsed.itemCategory) {
-                            get('form-itemcategory').value = parsed.itemCategory;
-                        }
-
-                        showToast(idx === 0 ? '✨ Grok AI Berhasil Membaca Screenshot!' : `✨ Grok AI Berhasil Membaca Screenshot Pesanan #${idx + 1}!`, 'emerald');
-                    } else {
-                        showToast('AI tidak dapat mengekstrak data. Isi form secara manual.', 'amber');
-                    }
+                const p = await aiExtract(base64DataUrl);
+                if (p) {
+                    aiApply(p, n => document.getElementById(`form-${n}${suffix}`),
+                        () => idx === 0 ? onCategoryChange() : onExtraCategoryChange(idx),
+                        () => idx === 0 ? updatePaymentMethodFromAmount() : updateExtraPaymentMethod(idx));
+                    showToast(idx === 0 ? '✨ AI Berhasil Membaca Screenshot!' : `✨ AI Berhasil Membaca Pesanan #${idx + 1}!`, 'emerald');
                 }
             } catch (err) {
-                console.warn('Grok AI OCR error:', err);
-                showToast('Koneksi gagal. Periksa internet & coba lagi.', 'rose');
+                console.warn('AI OCR error:', err); showToast('Gagal memproses screenshot.', 'rose');
             } finally {
                 if (loading) loading.classList.add('hidden');
-                setOrderTimeNow();
+                if (idx === 0) { // waktu diterima = sekarang
+                    const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                    const ot = document.getElementById('form-ordertime'); if (ot) ot.value = now.toISOString().slice(0, 16);
+                }
             }
         }
+
+        // AI Fusion di modal Edit Gabungan
+        async function ecScan(key, input) {
+            const file = input.files[0]; input.value = '';
+            if (!file) return;
+            const st = document.getElementById(`ec-scan-status-${key}`);
+            if (st) st.innerText = '⏳';
+            try {
+                const img = await aiResizeFile(file);
+                const p = await aiExtract(img.ai);
+                if (p) {
+                    aiApply(p, n => document.getElementById(`ec-${n}-${key}`), () => onEditCombinedCategoryChange(key), () => updateEditCombinedPaymentMethod(key));
+                    const sub = editCombinedState.subOrders.find(x => x._key === key); if (sub) sub.screenshot = img.store;
+                    showToast('✨ AI berhasil mengisi pesanan ini', 'emerald');
+                }
+            } catch (e) { showToast('Gagal memproses screenshot.', 'rose'); }
+            if (st) st.innerText = '';
+        }
+
+        // Edit pesanan tunggal -> tambah pesanan lain (jadi gabungan)
+        function convertSingleToCombinedEdit() {
+            const id = document.getElementById('edit-form-id').value;
+            saveEditForm({ preventDefault() {} });
+            const o = ordersList.find(x => x.id === id);
+            if (!o || o.isCombined) return;
+            const sub = Object.assign({}, o, { _key: 'k0' });
+            ['id','isCombined','subOrders','points','timestamp','orderTime','distanceKm','routeDurationMin','startCheckin'].forEach(k => delete sub[k]);
+            sub.orderIncome = 0;
+            editCombinedKeyCounter = 1;
+            editCombinedState = { subOrders: [sub], points: [{ key: 'k0', role: 'resto' }, { key: 'k0', role: 'recip' }] };
+            document.getElementById('edit-combined-order-id').value = o.id;
+            document.getElementById('edit-combined-ordertime').value = o.orderTime || '';
+            document.getElementById('ec-total-income').value = o.orderIncome || 0;
+            addEditCombinedSubOrder();
+            document.getElementById('edit-combined-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Platform sesuai kategori: Food->ShopeeFood (Grab/Gojek tetap boleh), SPX->SPX, Instan->SPX Instan
+        function effPlatform(x) {
+            const c = x.category, p = x.platform || 'Lainnya';
+            if (c === 'Instan') return 'SPX Instan';
+            if (c === 'SPX') return 'SPX';
+            if (c === 'Food') return (p === 'SPX' || p === 'SPX Instan' || p === 'Lainnya') ? 'ShopeeFood' : p;
+            return p;
+        }
+        function autoPlat(catId, platId) {
+            const c = document.getElementById(catId), p = document.getElementById(platId);
+            if (!c || !p) return;
+            p.value = effPlatform({ category: c.value, platform: p.value });
+        }
+
 
         function saveOrderForm(e) {
             e.preventDefault();
@@ -3379,8 +3372,8 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
 
                 if (platformFilter !== 'ALL') {
                     if (o.isCombined) {
-                        if (!(o.subOrders || []).some(s => (s.platform || 'Lainnya') === platformFilter)) return false;
-                    } else if ((o.platform || 'Lainnya') !== platformFilter) {
+                        if (!(o.subOrders || []).some(s => effPlatform(s) === platformFilter)) return false;
+                    } else if (effPlatform(o) !== platformFilter) {
                         return false;
                     }
                 }
@@ -3683,14 +3676,14 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             orders.forEach(o => {
                 if (o.isCombined) {
                     (o.subOrders || []).forEach(s => {
-                        const p = s.platform || 'Lainnya';
+                        const p = effPlatform(s);
                         if (!map[p]) map[p] = { orders: 0, income: 0 };
                         map[p].orders++;
                         map[p].income += (s.orderIncome || 0);
                     });
                     return;
                 }
-                const p = o.platform || 'Lainnya';
+                const p = effPlatform(o);
                 if (!map[p]) map[p] = { orders: 0, income: 0 };
                 map[p].orders++;
                 map[p].income += (o.orderIncome || 0);
@@ -3897,8 +3890,8 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
 
             const formattedTime = new Date(o.timestamp).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-            const platformLabels = { SPX: '📦 SPX', ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
-            const platformBadge = `<span class="bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-md font-bold text-[10px]">${platformLabels[o.platform] || platformLabels.Lainnya}</span>`;
+            const platformLabels = { 'SPX Instan': '⚡ SPX Instan', SPX: '📦 SPX', ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
+            const platformBadge = `<span class="bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-md font-bold text-[10px]">${platformLabels[effPlatform(o)] || platformLabels.Lainnya}</span>`;
             const incomeBadge = (o.orderIncome || 0) > 0
                 ? `<span class="text-[10px] font-extrabold text-emerald-600">+Rp${o.orderIncome.toLocaleString('id-ID')}</span>`
                 : '';
@@ -4082,8 +4075,8 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 payBadge.innerText = `💳 Non-Tunai`;
             }
 
-            const platformLabelsModal = { SPX: '📦 SPX (Shopee Xpress)', ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
-            document.getElementById('detail-platform-badge').innerText = platformLabelsModal[order.platform] || platformLabelsModal.Lainnya;
+            const platformLabelsModal = { 'SPX Instan': '⚡ SPX Instan', SPX: '📦 SPX (Shopee Xpress)', ShopeeFood: '🛍️ ShopeeFood', Grab: '🟢 Grab', Gojek: '🟩 Gojek', Lainnya: '📱 Lainnya' };
+            document.getElementById('detail-platform-badge').innerText = platformLabelsModal[effPlatform(order)] || platformLabelsModal.Lainnya;
             document.getElementById('detail-income-val').innerText = `Rp${(order.orderIncome || 0).toLocaleString('id-ID')}`;
             const fuelCost = computeOrderFuelCost(order);
             document.getElementById('detail-fuelcost-val').innerText = `Rp${Math.round(fuelCost).toLocaleString('id-ID')}`;
@@ -5529,14 +5522,10 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 ringEl.style.strokeDashoffset = strokeOffset;
             }
 
-            if (totalOrders >= effectiveTarget) {
-                if (ringSubEl) ringSubEl.innerText = 'Goal';
+            {
+                const isTodaySel = isSameDay(insightsSelectedDate, new Date());
+                if (ringSubEl) ringSubEl.innerText = isWeekly ? 'Minggu ini' : (isTodaySel ? 'Hari ini' : insightsSelectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
                 if (ringValEl) ringValEl.innerText = totalOrders;
-                if (ringUnitEl) ringUnitEl.innerText = 'selesai';
-            } else {
-                const remaining = effectiveTarget - totalOrders;
-                if (ringSubEl) ringSubEl.innerText = 'Remaining';
-                if (ringValEl) ringValEl.innerText = remaining;
                 if (ringUnitEl) ringUnitEl.innerText = 'order';
             }
 
@@ -5955,8 +5944,8 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             // Restos frequency
             const restos = {};
             filtered.forEach(o => {
-                const r = o.restoName || 'Lainnya';
-                restos[r] = (restos[r] || 0) + 1;
+                const names = o.isCombined ? (o.subOrders || []).map(x => x.restoName) : [o.restoName];
+                names.forEach(n => { const r = String(n || '').trim() || 'Lainnya'; restos[r] = (restos[r] || 0) + 1; });
             });
             const sortedRestos = Object.entries(restos).sort((a,b) => b[1] - a[1]).slice(0, 5);
 
@@ -6026,11 +6015,11 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
 
         function renderPlatformChart(filtered) {
             const breakdown = computePlatformBreakdown(filtered);
-            const platforms = ['SPX', 'ShopeeFood', 'Grab', 'Gojek', 'Lainnya'].filter(p => breakdown[p]);
+            const platforms = ['SPX', 'SPX Instan', 'ShopeeFood', 'Grab', 'Gojek', 'Lainnya'].filter(p => breakdown[p]);
             const __S3 = (window.__isSales && window.__isSales());
             const platformColors = __S3
-                ? { SPX: '#1E211D', ShopeeFood: '#DDFF00', Grab: '#A9BF00', Gojek: '#5C6650', Lainnya: '#C9CCC2' }
-                : { SPX: '#F97316', ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' };
+                ? { SPX: '#1E211D', 'SPX Instan': '#7A8F00', ShopeeFood: '#DDFF00', Grab: '#A9BF00', Gojek: '#5C6650', Lainnya: '#C9CCC2' }
+                : { SPX: '#F97316', 'SPX Instan': '#F59E0B', ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' };
 
             if (chartPlatformInstance) chartPlatformInstance.destroy();
 
@@ -6714,7 +6703,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                     <div class="bg-violet-50/80 p-2.5 rounded-2xl border border-violet-100 space-y-1">
                         <label class="block text-[11px] font-extrabold text-violet-900">Platform Aplikasi *</label>
                         <select id="ec-platform-${key}" class="w-full bg-white border border-violet-200 rounded-xl px-3 py-2 text-xs font-bold text-violet-700 focus:outline-none">
-                            <option value="SPX">📦 SPX (Shopee Xpress)</option>
+                            <option value="SPX">📦 SPX (Shopee Xpress)</option><option value="SPX Instan">⚡ SPX Instan</option>
                             <option value="ShopeeFood">🛍️ ShopeeFood</option>
                             <option value="Grab">🟢 Grab</option>
                             <option value="Gojek">🟩 Gojek</option>
@@ -6729,6 +6718,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                             <input type="number" id="ec-fuelcost-manual-${key}" min="0" placeholder="Kosongkan = auto" class="w-full bg-white border border-emerald-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none">
                         </div>
                     </div>
+                    <label class="flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[11px] font-extrabold py-2 rounded-xl cursor-pointer active:scale-95 transition"><input type="file" accept="image/*" class="hidden" onchange="ecScan('${key}',this)"><i class="fa-solid fa-wand-magic-sparkles"></i> Scan Screenshot (AI Fusion) <span id="ec-scan-status-${key}"></span></label>
                     <div id="ec-category-fields-${key}" class="space-y-2"></div>
                     <div class="p-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl space-y-2">
                         <span class="text-xs font-extrabold text-amber-700 flex items-center gap-1" id="ec-label-pengirim-${key}"><i class="fa-solid fa-utensils"></i> Data Resto / Pengirim</span>
@@ -6824,7 +6814,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
         function addEditCombinedSubOrder() {
             const key = 'k' + (editCombinedKeyCounter++);
             editCombinedState.subOrders.push({
-                _key: key, category: 'Food', platform: 'Lainnya', orderIncome: 0, manualFuelCost: null,
+                _key: key, category: 'Food', platform: 'ShopeeFood', screenshot: null, orderIncome: 0, manualFuelCost: null,
                 restoName: '', restoAddr: '', recipName: '', recipAddr: '', notes: '-', cashAmount: 0, payment: 'Non-Tunai',
                 restoCheckin: null, recipCheckin: null
             });
@@ -6977,6 +6967,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
             const finalSubOrders = editCombinedState.subOrders.map(s => {
                 const copy = Object.assign({}, s);
                 delete copy._key;
+                if (!copy.screenshot) copy.screenshot = createSVGPlaceholder(copy.restoName || 'Pesanan', copy.category, copy.payment);
                 return copy;
             });
 
@@ -7001,6 +6992,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
                 const totalCash = finalSubOrders.reduce((s, o) => s + (o.cashAmount || 0), 0);
 
                 const order = ordersList[idx];
+                order.isCombined = true; order.category = 'Gabungan';
                 order.subOrders = finalSubOrders;
                 order.points = finalPoints;
                 order.orderIncome = totalIncomeVal;
@@ -7063,11 +7055,12 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
       function updateDot(){var d=$('notif-dot'); if(d) d.classList.toggle('hidden',!list().some(function(n){return !n.read;}));}
       function timeAgo(ts){var m=Math.round((Date.now()-ts)/60000); if(m<1)return 'baru saja'; if(m<60)return m+' mnt lalu'; var d=new Date(ts); return (new Date().toDateString()===d.toDateString()?'':d.toLocaleDateString('id-ID',{day:'numeric',month:'short'})+' ')+d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});}
       function pushNotif(n,opt){
+        if(n.type==='order'&&!prefs().order) return;
         n.id=Date.now()+'-'+Math.random().toString(36).slice(2,6); n.ts=Date.now(); n.read=false;
         var a=list(); a.unshift(n); lsSet(NK,a.slice(0,50)); updateDot();
         if(opt&&opt.silent) return;
         var p=prefs();
-        if(!(n.type==='order'&&!p.order)) showPopup(n);
+        showPopup(n);
         if(p.sys&&document.hidden&&window.Notification&&Notification.permission==='granted'){try{new Notification(n.title,{body:n.body});}catch(e){}}
       }
       function showPopup(n){
@@ -7083,7 +7076,7 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
         while(box.children.length>3) box.firstChild.remove();
       }
       function renderList(){
-        var a=list(), el=$('notif-list'); if(!el) return;
+        var a=refreshOrderNotifs(), el=$('notif-list'); if(!el) return;
         if(!a.length){el.innerHTML='<div class="text-center py-10 text-xs text-slate-400"><i class="fa-regular fa-bell-slash text-2xl block mb-2"></i>Belum ada notifikasi</div>';return;}
         el.innerHTML=a.map(function(n){var t=TYPES[n.type]||TYPES.order;
           return '<button type="button" data-nid="'+n.id+'" class="w-full text-left flex items-start gap-3 p-3 rounded-2xl '+(n.read?'bg-slate-50':'bg-indigo-50')+' active:scale-[.98] transition">'+
@@ -7096,10 +7089,21 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
           else if(typeof switchTab==='function') switchTab('orders');
         };});
       }
+      function nameOf(o){return o.isCombined?(o.subOrders||[]).map(function(x){return x.restoName||'-';}).join(' + '):((o.restoName&&o.restoName!=='-')?o.restoName:(o.platform||'Pesanan'));}
+      function orderBody(o){
+        var d=new Date(getOrderTs(o)), isT=d.toDateString()===new Date().toDateString(), day=dayOrders(d), f=computeFinancialSummary(day);
+        var lbl=isT?'Hari ini':d.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+        return nameOf(o)+' · '+rp(o.orderIncome)+' · '+lbl+' '+countOrderUnits(day)+' order, kotor '+rp(f.grossIncome);
+      }
+      function refreshOrderNotifs(){
+        var a=list().filter(function(n){return n.type!=='order'||!n.orderId||ordersList.some(function(o){return o.id===n.orderId;});});
+        a.forEach(function(n){ if(n.type==='order'&&n.orderId){ var o=ordersList.filter(function(x){return x.id===n.orderId;})[0]; if(o) n.body=orderBody(o); } });
+        lsSet(NK,a); return a;
+      }
       function openPanel(){renderList(); $('notif-panel').classList.remove('hidden'); var a=list(); a.forEach(function(n){n.read=true;}); lsSet(NK,a); updateDot();}
       function closePanel(){$('notif-panel').classList.add('hidden');}
       function modal(html){$('notif-modal-body').innerHTML=html; $('notif-modal').classList.remove('hidden');}
-      window.openNotifPanel=openPanel; window.closeNotifPanel=closePanel;
+      window.pushNotifExt=pushNotif; window.openNotifPanel=openPanel; window.closeNotifPanel=closePanel;
       window.closeNotifModal=function(){$('notif-modal').classList.add('hidden');};
       window.clearNotifs=function(){lsSet(NK,[]); updateDot(); renderList();};
 
@@ -7182,17 +7186,18 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
       }
 
       /* ---------- pesanan baru ---------- */
-      function notifyNew(o){
-        var name=o.isCombined?('Gabungan '+((o.subOrders||[]).length)+' pesanan'):((o.restoName&&o.restoName!=='-')?o.restoName:(o.platform||'Pesanan'));
-        var todays=dayOrders(new Date()), f=computeFinancialSummary(todays);
-        pushNotif({type:'order',title:'Pesanan baru ditambahkan',body:name+' · '+rp(o.orderIncome)+' · Hari ini '+countOrderUnits(todays)+' order, kotor '+rp(f.grossIncome)});
+      function notifyNew(o,more){
+        var d=new Date(getOrderTs(o));
+        pushNotif({type:'order',orderId:o.id,date:ymd(d),title:more?'Pesanan ditambahkan ke orderan':'Pesanan baru ditambahkan',body:orderBody(o)});
       }
-      function seed(){ if(known===null) known=new Set(ordersList.map(function(o){return o.id;})); }
+      function unitMap(){var m={}; ordersList.forEach(function(o){m[o.id]=getOrderUnitCount(o);}); return m;}
+      function seed(){ if(known===null) known=unitMap(); }
       function onSaved(){
         if(known===null) return;
-        var added=ordersList.filter(function(o){return !known.has(o.id);});
-        known=new Set(ordersList.map(function(o){return o.id;}));
-        if(added.length&&added.length<=3){ added.forEach(notifyNew); checkTarget(); }
+        var cur=unitMap(), added=[];
+        ordersList.forEach(function(o){ var p=known[o.id]; if(p===undefined||cur[o.id]>p) added.push({o:o,more:p!==undefined}); });
+        known=cur;
+        if(added.length&&added.length<=3){ added.forEach(function(x){notifyNew(x.o,x.more);}); if(added.some(function(x){return new Date(getOrderTs(x.o)).toDateString()===new Date().toDateString();})) checkTarget(); }
         scheduleCheck();
       }
       var _save=saveToLocalStorage; saveToLocalStorage=function(){var r=_save.apply(this,arguments); try{onSaved();}catch(e){console.warn(e);} return r;};
@@ -7210,6 +7215,122 @@ ATURAN KHUSUS FITUR SPX (Shopee Xpress):
       };
       document.addEventListener('DOMContentLoaded',function(){syncPrefs(); updateDot();});
       window.syncNotifPrefs=syncPrefs;
+    })();
+    </script>
+    <script>
+    /* ===== Platform otomatis per kategori, titik awal driver, Limnas ===== */
+    (function(){
+      [['onCategoryChange',function(){autoPlat('form-category','form-platform');}],
+       ['onExtraCategoryChange',function(i){autoPlat('form-category-'+i,'form-platform-'+i);}],
+       ['onEditCategoryChange',function(){autoPlat('edit-form-category','edit-form-platform');}],
+       ['onEditCombinedCategoryChange',function(k){autoPlat('ec-category-'+k,'ec-platform-'+k);}]
+      ].forEach(function(x){ var f=window[x[0]]; window[x[0]]=function(){var r=f.apply(this,arguments); x[1].apply(this,arguments); return r;}; });
+
+      var PK='drivertrack_driver_prefs', TP='drivertrack_track_', $=function(i){return document.getElementById(i);};
+      var ymd=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+      var rp=function(n){return 'Rp'+Math.round(n||0).toLocaleString('id-ID');};
+      var gp=function(){try{return Object.assign({start:false,track:false},JSON.parse(localStorage.getItem(PK)||'{}'));}catch(e){return {start:false,track:false};}};
+      var dayData=function(k){try{return JSON.parse(localStorage.getItem(TP+k))||{km:0,pts:[]};}catch(e){return {km:0,pts:[]};}};
+      var km2=function(a,b,c,d){return parseFloat(calculateHaversineDistance(a,b,c,d))||0;};
+      var watchId=null, rangeDays=7, lastDay=ymd(new Date());
+
+      /* --- Est. BBM: tambah leg titik awal -> titik pertama --- */
+      function startLegKm(o){
+        if(!gp().start||!o.startCheckin) return 0;
+        var first=null;
+        if(o.isCombined){ ensureCombinedPoints(o); var p=(o.points||[])[0]; first=p?getPointCheckin(o,p):null; }
+        else first=o.restoCheckin;
+        return first?km2(o.startCheckin.lat,o.startCheckin.lon,first.lat,first.lon):0;
+      }
+      var _cof=computeOrderFuelCost;
+      computeOrderFuelCost=function(o){
+        var c=_cof(o);
+        if(!o.isCombined&&o.manualFuelCost!==null&&o.manualFuelCost!==undefined&&!isNaN(o.manualFuelCost)) return c;
+        return c+startLegKm(o)*getFuelRate();
+      };
+
+      /* --- Kotak titik awal di modal detail --- */
+      function geo(ok,fail){ if(!navigator.geolocation){fail('GPS tidak didukung');return;} navigator.geolocation.getCurrentPosition(ok,function(e){fail('Izin/sinyal GPS gagal');},{enableHighAccuracy:true,timeout:10000,maximumAge:0}); }
+      function nearestTrack(ts){ var d=dayData(ymd(new Date(ts))), best=null; d.pts.forEach(function(p){ if(p[0]<=ts&&ts-p[0]<=3600000) best=p; }); return best; }
+      window.setStartCheckin=function(id,mode){
+        var o=ordersList.find(function(x){return x.id===id;}); if(!o) return;
+        var done=function(lat,lon,acc){ o.startCheckin={lat:lat,lon:lon,accuracy:acc||15,timestamp:Date.now()}; saveToLocalStorage(); renderAllViews(); renderStartBox(o); showToast('Titik awal driver tersimpan','emerald'); };
+        if(mode==='track'){ var p=nearestTrack(getOrderTs(o)); if(p) done(p[1],p[2],20); else showToast('Belum ada data lacak sebelum order ini','amber'); return; }
+        if(mode==='clear'){ delete o.startCheckin; saveToLocalStorage(); renderAllViews(); renderStartBox(o); return; }
+        geo(function(pos){done(pos.coords.latitude,pos.coords.longitude,pos.coords.accuracy);},function(m){showToast(m,'rose');});
+      };
+      function renderStartBox(o){
+        var box=$('start-checkin-box'); if(!box) return;
+        if(!gp().start){ box.classList.add('hidden'); return; }
+        box.classList.remove('hidden');
+        var leg=startLegKm(o), has=!!o.startCheckin;
+        box.innerHTML='<p class="font-extrabold text-indigo-900 text-[11px] mb-1.5"><i class="fa-solid fa-flag-checkered mr-1"></i> Titik Awal Driver</p>'+
+          (has?'<p class="text-[10px] text-slate-600 mb-1.5">Tersimpan · jarak awal → pesanan pertama '+(leg?leg.toFixed(2)+' km (+'+rp(leg*getFuelRate())+' BBM)':'belum bisa dihitung (checkin resto dulu)')+'</p>':'<p class="text-[10px] text-slate-500 mb-1.5">Belum dicatat. Catat lokasi driver sebelum menuju resto.</p>')+
+          '<div class="flex gap-1.5"><button type="button" onclick="setStartCheckin(\''+o.id+'\',\'gps\')" class="flex-1 bg-indigo-600 text-white text-[10px] font-bold py-1.5 rounded-lg">'+(has?'Ulangi GPS':'Checkin GPS sekarang')+'</button>'+
+          '<button type="button" onclick="setStartCheckin(\''+o.id+'\',\'track\')" class="flex-1 bg-white border border-indigo-200 text-indigo-700 text-[10px] font-bold py-1.5 rounded-lg">Pakai posisi terlacak</button>'+
+          (has?'<button type="button" onclick="setStartCheckin(\''+o.id+'\',\'clear\')" class="px-2 bg-slate-100 text-slate-500 text-[10px] rounded-lg"><i class="fa-solid fa-trash"></i></button>':'')+'</div>';
+      }
+      function ensureStartBox(anchorId,o){
+        var box=$('start-checkin-box');
+        if(!box){ var a=$(anchorId); var host=a&&(a.closest('.rounded-2xl,.rounded-3xl')||a.parentElement); if(!host||!host.parentElement) return; box=document.createElement('div'); box.id='start-checkin-box'; box.className='bg-indigo-50/70 border border-indigo-200 rounded-2xl p-3 my-2'; host.parentElement.insertBefore(box,host); }
+        renderStartBox(o);
+      }
+      var _od=openOrderDetailModal; openOrderDetailModal=function(id){ _od.apply(this,arguments); var o=ordersList.find(function(x){return x.id===id;}); if(o&&!o.isCombined) ensureStartBox('resto-checkin-box',o); else if(o) ensureStartBox('detail-combined-checkin-progress',o); };
+
+      /* --- Limnas: pelacak pergerakan --- */
+      function record(pos){
+        var c=pos.coords, t=pos.timestamp||Date.now(), k=ymd(new Date(t)); if(c.accuracy>60) return;
+        var d=dayData(k), last=d.pts[d.pts.length-1];
+        if(last){ var dist=km2(last[1],last[2],c.latitude,c.longitude), dt=(t-last[0])/1000;
+          if(dist<0.03) return;
+          if(dt>0&&dist/(dt/3600)>140) return;
+          if(dt<=900) d.km+=dist; }
+        d.pts.push([t,+c.latitude.toFixed(5),+c.longitude.toFixed(5)]);
+        if(d.pts.length>3000) d.pts=d.pts.filter(function(_,i){return i%2===0;});
+        d.km=+d.km.toFixed(3);
+        try{localStorage.setItem(TP+k,JSON.stringify(d));}catch(e){}
+        renderTrackCard(); statusText();
+      }
+      function startTrack(){ if(watchId!==null||!navigator.geolocation) return; watchId=navigator.geolocation.watchPosition(record,function(){statusText('Izin lokasi ditolak/tidak tersedia');},{enableHighAccuracy:true,maximumAge:5000,timeout:30000}); }
+      function stopTrack(){ if(watchId!==null){navigator.geolocation.clearWatch(watchId); watchId=null;} }
+      function statusText(m){ var el=$('dp-status'); if(!el) return; var d=dayData(ymd(new Date())); el.innerText=m||(gp().track?(watchId!==null?'Limnas aktif · hari ini '+d.km.toFixed(2)+' km · '+rp(d.km*getFuelRate()):'Limnas menunggu izin lokasi'):'Limnas nonaktif'); }
+      window.saveDriverPrefs=function(){
+        var p={start:$('dp-start').checked,track:$('dp-track').checked}; localStorage.setItem(PK,JSON.stringify(p));
+        if(p.track) startTrack(); else stopTrack();
+        statusText(); renderTrackCard(); renderAllViews();
+        if(currentDetailOrder&&$('start-checkin-box')) renderStartBox(currentDetailOrder);
+      };
+
+      /* --- Kartu rekap Est. BBM di Home --- */
+      function renderTrackCard(){
+        var anchor=$('finance-km-info'); if(!anchor) return;
+        var card=$('track-card'), p=gp(), hasAny=false;
+        if(!card){ var host=anchor.closest('.card-shadow')||anchor.parentElement; card=document.createElement('div'); card.id='track-card'; card.className='bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3 mt-4'; host.insertAdjacentElement('afterend',card); }
+        var rate=getFuelRate(), rows=[], tk=0, today=ymd(new Date()), now=new Date();
+        for(var i=0;i<rangeDays;i++){ var d=new Date(now); d.setDate(d.getDate()-i); var k=ymd(d), dd=dayData(k); if(dd.km>0) hasAny=true; rows.push({k:k,d:d,km:dd.km,live:k===today}); if(k!==today) tk+=dd.km; }
+        card.classList.toggle('hidden',!p.track&&!hasAny);
+        var fin=rows.filter(function(r){return !r.live;}), tf=tk*rate;
+        card.innerHTML='<div class="flex items-center justify-between"><p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-gas-pump text-rose-500"></i> Est. BBM Pergerakan Driver (Limnas)</p><div class="flex gap-1">'+[7,14,30].map(function(n){return '<button type="button" onclick="setTrackRange('+n+')" class="text-[10px] font-bold px-2 py-1 rounded-lg '+(n===rangeDays?'bg-indigo-600 text-white':'bg-slate-100 text-slate-500')+'">'+n+'H</button>';}).join('')+'</div></div>'+
+          '<div class="grid grid-cols-2 gap-2 text-center"><div class="bg-slate-50 rounded-2xl p-2.5"><span class="text-[10px] text-slate-400 font-semibold block">Total jarak (selesai)</span><span class="text-sm font-extrabold text-slate-800">'+tk.toFixed(1)+' km</span></div><div class="bg-rose-50 rounded-2xl p-2.5"><span class="text-[10px] text-rose-500 font-semibold block">Est. BBM</span><span class="text-sm font-extrabold text-rose-700">'+rp(tf)+'</span></div></div>'+
+          '<div class="space-y-1 max-h-48 overflow-y-auto">'+rows.map(function(r){return '<div class="flex items-center justify-between text-[11px] bg-slate-50 rounded-xl px-3 py-1.5"><span class="font-semibold text-slate-600">'+(r.live?'Hari ini <span class="text-amber-500">· berjalan, final 00.00</span>':r.d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'}))+'</span><span class="font-extrabold text-slate-800">'+r.km.toFixed(1)+' km · '+rp(r.km*rate)+'</span></div>';}).join('')+'</div>'+
+          '<p class="text-[9.5px] text-slate-400 leading-snug">Dicatat dari GPS saat aplikasi terbuka. Dihitung terpisah dari Est. BBM per order (tidak dijumlahkan agar tidak dobel).</p>';
+      }
+      window.setTrackRange=function(n){rangeDays=n; renderTrackCard();};
+
+      /* --- Pergantian hari 00.00: rekap kemarin --- */
+      function midnightCheck(){
+        var t=ymd(new Date()); if(t===lastDay) return; var y=lastDay; lastDay=t; finalize(y); renderTrackCard(); renderAllViews();
+      }
+      function finalize(k){
+        var FK='drivertrack_track_final'; if(localStorage.getItem(FK)===k) return; localStorage.setItem(FK,k);
+        var d=dayData(k); if(d.km>0&&window.pushNotifExt) window.pushNotifExt({type:'summary',title:'Rekap BBM pergerakan '+k,body:d.km.toFixed(1)+' km · Est. BBM '+rp(d.km*getFuelRate())});
+      }
+      document.addEventListener('DOMContentLoaded',function(){
+        var p=gp(); if($('dp-start')) $('dp-start').checked=p.start; if($('dp-track')) $('dp-track').checked=p.track;
+        var y=new Date(); y.setDate(y.getDate()-1); finalize(ymd(y));
+        if(p.track) startTrack(); statusText(); setTimeout(renderTrackCard,800);
+      });
+      setInterval(midnightCheck,30000);
     })();
     </script>
 </body>
