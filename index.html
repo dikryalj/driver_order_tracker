@@ -439,6 +439,24 @@
       document.addEventListener('DOMContentLoaded', syncButtons);
     })();
     </script>
+    <style id="resto-rank-css">
+    #resto-rank-list{--rk-ink:#1E1B4B;--rk-mute:#64748B;--rk-track:#EEF0F7;--rk-bar:#818CF8;--rk-top:#4F46E5;--rk-no-bg:#EEF2FF;--rk-no-ink:#4F46E5;--rk-top-ink:#fff}
+    html[data-ui-theme="sales"] #resto-rank-list{--rk-ink:#1E211D;--rk-mute:#6B6F66;--rk-track:#E4E6DD;--rk-bar:#B7C93A;--rk-top:#1E211D;--rk-no-bg:#EEF0E6;--rk-no-ink:#1E211D;--rk-top-ink:#DDFF00}
+    html[data-ui-theme="focus"] #resto-rank-list{--rk-ink:#111318;--rk-mute:#7A7F94;--rk-track:#ECEEF8;--rk-bar:#8FA2FF;--rk-top:#3E5BFF;--rk-no-bg:#EEF1FF;--rk-no-ink:#3E5BFF;--rk-top-ink:#fff}
+    #resto-rank-list .rk-row{display:flex;align-items:center;gap:10px}
+    #resto-rank-list .rk-no{flex:0 0 26px;height:26px;border-radius:9px;background:var(--rk-no-bg);color:var(--rk-no-ink);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+    #resto-rank-list .rk-no.rk-top{background:var(--rk-top);color:var(--rk-top-ink)}
+    #resto-rank-list .rk-body{flex:1;min-width:0}
+    #resto-rank-list .rk-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:4px}
+    #resto-rank-list .rk-name{font-size:12px;font-weight:700;color:var(--rk-ink);line-height:1.25;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+    #resto-rank-list .rk-val{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--rk-ink)}
+    #resto-rank-list .rk-val small{font-size:9.5px;font-weight:600;color:var(--rk-mute)}
+    #resto-rank-list .rk-track{height:7px;border-radius:99px;background:var(--rk-track);overflow:hidden}
+    #resto-rank-list .rk-fill{height:100%;border-radius:99px;background:var(--rk-bar);transition:width .6s cubic-bezier(.2,.8,.2,1)}
+    #resto-rank-list .rk-fill.rk-top{background:var(--rk-top)}
+    #resto-rank-list .rk-muted{color:var(--rk-mute)}
+    html[data-ui-theme="focus"] .plat-item p:nth-child(2){color:#111318!important}
+    </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between pb-32 selection:bg-indigo-500 selection:text-white relative">
 
@@ -1031,9 +1049,7 @@
                             </h4>
                             <span class="text-[10px] font-bold text-slate-400">Top Restos</span>
                         </div>
-                        <div class="h-56">
-                            <canvas id="chart-restos"></canvas>
-                        </div>
+                        <div id="resto-rank-list" class="space-y-2.5"></div>
                     </div>
 
                     <div class="bg-white p-4 rounded-3xl card-shadow border border-slate-100">
@@ -3673,20 +3689,20 @@ ATURAN:
 
         function computePlatformBreakdown(orders) {
             const map = {};
+            const add = (p, inc) => {
+                if (!map[p]) map[p] = { orders: 0, income: 0 };
+                map[p].orders++; map[p].income += (inc || 0);
+            };
             orders.forEach(o => {
                 if (o.isCombined) {
-                    (o.subOrders || []).forEach(s => {
-                        const p = effPlatform(s);
-                        if (!map[p]) map[p] = { orders: 0, income: 0 };
-                        map[p].orders++;
-                        map[p].income += (s.orderIncome || 0);
-                    });
+                    // Pendapatan gabungan disimpan sebagai SATU total (sub-pesanan = 0),
+                    // jadi pakai porsi hasil pembagian per jarak agar SPX tidak tampil Rp0.
+                    let shares = [];
+                    try { shares = computeCombinedSubOrderFinancials(o); } catch (e) {}
+                    (o.subOrders || []).forEach((s, i) => add(effPlatform(s), (shares[i] && shares[i].incomeShare) || s.orderIncome || 0));
                     return;
                 }
-                const p = effPlatform(o);
-                if (!map[p]) map[p] = { orders: 0, income: 0 };
-                map[p].orders++;
-                map[p].income += (o.orderIncome || 0);
+                add(effPlatform(o), o.orderIncome);
             });
             return map;
         }
@@ -5941,16 +5957,7 @@ ATURAN:
                 hours[h]++;
             });
 
-            // Restos frequency
-            const restos = {};
-            filtered.forEach(o => {
-                const names = o.isCombined ? (o.subOrders || []).map(x => x.restoName) : [o.restoName];
-                names.forEach(n => { const r = String(n || '').trim() || 'Lainnya'; restos[r] = (restos[r] || 0) + 1; });
-            });
-            const sortedRestos = Object.entries(restos).sort((a,b) => b[1] - a[1]).slice(0, 5);
-
             if (chartHoursInstance) chartHoursInstance.destroy();
-            if (chartRestosInstance) chartRestosInstance.destroy();
 
             const ctx1 = document.getElementById('chart-hours').getContext('2d');
             chartHoursInstance = new Chart(ctx1, {
@@ -5981,49 +5988,60 @@ ATURAN:
                 }
             });
 
-            const ctx2 = document.getElementById('chart-restos').getContext('2d');
-            chartRestosInstance = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: sortedRestos.map(r => r[0]),
-                    datasets: [{
-                        label: 'Frekuensi Order',
-                        data: sortedRestos.map(r => r[1]),
-                        ...(window.__isSales && window.__isSales() ? {
-                            backgroundColor: sortedRestos.map((_, i) => i === 0 ? '#1E211D' : '#DDFF00'),
-                            borderColor: 'rgba(27,29,26,.15)', borderWidth: 1,
-                            borderRadius: 12, borderSkipped: false
-                        } : {
-                            backgroundColor: '#10B981',
-                            borderRadius: 6
-                        })
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { beginAtZero: true, ticks: { precision: 0 } }
-                    }
-                }
-            });
+            renderRestoRank(filtered);
 
             renderPlatformChart(filtered);
         }
 
+
+        // Peringkat resto: daftar HTML (nama penuh, jumlah, bar) agar terbaca di semua tema.
+        // Pesanan gabungan dihitung per resto masing-masing; nama dinormalisasi (besar/kecil huruf, spasi).
+        function renderRestoRank(filtered) {
+            const el = document.getElementById('resto-rank-list');
+            if (!el) return;
+            const map = {};
+            filtered.forEach(o => {
+                const names = o.isCombined ? (o.subOrders || []).map(x => x.restoName) : [o.restoName];
+                names.forEach(n => {
+                    const label = String(n || '').replace(/\s+/g, ' ').trim();
+                    if (!label || label === '-') return;
+                    const key = label.toLowerCase();
+                    if (!map[key]) map[key] = { name: label, n: 0 };
+                    map[key].n++;
+                });
+            });
+            const rows = Object.values(map).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 7);
+            if (!rows.length) { el.innerHTML = '<p class="text-[11px] text-center py-6 rk-muted">Belum ada data resto.</p>'; return; }
+            const max = rows[0].n;
+            el.innerHTML = rows.map((r, i) => `
+                <div class="rk-row">
+                    <span class="rk-no ${i === 0 ? 'rk-top' : ''}">${i + 1}</span>
+                    <div class="rk-body">
+                        <div class="rk-head"><span class="rk-name">${escapeHtml(r.name)}</span><span class="rk-val">${r.n}<small> order</small></span></div>
+                        <div class="rk-track"><div class="rk-fill ${i === 0 ? 'rk-top' : ''}" style="width:${Math.max(6, Math.round(r.n / max * 100))}%"></div></div>
+                    </div>
+                </div>`).join('');
+        }
+
         function renderPlatformChart(filtered) {
             const breakdown = computePlatformBreakdown(filtered);
-            const platforms = ['SPX', 'SPX Instan', 'ShopeeFood', 'Grab', 'Gojek', 'Lainnya'].filter(p => breakdown[p]);
-            const __S3 = (window.__isSales && window.__isSales());
-            const platformColors = __S3
-                ? { SPX: '#1E211D', 'SPX Instan': '#7A8F00', ShopeeFood: '#DDFF00', Grab: '#A9BF00', Gojek: '#5C6650', Lainnya: '#C9CCC2' }
-                : { SPX: '#F97316', 'SPX Instan': '#F59E0B', ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' };
+            const order = ['SPX', 'SPX Instan', 'ShopeeFood', 'Grab', 'Gojek', 'Lainnya'];
+            const platforms = Object.keys(breakdown).sort((a, b) => {
+                const ia = order.indexOf(a), ib = order.indexOf(b);
+                return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+            });
+            const theme = (window.getUITheme && window.getUITheme()) || 'default';
+            const palettes = {
+                default: { SPX: '#F97316', 'SPX Instan': '#F59E0B', ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' },
+                sales:   { SPX: '#1E211D', 'SPX Instan': '#7A8F00', ShopeeFood: '#A9BF00', Grab: '#5C6650', Gojek: '#8E9486', Lainnya: '#C9CCC2' },
+                focus:   { SPX: '#3E5BFF', 'SPX Instan': '#00A3FF', ShopeeFood: '#FF7A45', Grab: '#12B76A', Gojek: '#111318', Lainnya: '#9AA0B8' }
+            };
+            const pal = palettes[theme] || palettes.default;
+            const colorOf = p => pal[p] || pal.Lainnya;
 
             if (chartPlatformInstance) chartPlatformInstance.destroy();
-
             const ctx3 = document.getElementById('chart-platform').getContext('2d');
+            const maxIncome = Math.max(0, ...platforms.map(p => breakdown[p].income));
             chartPlatformInstance = new Chart(ctx3, {
                 type: 'bar',
                 data: {
@@ -6031,14 +6049,12 @@ ATURAN:
                     datasets: [{
                         label: 'Pendapatan (Rp)',
                         data: platforms.map(p => breakdown[p].income),
-                        ...(__S3 ? {
-                            backgroundColor: platforms.map(p => platformColors[p] || '#1E211D'),
-                            borderColor: 'rgba(27,29,26,.15)', borderWidth: 1,
-                            borderRadius: 12, borderSkipped: false
-                        } : {
-                            backgroundColor: platforms.map(p => platformColors[p] || '#6366F1'),
-                            borderRadius: 6
-                        })
+                        backgroundColor: platforms.map(colorOf),
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        // order tanpa pendapatan tetap terlihat sebagai batang tipis
+                        minBarLength: 6,
+                        maxBarThickness: 46
                     }]
                 },
                 options: {
@@ -6046,15 +6062,14 @@ ATURAN:
                     maintainAspectRatio: false,
                     plugins: {
                         legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => `Rp${Math.round(ctx.parsed.y).toLocaleString('id-ID')}`
-                            }
-                        }
+                        tooltip: { callbacks: {
+                            label: ctx => `Rp${Math.round(ctx.parsed.y).toLocaleString('id-ID')} · ${breakdown[ctx.label].orders} order`
+                        } }
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { callback: (v) => `${v/1000}k` } },
-                        x: { grid: { display: false } }
+                        y: { beginAtZero: true, suggestedMax: maxIncome > 0 ? undefined : 10000,
+                             ticks: { callback: v => v >= 1000 ? `${Math.round(v / 100) / 10}k` : v } },
+                        x: { grid: { display: false }, ticks: { font: { weight: '600' } } }
                     }
                 }
             });
@@ -6065,8 +6080,8 @@ ATURAN:
                 return;
             }
             listEl.innerHTML = platforms.map(p => `
-                <div class="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
-                    <p class="text-[10px] font-bold text-slate-500">${p}</p>
+                <div class="plat-item bg-slate-50 rounded-xl p-2.5 border border-slate-100" style="border-left:4px solid ${colorOf(p)}">
+                    <p class="text-[10px] font-bold text-slate-500">${escapeHtml(p)}</p>
                     <p class="text-xs font-extrabold text-slate-900">Rp${Math.round(breakdown[p].income).toLocaleString('id-ID')}</p>
                     <p class="text-[9.5px] text-slate-400">${breakdown[p].orders} order</p>
                 </div>
