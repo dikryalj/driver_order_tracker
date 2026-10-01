@@ -954,6 +954,7 @@
                             <div class="flex items-center gap-1.5 text-slate-800 font-black text-base leading-none">
                                 <span id="insights-metric-fuel">Rp 0</span>
                             </div>
+                            <p id="insights-fuel-note" class="hidden text-[10px] font-semibold text-amber-600 leading-snug mt-0.5"></p>
                         </div>
                     </div>
                 </div>
@@ -969,7 +970,7 @@
                     </div>
 
                     <div class="space-y-1">
-                        <p class="text-[11px] font-medium text-slate-400">SPX Paket</p>
+                        <p class="text-[11px] font-medium text-slate-400">SPX &amp; Instan</p>
                         <p class="text-xs font-black text-slate-800" id="insights-bar-spx-val">0/0</p>
                         <div class="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
                             <div id="insights-bar-spx-progress" class="bg-sky-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
@@ -3624,6 +3625,18 @@ ATURAN:
 
             const totalIncome = order.orderIncome || 0;
 
+            // BBM gabungan dihitung dari jarak RUTE satu perjalanan (order.distanceKm, termasuk
+            // perpindahan antar resto), sama dengan "Total km" di Home. Sebelumnya hanya
+            // jumlah garis lurus resto->penerima per pesanan sehingga BBM terlalu kecil.
+            const routeKm = order.distanceKm > 0 ? order.distanceKm : null;
+            const freeSubs = perSub.filter(q => q.manualFuel === null);
+            const freeKnownKm = freeSubs.reduce((a, q) => a + (q.distanceKm || 0), 0);
+            const routePool = routeKm !== null && n > 0 ? routeKm * fuelRate * (freeSubs.length / n) : null;
+            const routeShare = q => {
+                if (routePool === null) return null;
+                return freeKnownKm > 0 ? routePool * ((q.distanceKm || 0) / freeKnownKm) : routePool / freeSubs.length;
+            };
+
             return perSub.map(p => {
                 let incomeShare;
                 if (p.distanceKm === null) {
@@ -3636,9 +3649,10 @@ ATURAN:
                     incomeShare = totalIncome / n;
                 }
 
+                const rs = p.manualFuel !== null ? null : routeShare(p);
                 const fuelCost = p.manualFuel !== null
                     ? p.manualFuel
-                    : (p.distanceKm !== null ? p.distanceKm * fuelRate : 0);
+                    : (rs !== null ? rs : (p.distanceKm !== null ? p.distanceKm * fuelRate : 0));
 
                 return {
                     subIndex: p.subIndex,
@@ -5511,11 +5525,11 @@ ATURAN:
                 if (o.isCombined) {
                     (o.subOrders || []).forEach(s => {
                         if (s.category === 'Food') foodCount++;
-                        if (s.category === 'SPX') spxCount++;
+                        if (s.category === 'SPX' || s.category === 'Instan') spxCount++;
                     });
                 } else {
                     if (o.category === 'Food') foodCount++;
-                    if (o.category === 'SPX') spxCount++;
+                    if (o.category === 'SPX' || o.category === 'Instan') spxCount++;
                 }
             });
 
@@ -5550,6 +5564,20 @@ ATURAN:
             const fuelEl = document.getElementById('insights-metric-fuel');
             if (incomeEl) incomeEl.innerText = `Rp${Math.round(totalIncome).toLocaleString('id-ID')}`;
             if (fuelEl) fuelEl.innerText = `Rp${Math.round(totalFuel).toLocaleString('id-ID')}`;
+            const noteEl = document.getElementById('insights-fuel-note');
+            if (noteEl) {
+                const gap = targetOrders.filter(o => {
+                    if (o.manualFuelCost !== null && o.manualFuelCost !== undefined && !isNaN(o.manualFuelCost)) return false;
+                    if (!(o.distanceKm > 0)) return true;
+                    if (o.isCombined) {
+                        ensureCombinedPoints(o);
+                        return (o.points || []).some(pt => !getPointCheckin(o, pt));
+                    }
+                    return false;
+                }).length;
+                noteEl.classList.toggle('hidden', gap === 0);
+                noteEl.innerText = gap ? `${gap} order belum lengkap dipetakan, BBM mungkin lebih besar` : '';
+            }
 
             // 6. Update 3 Mini Progress Bar
             const barFoodVal = document.getElementById('insights-bar-food-val');
@@ -5901,6 +5929,29 @@ ATURAN:
             container.innerHTML = html;
         }
 
+        // Nama resto per pesanan. Orderan gabungan -> nama resto tiap sub-pesanan (bukan kata "gabungan").
+        // Dipakai bersama oleh daftar pesanan Insights dan peringkat resto agar selalu konsisten.
+        function normRestoName(n) { return String(n || '').replace(/\s+/g, ' ').trim(); }
+        function getOrderRestoNames(o) {
+            const raw = o.isCombined ? (o.subOrders || []).map(x => x.restoName) : [o.restoName];
+            return raw.map(normRestoName).filter(n => n && n !== '-');
+        }
+        // "Azdan Seblak ×2 + Seblak Prasmanan" (nama sama digabung dengan jumlah)
+        function getOrderRestoLabel(o) {
+            const seen = new Map();
+            getOrderRestoNames(o).forEach(n => {
+                const k = n.toLowerCase();
+                if (!seen.has(k)) seen.set(k, { name: n, c: 0 });
+                seen.get(k).c++;
+            });
+            const parts = [...seen.values()].map(v => v.c > 1 ? `${v.name} ×${v.c}` : v.name);
+            return parts.length ? parts.join(' + ') : (o.platform || 'Pesanan');
+        }
+        function getOrderRecipLabel(o) {
+            const names = (o.isCombined ? (o.subOrders || []).map(x => x.recipName) : [o.recipName]).map(normRestoName).filter(n => n && n !== '-');
+            return names.length ? names.join(', ') : 'Penerima';
+        }
+
         function createInsightsOrderCardHTML(o) {
             const timeStr = new Date(o.timestamp).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
             const isCash = o.cashAmount > 0;
@@ -5928,15 +5979,15 @@ ATURAN:
                     <!-- Info Order Sesuai Desain Referensi -->
                     <div class="flex-1 min-w-0 space-y-0.5">
                         <div class="flex items-center justify-between gap-1">
-                            <h5 class="text-xs font-extrabold text-slate-900 truncate group-hover:text-emerald-600 transition">
-                                ${o.restoName}
+                            <h5 class="text-xs font-extrabold text-slate-900 group-hover:text-emerald-600 transition" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;line-height:1.3">
+                                ${escapeHtml(getOrderRestoLabel(o))}
                             </h5>
                             <span class="text-[10px] font-semibold text-slate-400 flex-shrink-0">${timeStr}</span>
                         </div>
                         <p class="text-[11px] text-slate-400 font-medium truncate flex items-center gap-1">
                             <span class="text-amber-500 font-bold">💰 Rp${(o.orderIncome || 0).toLocaleString('id-ID')}</span>
                             ${o.distanceKm ? `<span>• 📍 ${o.distanceKm} km</span>` : ''}
-                            <span class="truncate">• ➔ ${o.recipName || 'Penerima'}</span>
+                            <span class="truncate">• ➔ ${escapeHtml(getOrderRecipLabel(o))}</span>
                         </p>
                     </div>
 
@@ -6001,10 +6052,7 @@ ATURAN:
             if (!el) return;
             const map = {};
             filtered.forEach(o => {
-                const names = o.isCombined ? (o.subOrders || []).map(x => x.restoName) : [o.restoName];
-                names.forEach(n => {
-                    const label = String(n || '').replace(/\s+/g, ' ').trim();
-                    if (!label || label === '-') return;
+                getOrderRestoNames(o).forEach(label => {
                     const key = label.toLowerCase();
                     if (!map[key]) map[key] = { name: label, n: 0 };
                     map[key].n++;
@@ -7346,6 +7394,19 @@ ATURAN:
         if(p.track) startTrack(); statusText(); setTimeout(renderTrackCard,800);
       });
       setInterval(midnightCheck,30000);
+    })();
+    </script>
+    <script>
+    /* Normalisasi platform data lama & hasil impor: Food->ShopeeFood, SPX->SPX, Instan->SPX Instan */
+    (function(){
+      function fix(x){ var e=effPlatform(x); if(x.platform!==e){x.platform=e; return 1;} return 0; }
+      function normalize(){
+        var n=0;
+        ordersList.forEach(function(o){ if(o.isCombined){ (o.subOrders||[]).forEach(function(sb){n+=fix(sb);}); } else n+=fix(o); });
+        if(n){ try{saveToLocalStorage();}catch(e){} try{renderAllViews();}catch(e){} }
+      }
+      var i0=initStorage; initStorage=async function(){ var r=await i0.apply(this,arguments); normalize(); return r; };
+      var c0=confirmImport; confirmImport=function(){ var r=c0.apply(this,arguments); setTimeout(normalize,300); return r; };
     })();
     </script>
 </body>
