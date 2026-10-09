@@ -288,6 +288,7 @@
     html body header.sticky>div>div:last-child{order:2}
     html body header.sticky>div>div:first-child>div:first-child{order:3}
     html body #header-greeting{font-size:0!important;line-height:0!important}
+    html body #header-greeting[data-greeting]::before{content:attr(data-greeting)}
     html body #header-greeting::before{content:"Selamat datang,";display:block;font-size:1.3rem;line-height:1.2;font-weight:600;color:var(--fk);letter-spacing:-.02em}
     html body #header-driver-name{font-size:1.3rem!important;font-weight:600!important;line-height:1.2!important;letter-spacing:-.02em}
     html body #header-driver-name::after{content:"!"}
@@ -377,6 +378,13 @@
     html body section[id^="tab-"]:not(.hidden)>*:nth-child(5){animation-delay:.24s}
     html body section[id^="tab-"]:not(.hidden)>*:nth-child(n+6){animation-delay:.3s}
     @media (prefers-reduced-motion:reduce){html body *,html body *::before,html body *::after{animation:none!important;transition:none!important}}
+    </style>
+    <style id="daily-message-css">
+    /* Pesan harian driver: netral, mengikuti warna kartu hero di semua tema */
+    .dm-box{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:16px;
+            background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.12);position:relative;z-index:1}
+    .dm-icon{font-size:14px;line-height:1.35;flex-shrink:0}
+    .dm-text{margin:0;font-size:12px;line-height:1.45;font-weight:600;color:#fff;word-break:break-word}
     </style>
     <style id="theme-switcher-ui">
     .fx-only{display:none}
@@ -607,6 +615,12 @@
                     </div>
                 </div>
 
+                <!-- Pesan harian driver (dinamis, semua tema) -->
+                <div id="driver-daily-message" class="dm-box" role="status" aria-live="polite">
+                    <span class="dm-icon" aria-hidden="true">💬</span>
+                    <p id="driver-daily-message-text" class="dm-text">Semangat narik hari ini! 🚀</p>
+                </div>
+
                 <!-- Mini Metrics Grid -->
                 <div class="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-white/10 text-center">
                     <div class="bg-white/10 rounded-2xl p-2 backdrop-blur-md">
@@ -754,15 +768,15 @@
         </section>
 
         <section id="tab-upload" class="hidden space-y-4">
-            <!-- Grok API Key Banner -->
+            <!-- AI API Key Banner -->
             <div id="grok-key-banner" class="hidden bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 rounded-2xl p-4 space-y-3">
                 <div class="flex items-start gap-3">
                     <div class="w-8 h-8 rounded-xl bg-rose-100 text-rose-500 flex items-center justify-center flex-shrink-0 text-sm">
                         <i class="fa-solid fa-key"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="text-xs font-extrabold text-rose-800">API Key Groq Belum Diatur</p>
-                        <p class="text-[11px] text-rose-600 mt-0.5">Masukkan Groq API Key (groq.com) untuk mengaktifkan fitur AI ekstrak screenshot otomatis.</p>
+                        <p class="text-xs font-extrabold text-rose-800">API Key AI Belum Diatur</p>
+                        <p class="text-[11px] text-rose-600 mt-0.5">Masukkan API Key AI untuk mengaktifkan fitur AI Pembaca Gambar (ekstrak screenshot otomatis).</p>
                     </div>
                 </div>
                 <div class="flex gap-2">
@@ -777,14 +791,14 @@
                 <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage). Dapatkan key di <a href="https://console.groq.com" target="_blank" class="underline font-bold">console.groq.com</a></p>
             </div>
 
-            <!-- Grok API Connected Status -->
+            <!-- AI API Connected Status -->
             <div id="grok-key-connected" class="hidden bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between gap-3">
                 <div class="flex items-center gap-2.5">
                     <div class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <div>
-                        <p class="text-xs font-extrabold text-emerald-800">Grok AI Terhubung</p>
+                        <p class="text-xs font-extrabold text-emerald-800">AI Vision Terhubung</p>
                         <p class="text-[10px] text-emerald-600" id="grok-key-masked">Key: gsk_••••••••</p>
                     </div>
                 </div>
@@ -799,7 +813,7 @@
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                     </div>
                     <h3 class="text-base font-bold text-slate-900">Upload Screenshot atau Foto Pesanan</h3>
-                    <p class="text-xs text-slate-400 mt-0.5">AI Grok Vision membaca data alamat, resto, dan penerima dari screenshot atau foto kamera, lalu menyimpan fotonya.</p>
+                    <p class="text-xs text-slate-400 mt-0.5">AI Vision membaca data alamat, resto, dan penerima dari screenshot atau foto kamera, lalu menyimpan fotonya.</p>
                 </div>
 
                 <!-- Dropzone Area -->
@@ -845,7 +859,7 @@
                     <div class="inline-block animate-spin text-indigo-600 text-2xl">
                         <i class="fa-solid fa-circle-notch"></i>
                     </div>
-                    <p class="text-xs font-bold text-indigo-900">AI Grok Vision Membaca Gambar...</p>
+                    <p class="text-xs font-bold text-indigo-900">AI Vision Membaca Gambar...</p>
                     <p class="text-[10px] text-indigo-600">Mengekstrak resto, resi, alamat, dan mendeteksi pembayaran tunai.</p>
                 </div>
 
@@ -984,7 +998,7 @@
                     <input type="month" id="insights-month-input" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="onInsightsMonthChange(this.value)">
                 </div>
 
-                <!-- Horizontal Weekly Date Strip (S M T W T F S) -->
+                <!-- Horizontal Weekly Date Strip (Senin - Minggu) -->
                 <div class="bg-white px-2 py-2 rounded-3xl card-shadow border border-slate-100 flex items-center justify-between mt-1">
                     <button type="button" onclick="navigateInsightsWeek(-1)" class="w-7 h-10 flex items-center justify-center text-slate-300 hover:text-slate-600 rounded-xl transition text-xs flex-shrink-0" title="Minggu Sebelumnya">
                         <i class="fa-solid fa-chevron-left"></i>
@@ -1093,7 +1107,7 @@
                         <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                             <i class="fa-solid fa-chart-column text-indigo-500"></i> Grafik Pendapatan vs Est. BBM
                         </h4>
-                        <p class="text-[10px] text-slate-400 mt-0.5" id="comparison-chart-subtitle">Perbandingan 7 hari (Minggu - Sabtu)</p>
+                        <p class="text-[10px] text-slate-400 mt-0.5" id="comparison-chart-subtitle">Perbandingan 7 hari (Senin - Minggu)</p>
                     </div>
                     <span id="comparison-chart-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-600">7 Hari</span>
                 </div>
@@ -1314,10 +1328,27 @@
                 <p id="last-backup-info" class="text-[10px] text-slate-400 text-center pt-1">Belum pernah backup.</p>
             </div>
 
-            <!-- Pengaturan AI Grok -->
+            <!-- Database Lokasi Resto/Toko (berbagi lokasi antar driver, TANPA data pesanan) -->
+            <div id="resto-db-card" class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-2.5">
+                <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-store text-indigo-600"></i> Database Lokasi Resto/Toko</p>
+                <p class="text-[11px] text-slate-400 leading-relaxed">Bagikan titik lokasi resto/toko (nama, alamat, koordinat GPS) ke driver lain tanpa membawa riwayat pesananmu. Driver yang menerima tidak perlu checkpoint ulang di resto yang sudah tercatat.</p>
+                <div class="grid grid-cols-2 gap-2 pt-1">
+                    <button type="button" onclick="backupDataResto()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-download"></i> Export Database Resto
+                    </button>
+                    <button type="button" onclick="document.getElementById('resto-db-file-input').click()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2.5 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-upload"></i> Import Database Resto
+                    </button>
+                    <input type="file" id="resto-db-file-input" accept="application/json,.json" class="hidden" onchange="restoreDataResto(event)">
+                </div>
+                <p class="text-[10px] text-slate-400 leading-snug"><i class="fa-solid fa-shield-halved"></i> File hanya berisi nama, alamat, koordinat &amp; kategori resto. Import tidak menambah, mengubah, atau menghapus pesananmu.</p>
+                <p id="resto-db-info" class="text-[10px] text-slate-400 text-center">Memuat data resto...</p>
+            </div>
+
+            <!-- Pengaturan AI Vision -->
             <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-3">
-                <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-robot text-indigo-600"></i> Pengaturan AI Grok (xAI)</p>
-                <p class="text-[11px] text-slate-400 leading-relaxed">API Key digunakan untuk mengaktifkan fitur ekstrak screenshot otomatis menggunakan Grok Vision. Key disimpan di perangkat ini saja.</p>
+                <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-robot text-indigo-600"></i> Pengaturan AI Vision</p>
+                <p class="text-[11px] text-slate-400 leading-relaxed">API Key digunakan untuk mengaktifkan fitur ekstrak screenshot otomatis menggunakan AI Vision. Key disimpan di perangkat ini saja.</p>
                 
                 <!-- Status Badge -->
                 <div id="profile-grok-status" class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2 border border-slate-100">
@@ -1326,7 +1357,7 @@
                 </div>
 
                 <div class="space-y-2">
-                    <label class="block text-[10px] font-bold text-slate-500">Grok API Key</label>
+                    <label class="block text-[10px] font-bold text-slate-500">API Key AI</label>
                     <div class="flex gap-2">
                         <div class="relative flex-1">
                             <i class="fa-solid fa-key absolute left-3 top-2.5 text-slate-400 text-[10px]"></i>
@@ -2951,7 +2982,7 @@
                         <div class="inline-block animate-spin text-indigo-600 text-lg">
                             <i class="fa-solid fa-circle-notch"></i>
                         </div>
-                        <p class="text-[10.5px] font-bold text-indigo-900">AI Grok Vision Membaca Gambar...</p>
+                        <p class="text-[10.5px] font-bold text-indigo-900">AI Vision Membaca Gambar...</p>
                     </div>
                 </div>
 
@@ -3305,7 +3336,7 @@
         }
 
         // ============================================================
-        // GROK API KEY MANAGEMENT
+        // AI API KEY MANAGEMENT
         // Key disimpan di localStorage, tidak pernah hardcode di HTML.
         // ============================================================
         const GROK_API_KEY_STORAGE = 'drivertrack_grok_api_key';
@@ -3318,26 +3349,26 @@
             const input = document.getElementById('grok-key-input-banner');
             const key = (input?.value || '').trim();
             if (!key || !key.startsWith('gsk_')) {
-                showToast('Masukkan API Key Grok yang valid (dimulai dengan gsk_).', 'rose');
+                showToast('Masukkan API Key AI yang valid (dimulai dengan gsk_).', 'rose');
                 return;
             }
             localStorage.setItem(GROK_API_KEY_STORAGE, key);
             input.value = '';
             updateGrokKeyUI();
-            showToast('Grok API Key berhasil disimpan! AI siap digunakan.', 'emerald');
+            showToast('API Key AI berhasil disimpan! AI siap digunakan.', 'emerald');
         }
 
         function saveGrokApiKeyFromProfile() {
             const input = document.getElementById('profile-grok-key-input');
             const key = (input?.value || '').trim();
             if (!key || !key.startsWith('gsk_')) {
-                showToast('Masukkan API Key Grok yang valid (dimulai dengan gsk_).', 'rose');
+                showToast('Masukkan API Key AI yang valid (dimulai dengan gsk_).', 'rose');
                 return;
             }
             localStorage.setItem(GROK_API_KEY_STORAGE, key);
             input.value = '';
             updateGrokKeyUI();
-            showToast('Grok API Key berhasil disimpan!', 'emerald');
+            showToast('API Key AI berhasil disimpan!', 'emerald');
         }
 
         function clearGrokApiKey() {
@@ -3382,7 +3413,7 @@
             if (dot && statusText) {
                 if (hasKey) {
                     dot.className = 'w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0';
-                    statusText.textContent = 'Terhubung — AI Grok Vision aktif';
+                    statusText.textContent = 'Terhubung — AI Vision aktif';
                     statusText.className = 'text-[11px] font-semibold text-emerald-600';
                 } else {
                     dot.className = 'w-2 h-2 rounded-full bg-rose-400 flex-shrink-0';
@@ -3516,7 +3547,7 @@ ATURAN:
         async function aiExtract(dataUrl) {
             const photo = aiPhotoMode; aiPhotoMode = false;   // dipakai sekali per gambar
             const apiKey = getGrokApiKey();
-            if (!apiKey) { showToast('API Key Groq belum diatur. Masukkan key terlebih dahulu.', 'rose'); updateGrokKeyUI(); return null; }
+            if (!apiKey) { showToast('API Key AI belum diatur. Masukkan key terlebih dahulu.', 'rose'); updateGrokKeyUI(); return null; }
             let lastErr = null;
             for (const model of AI_MODELS) {
                 let res;
@@ -3540,11 +3571,11 @@ ATURAN:
                 lastErr = { status: res.status, msg: err?.error?.message || res.statusText };
                 if (res.status === 401 || res.status === 403) break;
             }
-            if (lastErr?.status === 401 || lastErr?.status === 403) { showToast('API Key Groq tidak valid. Periksa key Anda di console.groq.com.', 'rose'); clearGrokApiKey(); }
-            else if (lastErr?.status === 429) showToast('Rate limit Groq tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
+            if (lastErr?.status === 401 || lastErr?.status === 403) { showToast('API Key AI tidak valid. Periksa kembali key Anda di menu Profil.', 'rose'); clearGrokApiKey(); }
+            else if (lastErr?.status === 429) showToast('Batas penggunaan AI tercapai. Tunggu sebentar lalu coba lagi.', 'amber');
             else if (lastErr?.network) showToast('Koneksi gagal. Periksa internet & coba lagi.', 'rose');
             else if (lastErr?.parse) showToast('AI tidak dapat membaca gambar ini. Isi form manual.', 'amber');
-            else showToast(`Groq API Error (${lastErr?.status || 500}): ${lastErr?.msg || ''}`, 'rose');
+            else showToast(`AI Error (${lastErr?.status || 500}): ${lastErr?.msg || ''}`, 'rose');
             return null;
         }
         // Terapkan hasil ke form. get(nama) -> elemen input
@@ -4749,6 +4780,7 @@ function ekstrakTeksLokal(rawText) {
             document.getElementById('kpi-peak-hour').innerText = maxHour;
 
             renderFinancialSummaryUI(filtered);
+            renderDailyDriverMessage();
             renderHomeOrders(filtered.slice(0, 3));
             renderOrdersList(filtered);
             if (activeTab === 'insights') {
@@ -6258,6 +6290,7 @@ function ekstrakTeksLokal(rawText) {
                 insightsDailyTarget = parseInt(val);
                 localStorage.setItem('drivertrack_daily_target', String(insightsDailyTarget));
                 renderInsightsView();
+                renderDailyDriverMessage();
                 showToast(`Target harian diatur ke ${insightsDailyTarget} pesanan.`, 'emerald');
             }
         }
@@ -6283,13 +6316,10 @@ function ekstrakTeksLokal(rawText) {
 
         function getWeekBounds(date) {
             const curr = new Date(date);
-            const dow = curr.getDay(); // 0=Sun
-            const start = new Date(curr);
-            start.setDate(curr.getDate() - dow);
-            start.setHours(0, 0, 0, 0);
-            const end = new Date(start);
-            end.setDate(start.getDate() + 6);
-            end.setHours(23, 59, 59, 999);
+            // Minggu kerja: Senin 00:00:00.000 s/d Minggu 23:59:59.999
+            const dow = (curr.getDay() + 6) % 7; // 0=Senin ... 6=Minggu
+            const start = new Date(curr.getFullYear(), curr.getMonth(), curr.getDate() - dow, 0, 0, 0, 0);
+            const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6, 23, 59, 59, 999);
             return { start, end };
         }
 
@@ -6337,7 +6367,7 @@ function ekstrakTeksLokal(rawText) {
                 monthInputEl.value = `${currentYear}-${monthStr}`;
             }
 
-            // 1. Render Strip Kalender Mingguan (S M T W T F S)
+            // 1. Render Strip Kalender Mingguan (Senin - Minggu)
             renderInsightsWeekStrip();
 
             // ----------------------------------------------------------------
@@ -6367,7 +6397,7 @@ function ekstrakTeksLokal(rawText) {
             const badgeEl = document.getElementById('comparison-chart-badge');
             if (badgeEl) badgeEl.innerText = isWeekly ? '7 Hari' : 'Hari Ini';
             const subtitleEl = document.getElementById('comparison-chart-subtitle');
-            if (subtitleEl) subtitleEl.innerText = isWeekly ? 'Perbandingan 7 hari (Minggu - Sabtu)' : 'Pendapatan & BBM hari terpilih per jam';
+            if (subtitleEl) subtitleEl.innerText = isWeekly ? 'Perbandingan 7 hari (Senin - Minggu)' : 'Pendapatan & BBM hari terpilih per jam';
 
             // 2. Pilih pesanan yang akan diarahkan
             const dayOrders = ordersList.filter(o => isSameDay(o.timestamp, insightsSelectedDate));
@@ -6482,13 +6512,13 @@ function ekstrakTeksLokal(rawText) {
                 chartComparisonInstance = null;
             }
 
-            const dayLabels = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+            const dayLabels = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']; // Senin → Minggu
             const incomeData = [];
             const fuelData = [];
             const fullLabels = [];
 
             const isWeekly = insightsPeriodMode === 'weekly';
-            const selectedDayIndex = insightsSelectedDate.getDay(); // 0-6
+            const selectedDayIndex = (insightsSelectedDate.getDay() + 6) % 7; // 0=Senin ... 6=Minggu
 
             let hasData = false;
             for (let i = 0; i < 7; i++) {
@@ -6678,11 +6708,9 @@ function ekstrakTeksLokal(rawText) {
             if (!stripContainer) return;
 
             const curr = new Date(insightsSelectedDate);
-            const dayOfWeek = curr.getDay(); // 0 = Minggu, 1 = Senin, ..., 6 = Sabtu
-            const startOfWeek = new Date(curr);
-            startOfWeek.setDate(curr.getDate() - dayOfWeek);
+            const startOfWeek = getWeekBounds(curr).start; // Senin 00:00
 
-            const dayInitials = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            const dayInitials = ['S', 'S', 'R', 'K', 'J', 'S', 'M']; // Sen Sel Rab Kam Jum Sab Min
             let html = '';
 
             for (let i = 0; i < 7; i++) {
@@ -7056,6 +7084,208 @@ function ekstrakTeksLokal(rawText) {
             }
         }
 
+        // Sapaan berdasarkan jam perangkat
+        //  00.00–04.59 Dini Hari | 05.00–10.59 Pagi | 11.00–14.59 Siang
+        //  15.00–17.59 Sore      | 18.00–18.59 Senja | 19.00–23.59 Malam
+        function getTimeGreeting(date) {
+            const h = (date || new Date()).getHours();
+            if (h < 5)  return 'Selamat Dini Hari';
+            if (h < 11) return 'Selamat Pagi';
+            if (h < 15) return 'Selamat Siang';
+            if (h < 18) return 'Selamat Sore';
+            if (h < 19) return 'Selamat Senja';
+            return 'Selamat Malam';
+        }
+
+
+        // ============================================================
+        // PESAN HARIAN DRIVER (Home, semua tema)
+        // - Teks lokal: indeks ditentukan tanggal → stabil saat refresh, berganti tiap hari.
+        // - Jika API Key AI tersimpan & online: kalimat dibuat AI sekali per hari
+        //   per status (disimpan di localStorage), lalu dipakai ulang.
+        //   Gagal/offline → otomatis pakai teks lokal.
+        // ============================================================
+        const DAILY_MSG_START = [
+            "Hari baru, rezeki baru, {nama}! Target hari ini {target} order — yuk mulai pelan tapi pasti. 🚀",
+            "Semangat {nama}! Setiap kilometer adalah rezeki, siap lanjut orderan berikutnya? 💪",
+            "Tarik napas, cek kendaraan, lalu gas! Hari ini bisa jadi hari terbaikmu, {nama}. ✨",
+            "Tenang, satu order berikutnya biasanya membuka jalan untuk order-order lainnya. 🙌",
+            "Konsisten itu kunci, {nama}. Tinggal {sisa} order lagi untuk menutup target hari ini. 🎯",
+            "Jangan lupa isi tenaga dulu ya, {nama}. Driver yang bugar, order lancar! 🍚",
+            "Pelan-pelan saja, yang penting selamat sampai tujuan. Target {target} order pasti terkejar! 🛵",
+            "Hari ini siapa tahu ada bonus menunggu. Yuk, jemput orderan berikutnya, {nama}! 🌟",
+            "Satu order demi satu order, lama-lama jadi target tercapai. Semangat, {nama}! 💫",
+            "Rezeki sudah diatur, tugas kita jemput dengan sabar dan hati-hati. Siap jalan? 🤲",
+            "Cuaca boleh berubah, semangatmu jangan. Ayo lanjut, {nama}! ☀️",
+            "Target hari ini {target} order. Kamu pernah melewati hari yang lebih berat, kok. 🔥",
+            "Atur ritme, jaga keselamatan, dan nikmati perjalanannya. Orderan berikutnya menunggu! 🚦",
+            "Kamu hebat sudah bangun dan berjuang hari ini, {nama}. Yuk kejar target pelan-pelan! 💚"
+        ];
+        const DAILY_MSG_NEAR = [
+            "Target hari ini tinggal sedikit lagi, yuk tambah {sisa} orderan lagi! 💪",
+            "Sedikit lagi, {nama}! Tinggal {sisa} order untuk menutup target hari ini. 🎯",
+            "Hampir sampai! Satu dua order lagi dan target harianmu beres. 🚀",
+            "Tetap semangat {nama}, setiap kilometer adalah rezeki. Siap lanjut orderan berikutnya? 🚀",
+            "Progres hari ini sudah bagus, {nama}. Tinggal {sisa} langkah lagi menuju target! ✨",
+            "Garis finish sudah kelihatan. Jaga fokus dan keselamatan, ya! 🏁",
+            "Sudah sejauh ini, masa berhenti sekarang? Tinggal {sisa} order lagi, {nama}! 🔥",
+            "Napas panjang, minum dulu sebentar, lalu gas lagi. Target tinggal {sisa} order! 🥤",
+            "Kerja kerasmu hari ini kelihatan hasilnya. Sedikit lagi, {nama}! 🌟",
+            "Tinggal {sisa} order lagi. Kamu pasti bisa menyelesaikannya dengan aman! 🛵",
+            "Ritme hari ini sudah pas, {nama}. Pertahankan sampai target tercapai! 💫",
+            "Hampir tuntas! Jangan terburu-buru, yang penting selamat dan lancar. 🙏"
+        ];
+        const DAILY_MSG_DONE = [
+            "Luar biasa! Target harianmu sudah tercapai hari ini! 🔥 Tetap jaga keselamatan ya!",
+            "Mantap {nama}! Rekor hari ini tembus target. Waktunya istirahat cukup atau bonus tambahan? 😎",
+            "Target {target} order tuntas, {nama}! Kamu keren hari ini. 🏆",
+            "Alhamdulillah, target hari ini aman. Boleh lanjut cari bonus atau pulang dengan tenang. 🌙",
+            "Kerja keras hari ini terbayar, {nama}. Jangan lupa istirahat dan makan yang cukup! 🍽️",
+            "Target tercapai! Setiap order tambahan sekarang adalah bonus untukmu. 🎉",
+            "Hebat, {nama}! Konsistensimu patut diacungi jempol. Tetap hati-hati di jalan. 👏",
+            "Misi hari ini selesai dengan baik. Mau tancap gas lagi atau istirahat dulu? 😄",
+            "Target sudah di tangan, {nama}! Tubuhmu juga butuh rehat, jangan dipaksa. 💚",
+            "Pencapaian bagus hari ini! Besok kita lanjutkan dengan semangat yang sama. 🚀",
+            "Kamu berhasil, {nama}! Syukuri hasilnya dan tetap utamakan keselamatan. 🤲",
+            "Target harian lunas! Sisa waktu hari ini bonus, gunakan sesuai tenagamu. ✨"
+        ];
+        const DAILY_MSG_AI_KEY = 'drivertrack_daily_msg_ai';
+        const DAILY_MSG_AI_MODELS = ['llama-3.1-8b-instant', 'qwen/qwen3.6-27b'];
+        let dailyMsgAiPending = false;
+
+        // Nomor hari lokal (stabil sepanjang hari, berganti tepat tengah malam)
+        function getDayNumber(date) {
+            const d = date || new Date();
+            return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+        }
+        function getLocalDateKey(date) {
+            const d = date || new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function getDriverFirstName() {
+            try {
+                const n = (userProfile && userProfile.name || '').trim().split(/\s+/)[0];
+                return n || 'Driver';
+            } catch (e) { return 'Driver'; }
+        }
+        function fillDailyTemplate(tpl, ctx) {
+            return tpl.replace(/\{nama\}/g, ctx.nama).replace(/\{sisa\}/g, ctx.sisa)
+                      .replace(/\{target\}/g, ctx.target).replace(/\{jumlah\}/g, ctx.count);
+        }
+        // Penyedia pesan harian: status 'start' (< 60% target), 'near' (60%–99%), 'done' (>= target)
+        function getDailyDriverMessage(count, target, name, date) {
+            const status = count >= target ? 'done' : (target > 0 && count / target >= 0.6 ? 'near' : 'start');
+            const list = status === 'done' ? DAILY_MSG_DONE : status === 'near' ? DAILY_MSG_NEAR : DAILY_MSG_START;
+            const tpl = list[getDayNumber(date) % list.length];
+            const text = fillDailyTemplate(tpl, {
+                nama: name, sisa: Math.max(1, target - count), target: target, count: count
+            });
+            return { status, text };
+        }
+
+        function loadDailyAiCache() {
+            try {
+                const c = JSON.parse(localStorage.getItem(DAILY_MSG_AI_KEY) || 'null');
+                if (c && c.date === getLocalDateKey()) return c;
+            } catch (e) {}
+            return { date: getLocalDateKey() };
+        }
+        function saveDailyAiCache(c) {
+            try { localStorage.setItem(DAILY_MSG_AI_KEY, JSON.stringify(c)); } catch (e) {}
+        }
+
+        async function fetchAiDailyMessage(status, name, count, target) {
+            if (typeof getGrokApiKey !== 'function') return null;
+            const apiKey = getGrokApiKey();
+            if (!apiKey || !navigator.onLine) return null;
+            const now = new Date();
+            const hari = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'][now.getDay()];
+            const situasi = status === 'done'
+                ? 'Target order harian sudah TERCAPAI. Beri apresiasi singkat dan ingatkan istirahat/keselamatan.'
+                : status === 'near'
+                ? 'Target order harian HAMPIR tercapai. Beri semangat untuk menuntaskan sedikit lagi.'
+                : 'Target order harian masih jauh/baru mulai. Beri semangat hangat untuk lanjut narik.';
+            const sys = 'Kamu penulis pesan penyemangat untuk driver ojek online Indonesia. Tulis SATU pesan singkat '
+                + '(maksimal 130 karakter, 1-2 kalimat) dalam bahasa Indonesia santai dan hangat, dengan 1 emoji. '
+                + 'Sapa dengan nama bila natural. JANGAN pakai angka/digit, tanda kutip, hashtag, atau penjelasan tambahan. '
+                + 'Hanya keluarkan isi pesannya. Variasikan gaya tiap hari: bisa pertanyaan, ajakan, atau apresiasi.';
+            const usr = `Nama driver: ${name}. Hari: ${hari}. Tanggal: ${getLocalDateKey(now)}. ${situasi}`;
+            const ctrl = new AbortController();
+            const timer = setTimeout(() => ctrl.abort(), 9000);
+            try {
+                for (const model of DAILY_MSG_AI_MODELS) {
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        signal: ctrl.signal,
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+                        body: JSON.stringify({ model, temperature: 1, max_tokens: 90, messages: [
+                            { role: 'system', content: sys },
+                            { role: 'user', content: usr }
+                        ] })
+                    });
+                    if (res.status === 401 || res.status === 403) return null;
+                    if (!res.ok) continue;
+                    const data = await res.json();
+                    let text = (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '';
+                    text = text.replace(/<think>[\s\S]*?<\/think>/gi, '').trim().split('\n')[0]
+                               .replace(/^["'“”‘’\s]+|["'“”‘’\s]+$/g, '').trim();
+                    if (text.length >= 8 && text.length <= 200 && !/\d/.test(text)) return text;
+                }
+            } catch (e) { /* offline / timeout → pakai teks lokal */ }
+            finally { clearTimeout(timer); }
+            return null;
+        }
+
+        function maybeRefreshDailyMessageWithAI(status, name, count, target) {
+            if (dailyMsgAiPending || typeof getGrokApiKey !== 'function' || !getGrokApiKey() || !navigator.onLine) return;
+            const cache = loadDailyAiCache();
+            const slot = cache[status];
+            if (slot && slot.text) return;                                   // sudah ada pesan AI hari ini
+            if (slot && ((slot.fails || 0) >= 3 || Date.now() - (slot.ts || 0) < 20 * 60 * 1000)) return; // jangan spam
+            dailyMsgAiPending = true;
+            fetchAiDailyMessage(status, name, count, target).then(text => {
+                const c = loadDailyAiCache();
+                const prev = c[status] || {};
+                c[status] = text ? { text, ts: Date.now() } : { text: null, ts: Date.now(), fails: (prev.fails || 0) + 1 };
+                saveDailyAiCache(c);
+            }).catch(() => {}).finally(() => {
+                dailyMsgAiPending = false;
+                renderDailyDriverMessage();
+            });
+        }
+
+        function renderDailyDriverMessage() {
+            const el = document.getElementById('driver-daily-message-text');
+            if (!el) return;
+            let count, target;
+            try { count = getTodayOrderUnitCount(); target = insightsDailyTarget || 10; }
+            catch (e) { return; } // data order belum siap; akan dirender ulang oleh renderAllViews()
+            const name = getDriverFirstName();
+            const msg = getDailyDriverMessage(count, target, name);
+            const cache = loadDailyAiCache();
+            const aiText = cache[msg.status] && cache[msg.status].text;
+            const finalText = aiText || msg.text;
+            if (el.textContent !== finalText) el.textContent = finalText; // textContent: aman dari injeksi HTML
+            if (!aiText) maybeRefreshDailyMessageWithAI(msg.status, name, count, target);
+        }
+
+        // Sapaan & pesan harian ikut berganti saat jam/hari berubah tanpa perlu reload
+        function refreshTimeBasedUI() {
+            try { updateHeaderGreeting(); } catch (e) {}
+            try { renderDailyDriverMessage(); } catch (e) {}
+        }
+        setInterval(refreshTimeBasedUI, 60000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshTimeBasedUI(); });
+
+        function updateHeaderGreeting() {
+            const el = document.getElementById('header-greeting');
+            if (!el) return;
+            const greetingText = `${getTimeGreeting()} 👋`;
+            if (el.innerText !== greetingText) el.innerText = greetingText;
+            // Tema yang menyembunyikan teks asli (Focus) membaca sapaan dari atribut ini
+            el.setAttribute('data-greeting', greetingText);
+        }
+
         function renderProfileUI() {
             const name = userProfile.name ? userProfile.name.trim() : '';
             const photo = userProfile.photo;
@@ -7068,11 +7298,8 @@ function ekstrakTeksLokal(rawText) {
             const headerGreeting = document.getElementById('header-greeting');
 
             if (headerName) headerName.innerText = name || 'Driver';
-            if (headerGreeting) {
-                const hour = new Date().getHours();
-                const salam = hour < 12 ? 'Selamat Pagi' : hour < 17 ? 'Selamat Siang' : 'Selamat Malam';
-                headerGreeting.innerText = `${salam} 👋`;
-            }
+            if (headerGreeting) updateHeaderGreeting();
+            try { renderDailyDriverMessage(); } catch (e) {}
             if (headerAvatar) {
                 if (photo) {
                     headerAvatar.innerHTML = `<img src="${photo}" alt="Avatar" class="w-full h-full object-cover">`;
@@ -9050,6 +9277,256 @@ window.RoadRouter=(function(){
 })();
 </script>
 
+<script id="resto-db-js">
+/* =====================================================================
+   DATABASE LOKASI RESTO/TOKO — Backup & Restore (berbagi antar driver)
+   - Store sendiri: localStorage 'drivertrack_database_resto' (terpisah dari pesanan).
+   - Export: HANYA nama, alamat, koordinat, kategori (+ waktu pembaruan). Tanpa pesanan.
+   - Import: HANYA menulis ke store resto. Tidak menyentuh ordersList / saveToLocalStorage.
+   - Titik dari store dipakai "ingatan resto" (memIndex) untuk pesanan baru.
+   ===================================================================== */
+(function(){
+  'use strict';
+  var STORE_KEY='drivertrack_database_resto', META_KEY='drivertrack_database_resto_meta';
+  var FORMAT='drivertrack-database-resto', VERSION=1, FILENAME='drivertrack_database_resto.json';
+  var MAX_BYTES=5*1024*1024, MAX_ITEMS=20000, NEAR_METERS=15;
+
+  var $=function(i){ return document.getElementById(i); };
+  var toast=function(m,c){ if(typeof showToast==='function') showToast(m,c||'emerald'); };
+
+  /* Kunci nama: HARUS sama dengan normName() di "ingatan resto" agar cocok */
+  function normKey(n){
+    n=String(n==null?'':n).toLowerCase();
+    try{ n=n.normalize('NFKD').replace(/[\u0300-\u036f]/g,''); }catch(e){}
+    n=n.replace(/[^a-z0-9]+/g,' ').trim();
+    return n.length>=3 ? n : '';
+  }
+  function cleanText(v,max){ return String(v==null?'':v).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,max); }
+  function cleanAddr(v){ var a=String(v==null?'':v).replace(/Catatan Pemesan:[\s\S]*/gi,''); a=cleanText(a,400); return a==='-'?'':a; }
+  function r6(x){ return Math.round(x*1e6)/1e6; }
+  function validCoord(lat,lng){
+    return isFinite(lat) && isFinite(lng) && Math.abs(lat)<=90 && Math.abs(lng)<=180 && !(Math.abs(lat)<0.0001 && Math.abs(lng)<0.0001);
+  }
+  function catOf(v){
+    v=String(v==null?'':v).toLowerCase();
+    if(/food|makan/.test(v)) return 'Food';
+    if(/spx|express|reguler|regular/.test(v)) return 'Express';
+    if(/instan|instant|sameday/.test(v)) return 'Instant';
+    return '';
+  }
+  function meters(aLat,aLng,bLat,bLng){
+    var R=6371000, t=Math.PI/180, dLa=(bLat-aLat)*t, dLo=(bLng-aLng)*t;
+    var h=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(aLat*t)*Math.cos(bLat*t)*Math.sin(dLo/2)*Math.sin(dLo/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+  }
+
+  /* ---------- store lokal ---------- */
+  function loadStore(){
+    try{ var o=JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); return (o && typeof o==='object' && !Array.isArray(o)) ? o : {}; }
+    catch(e){ return {}; }
+  }
+  function saveStore(o){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(o)); return true; }catch(e){ return false; } }
+  function loadMeta(){ try{ return JSON.parse(localStorage.getItem(META_KEY)||'{}')||{}; }catch(e){ return {}; } }
+  function saveMeta(m){ try{ localStorage.setItem(META_KEY,JSON.stringify(m)); }catch(e){} }
+
+  /* Titik resto dari Checkin GPS ASLI di pesanan (dibaca saja, hanya field resto). Titik perkiraan (Google/ingatan) tidak dibagikan. */
+  function fromOrders(){
+    var out={};
+    if(typeof ordersList==='undefined' || !ordersList) return out;
+    ordersList.forEach(function(o){
+      if(!o) return;
+      (o.isCombined ? (o.subOrders||[]) : [o]).forEach(function(h){
+        if(!h) return;
+        var c=h.restoCheckin; if(!c || c.provisional) return;
+        var lat=Number(c.lat), lng=Number(c.lon!=null?c.lon:c.lng);
+        if(!validCoord(lat,lng)) return;
+        var k=normKey(h.restoName); if(!k) return;
+        var ts=Number(c.timestamp)||0, prev=out[k];
+        var rec={namaResto:cleanText(h.restoName,200), alamatResto:cleanAddr(h.restoAddr), lat:r6(lat), lng:r6(lng), kategori:catOf(h.category||o.category), ts:ts};
+        if(!prev){ out[k]=rec; }
+        else if(ts>prev.ts){ if(!rec.alamatResto) rec.alamatResto=prev.alamatResto; if(!rec.kategori) rec.kategori=prev.kategori; out[k]=rec; }
+        else { if(!prev.alamatResto) prev.alamatResto=rec.alamatResto; if(!prev.kategori) prev.kategori=rec.kategori; }
+      });
+    });
+    return out;
+  }
+  /* Database lokal efektif = store (hasil import) + titik GPS asli dari pesanan; yang terbaru menang */
+  function getAll(){
+    var all={}, st=loadStore(), od=fromOrders();
+    Object.keys(st).forEach(function(k){
+      var e=st[k]; if(!e || !validCoord(Number(e.lat),Number(e.lng))) return;
+      all[k]={namaResto:cleanText(e.namaResto,200), alamatResto:cleanText(e.alamatResto,400), lat:Number(e.lat), lng:Number(e.lng), kategori:catOf(e.kategori), ts:Number(e.ts)||0};
+    });
+    Object.keys(od).forEach(function(k){
+      var e=od[k], cur=all[k];
+      if(!cur){ all[k]=e; return; }
+      if(e.ts>cur.ts){ if(!e.alamatResto) e.alamatResto=cur.alamatResto; if(!e.kategori) e.kategori=cur.kategori; all[k]=e; }
+      else { if(!cur.alamatResto) cur.alamatResto=e.alamatResto; if(!cur.kategori) cur.kategori=e.kategori; }
+    });
+    return all;
+  }
+
+  function updateInfo(){
+    var el=$('resto-db-info'); if(!el) return;
+    var n=Object.keys(getAll()).length, m=loadMeta(), parts=[n+' resto tersimpan di perangkat ini.'];
+    var f=function(iso){ try{ return new Date(iso).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; } };
+    if(m.lastImport) parts.push('Import terakhir: '+f(m.lastImport)+' (+'+(m.added||0)+' baru, '+(m.updated||0)+' diperbarui).');
+    if(m.lastExport) parts.push('Export terakhir: '+f(m.lastExport)+'.');
+    el.textContent=parts.join(' ');
+  }
+
+  /* ---------- EXPORT ---------- */
+  function backupDataResto(){
+    try{
+      var all=getAll(), keys=Object.keys(all);
+      if(!keys.length){ toast('Belum ada data resto dengan titik GPS untuk di-export. Lakukan Check Point di resto terlebih dahulu.','amber'); return; }
+      var list=keys.map(function(k){ return all[k]; }).sort(function(a,b){ return a.namaResto.localeCompare(b.namaResto,'id'); })
+        .map(function(r){
+          return {
+            namaResto:r.namaResto,
+            alamatResto:r.alamatResto||'',
+            koordinat:{lat:r6(r.lat), lng:r6(r.lng)},
+            kategori:r.kategori||'',
+            diperbarui:r.ts>1e11 ? new Date(r.ts).toISOString() : null
+          };
+        });
+      var payload={format:FORMAT, version:VERSION, app:'DriverTrack', exportedAt:new Date().toISOString(), total:list.length, restos:list};
+      var blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+      var url=URL.createObjectURL(blob), a=document.createElement('a');
+      a.href=url; a.download=FILENAME; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); },1500);
+      var m=loadMeta(); m.lastExport=new Date().toISOString(); saveMeta(m); updateInfo();
+      toast('Export berhasil: '+list.length+' titik lokasi Resto/Toko disimpan ke '+FILENAME+'.','emerald');
+    }catch(e){
+      console.error(e); toast('Gagal export database resto. Coba lagi.','rose');
+    }
+  }
+
+  /* ---------- VALIDASI FILE ---------- */
+  function parseRestoFile(parsed){
+    var items;
+    if(Array.isArray(parsed)){ items=parsed; }
+    else if(parsed && typeof parsed==='object'){
+      if(parsed.format && parsed.format!==FORMAT) return {error:'File ini bukan database resto DriverTrack.'};
+      if(Array.isArray(parsed.restos)){ items=parsed.restos; }
+      else if(parsed.ordersList || parsed.orders) return {error:'Ini file backup PESANAN, bukan database resto. Gunakan tombol Import Data di kartu Backup & Restore Data.'};
+      else return {error:'Struktur file tidak dikenali (daftar "restos" tidak ditemukan).'};
+      if(Number(parsed.version)>VERSION) return {error:'File dibuat dengan versi yang lebih baru. Perbarui aplikasi lalu coba lagi.'};
+    } else return {error:'Struktur file tidak dikenali.'};
+    if(items.length>MAX_ITEMS) return {error:'File terlalu besar (maksimal '+MAX_ITEMS+' resto).'};
+    var map={}, skipped=0;
+    items.forEach(function(it){
+      if(!it || typeof it!=='object'){ skipped++; return; }
+      var nama=cleanText(it.namaResto,200), k=normKey(nama);
+      var kc=it.koordinat||{}, lat=Number(kc.lat), lng=Number(kc.lng!=null?kc.lng:kc.lon);
+      if(!k || !validCoord(lat,lng)){ skipped++; return; }
+      var t=it.diperbarui ? Date.parse(it.diperbarui) : NaN;
+      var rec={namaResto:nama, alamatResto:cleanAddr(it.alamatResto), lat:r6(lat), lng:r6(lng), kategori:catOf(it.kategori), ts:isFinite(t)?t:1};
+      var prev=map[k];
+      if(!prev || rec.ts>=prev.ts){ if(prev){ if(!rec.alamatResto) rec.alamatResto=prev.alamatResto; if(!rec.kategori) rec.kategori=prev.kategori; } map[k]=rec; }
+    });
+    var list=Object.keys(map).map(function(k){ map[k].k=k; return map[k]; });
+    if(!list.length) return {error:'Tidak ada data resto yang valid di file ini.'};
+    return {list:list, skipped:skipped};
+  }
+
+  /* ---------- MERGE (tanpa duplikat) ---------- */
+  function mergeInto(list){
+    var local=getAll(), store=loadStore(), added=0, updated=0, same=0;
+    var localKeys=Object.keys(local);
+    list.forEach(function(r){
+      var key=r.k;
+      if(!local[key]){
+        /* Nama beda tapi titik hampir identik DAN nama saling memuat → anggap resto yang sama.
+           (Koordinat saja tidak cukup: banyak resto bisa berdekatan di food court / mal.) */
+        for(var i=0;i<localKeys.length;i++){
+          var lk=localKeys[i], L=local[lk];
+          if(Math.abs(L.lat-r.lat)>0.0003 || Math.abs(L.lng-r.lng)>0.0003) continue;
+          if((lk.indexOf(r.k)>=0 || r.k.indexOf(lk)>=0) && meters(L.lat,L.lng,r.lat,r.lng)<=NEAR_METERS){ key=lk; break; }
+        }
+      }
+      var cur=local[key];
+      if(!cur){
+        store[key]={namaResto:r.namaResto, alamatResto:r.alamatResto, lat:r.lat, lng:r.lng, kategori:r.kategori, ts:r.ts};
+        local[key]=store[key]; localKeys.push(key); added++;
+        return;
+      }
+      if(r.ts>cur.ts){                               // data masuk lebih baru → perbarui koordinat/alamat
+        var rec={namaResto:cur.namaResto, alamatResto:r.alamatResto||cur.alamatResto, lat:r.lat, lng:r.lng, kategori:r.kategori||cur.kategori, ts:r.ts};
+        store[key]=rec; local[key]=rec; updated++;
+      } else {                                        // data lokal sama/lebih baru → pertahankan, isi alamat/kategori yang kosong
+        var st=store[key];
+        if(st){
+          var ch=false;
+          if(!st.alamatResto && r.alamatResto){ st.alamatResto=r.alamatResto; ch=true; }
+          if(!st.kategori && r.kategori){ st.kategori=r.kategori; ch=true; }
+          if(ch) updated++; else same++;
+        } else same++;
+      }
+    });
+    return {store:store, added:added, updated:updated, same:same};
+  }
+
+  /* ---------- IMPORT ---------- */
+  function restoreDataResto(event){
+    var input=event && event.target, file=input && input.files && input.files[0];
+    if(!file) return;
+    var reset=function(){ try{ input.value=''; }catch(e){} };
+    if(file.size>MAX_BYTES){ toast('File terlalu besar (maksimal 5 MB).','rose'); reset(); return; }
+    if(!/\.json$/i.test(file.name||'') && !/json/i.test(file.type||'')){ toast('Pilih file database resto berformat .json.','rose'); reset(); return; }
+    var reader=new FileReader();
+    reader.onerror=function(){ toast('Gagal membaca file.','rose'); reset(); };
+    reader.onload=function(e){
+      try{
+        var parsed;
+        try{ parsed=JSON.parse(e.target.result); }catch(err){ toast('File bukan JSON yang valid.','rose'); return; }
+        var res=parseRestoFile(parsed);
+        if(res.error){ toast(res.error,'rose'); return; }
+        var mg=mergeInto(res.list);
+        if(mg.added>0 || mg.updated>0){
+          if(!saveStore(mg.store)){ toast('Gagal menyimpan database resto (penyimpanan penuh). Tidak ada data yang diubah.','rose'); return; }
+          var m=loadMeta(); m.lastImport=new Date().toISOString(); m.added=mg.added; m.updated=mg.updated; saveMeta(m);
+        }
+        updateInfo();
+        var tail=res.skipped>0 ? ' ('+res.skipped+' entri tidak valid dilewati)' : '';
+        if(mg.added>0){
+          toast('Berhasil menambahkan '+mg.added+' titik lokasi Resto/Toko baru!'+(mg.updated>0?' '+mg.updated+' titik diperbarui.':'')+' Siap digunakan untuk navigasi/checkpoint.'+tail,'emerald');
+        } else if(mg.updated>0){
+          toast('Tidak ada resto baru, '+mg.updated+' titik lokasi diperbarui.'+tail,'emerald');
+        } else {
+          toast('Tidak ada perubahan: semua resto di file sudah ada di perangkat ini.'+tail,'amber');
+        }
+      }catch(err){
+        console.error(err); toast('Gagal memproses file database resto.','rose');
+      } finally { reset(); }
+    };
+    reader.readAsText(file);
+  }
+
+  /* Dibaca oleh "ingatan resto" (hanya store import; titik dari pesanan sudah dipindai sendiri di sana) */
+  window.DriverTrackRestoDB={
+    index:function(){
+      var st=loadStore(), out={};
+      Object.keys(st).forEach(function(k){
+        var e=st[k], lat=Number(e&&e.lat), lng=Number(e&&e.lng);
+        if(validCoord(lat,lng)) out[k]={lat:lat,lng:lng,ts:Number(e.ts)||0};
+      });
+      return out;
+    },
+    count:function(){ return Object.keys(getAll()).length; }
+  };
+  window.backupDataResto=backupDataResto;
+  window.restoreDataResto=restoreDataResto;
+
+  /* Jumlah resto ikut diperbarui saat membuka tab Profil */
+  var _st=window.switchTab;
+  if(typeof _st==='function'){
+    window.switchTab=function(t){ var r=_st.apply(this,arguments); if(t==='profile') setTimeout(updateInfo,60); return r; };
+  }
+  document.addEventListener('DOMContentLoaded',function(){ updateInfo(); setTimeout(updateInfo,1500); });
+})();
+</script>
+
 <script>
 /* =====================================================================
    PATCH v3 — OPSI 2: POSISI OTOMATIS VIA GOOGLE MAPS (+ Check Point tetap ada)
@@ -9243,6 +9720,15 @@ window.RoadRouter=(function(){
       var ts=c.timestamp||0;
       if(!idx[k] || ts>idx[k].ts) idx[k]={lat:c.lat,lon:c.lon,ts:ts,k:k};
     }); });
+    /* Database Resto (hasil Import dari driver lain). Checkin GPS asli di pesanan tetap menang
+       kecuali entri database lebih baru. Hanya DIBACA di sini; pesanan tidak diubah. */
+    try{
+      var db=(window.DriverTrackRestoDB && window.DriverTrackRestoDB.index()) || {};
+      Object.keys(db).forEach(function(k){
+        var e=db[k]; if(!e || !isFinite(e.lat) || !isFinite(e.lng)) return;
+        if(!idx[k] || e.ts>idx[k].ts) idx[k]={lat:e.lat,lon:e.lng,ts:e.ts,k:k};
+      });
+    }catch(e){}
     return idx;
   }
   function memCount(){
