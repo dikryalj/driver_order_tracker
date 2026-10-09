@@ -5,6 +5,8 @@
     <meta name="theme-color" content="#F4F5FB" id="meta-theme-color">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>DriverTrack - Daily Task & Order Tracker</title>
+    <link rel="icon" type="image/png" href="assets/app-logo.png">
+    <link rel="apple-touch-icon" href="assets/app-logo.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -16,6 +18,8 @@
     <!-- Leaflet OpenStreetMap CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Ai lokal -->
+    <script src="assets/ocr/tesseract.min.js"></script>
 
     <!-- ============================================================
          GOOGLE MAPS (OPSI 2 — POSISI OTOMATIS)
@@ -485,9 +489,64 @@
     #resto-rank-list .rk-fill.rk-top{background:var(--rk-top)}
     #resto-rank-list .rk-muted{color:var(--rk-mute)}
     html[data-ui-theme="focus"] .plat-item p:nth-child(2){color:#111318!important}
+    @keyframes preloadBounce {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-8px) scale(1.02); }
+    }
+    .preload-logo-anim {
+        animation: preloadBounce 2.6s ease-in-out infinite;
+    }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between pb-32 selection:bg-indigo-500 selection:text-white relative">
+
+    <!-- ==========================================
+         PRELOAD / SPLASH SCREEN (GAMBAR 2)
+         ========================================== -->
+    <div id="app-preload-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-between bg-gradient-to-b from-[#0B1120] via-[#0F172A] to-[#1E1B4B] text-white p-6 select-none overflow-hidden transition-all duration-700 ease-out">
+        <!-- Top indicator -->
+        <div class="w-full max-w-sm flex items-center justify-between text-[11px] font-bold tracking-wider text-indigo-300/80 pt-2">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-motorcycle text-lime-400"></i> DRIVERTRACK</span>
+            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px]">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
+            </span>
+        </div>
+
+        <!-- Center: Gambar 2 with ambient glow & 3D styling -->
+        <div class="relative flex flex-col items-center justify-center my-auto">
+            <!-- Glowing background aura -->
+            <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-indigo-500/25 via-lime-400/20 to-blue-500/25 blur-3xl pointer-events-none -z-10 animate-pulse"></div>
+            
+            <!-- Logo Gambar 2 -->
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center drop-shadow-2xl">
+                <img src="assets/splash-logo.png" alt="DriverTrack App" class="w-full h-full object-contain preload-logo-anim filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)]">
+            </div>
+
+            <!-- Subtitle badge -->
+            <div class="mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-lg">
+                <p class="text-[11px] font-bold text-indigo-200 tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-bolt text-lime-400"></i> Partner Pintar Driver Harian
+                </p>
+            </div>
+        </div>
+
+        <!-- Bottom: Progress Bar & Status Loading -->
+        <div class="w-full max-w-xs space-y-3 pb-8">
+            <div class="flex justify-between items-center text-xs font-bold">
+                <span id="preload-status-text" class="text-slate-300 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-notch fa-spin text-lime-400 text-xs"></i> Memuat modul aplikasi...
+                </span>
+                <span id="preload-percent" class="text-lime-400 font-extrabold text-xs">0%</span>
+            </div>
+            
+            <!-- Progress Bar Track -->
+            <div class="w-full h-2.5 bg-slate-900/90 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
+                <div id="preload-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-lime-400 rounded-full transition-all duration-300 ease-out w-0 shadow-md shadow-lime-400/30"></div>
+            </div>
+            
+            <p class="text-[10px] text-center text-slate-400 font-medium">Rekap Pendapatan · Limnas GPS · Est. BBM</p>
+        </div>
+    </div>
 
     <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-100 px-4 py-3 sm:px-6">
         <div class="max-w-md mx-auto flex items-center justify-between">
@@ -1157,9 +1216,9 @@
             <!-- Titik Awal & Pelacakan Driver -->
             <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-3">
                 <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-location-crosshairs text-indigo-600"></i> Titik Awal &amp; Pelacakan Driver</p>
-                <label class="flex items-center justify-between gap-3"><span><span class="block text-xs font-bold text-slate-800">Check point titik awal driver</span><span class="block text-[10px] text-slate-400 leading-snug">Est. BBM ikut menghitung jarak lokasi awal → resto, bukan hanya resto → penerima.</span></span><input type="checkbox" id="dp-start" onchange="saveDriverPrefs()" class="w-4 h-4 accent-indigo-600 flex-shrink-0"></label>
-                <label class="flex items-center justify-between gap-3"><span><span class="block text-xs font-bold text-slate-800">Limnas (pelacak pergerakan)</span><span class="block text-[10px] text-slate-400 leading-snug">Catat semua pergerakan hari ini; rekap Est. BBM tampil di Home tiap pukul 00.00. Aktif saat aplikasi terbuka.</span></span><input type="checkbox" id="dp-track" onchange="saveDriverPrefs()" class="w-4 h-4 accent-indigo-600 flex-shrink-0"></label>
-                <p id="dp-status" class="text-[10px] font-semibold text-slate-500 bg-slate-50 rounded-xl px-3 py-2"></p>
+                <label class="flex items-center justify-between gap-3"><span><span class="block text-xs font-bold text-slate-800">Check point titik awal driver</span><span class="block text-[10px] text-slate-400 leading-snug">Est. BBM ikut menghitung jarak lokasi awal → resto, bukan hanya resto → penerima.</span></span><input type="checkbox" id="dp-start" onchange="onToggleDriverPref('start', this)" class="w-4 h-4 accent-indigo-600 flex-shrink-0"></label>
+                <label class="flex items-center justify-between gap-3"><span><span class="block text-xs font-bold text-slate-800">Limnas (pelacak pergerakan)</span><span class="block text-[10px] text-slate-400 leading-snug">Catat semua pergerakan hari ini; rekap Est. BBM tampil di Home tiap pukul 00.00. Aktif saat aplikasi terbuka.</span></span><input type="checkbox" id="dp-track" onchange="onToggleDriverPref('track', this)" class="w-4 h-4 accent-indigo-600 flex-shrink-0"></label>
+                <p id="dp-status" class="text-[10px] font-semibold text-slate-500 bg-slate-50 rounded-xl px-3 py-2 cursor-pointer transition hover:bg-slate-100" onclick="checkOrPromptGPSStatus()"></p>
             </div>
 
             <!-- Peta Limnas -->
@@ -1781,6 +1840,192 @@
     </div>
 
     <script>
+        // ==========================================
+        // DRIVERTRACK GPS & PERMISSIONS HELPER
+        // Terintegrasi dengan @capacitor/geolocation (Native Android) & fallback Browser
+        // ==========================================
+        window.DriverGPS = {
+            isNative() {
+                return !!(window.Capacitor && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('Geolocation') && window.Capacitor.Plugins && window.Capacitor.Plugins.Geolocation);
+            },
+
+            async checkPermission() {
+                if (this.isNative()) {
+                    try {
+                        const status = await window.Capacitor.Plugins.Geolocation.checkPermissions();
+                        if (status.location === 'granted' || status.coarseLocation === 'granted') return 'granted';
+                        if (status.location === 'denied') return 'denied';
+                        return 'prompt';
+                    } catch (e) {
+                        console.warn('Capacitor checkPermissions error:', e);
+                    }
+                }
+                if (navigator.permissions && navigator.permissions.query) {
+                    try {
+                        const p = await navigator.permissions.query({ name: 'geolocation' });
+                        return p.state;
+                    } catch (e) {}
+                }
+                return 'prompt';
+            },
+
+            async requestNativePermission() {
+                if (this.isNative()) {
+                    try {
+                        const res = await window.Capacitor.Plugins.Geolocation.requestPermissions();
+                        if (res.location === 'granted' || res.coarseLocation === 'granted') return true;
+                    } catch (e) {
+                        console.warn('Capacitor requestPermissions error:', e);
+                    }
+                }
+                return new Promise((resolve) => {
+                    if (!navigator.geolocation) return resolve(false);
+                    navigator.geolocation.getCurrentPosition(
+                        () => resolve(true),
+                        (err) => {
+                            console.warn('Browser GPS permission error:', err);
+                            resolve(false);
+                        },
+                        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+                    );
+                });
+            },
+
+            showPermissionModal(featureName, onConfirm, onCancel) {
+                const modal = document.getElementById('gps-permission-modal');
+                const titleEl = document.getElementById('gps-perm-title');
+                const descEl = document.getElementById('gps-perm-desc');
+                const confirmBtn = document.getElementById('gps-perm-confirm-btn');
+                const cancelBtn = document.getElementById('gps-perm-cancel-btn');
+
+                if (!modal) {
+                    if (confirm(`Aplikasi DriverTrack memerlukan izin lokasi GPS untuk mengaktifkan: ${featureName}.\n\nApakah Anda ingin mengizinkan akses lokasi sekarang?`)) {
+                        if (onConfirm) onConfirm();
+                    } else {
+                        if (onCancel) onCancel();
+                    }
+                    return;
+                }
+
+                if (titleEl) titleEl.innerText = 'Izinkan Akses Lokasi (GPS)';
+                if (descEl) descEl.innerHTML = `Fitur <b>${featureName || 'Pelacakan'}</b> memerlukan izin lokasi GPS perangkat agar dapat bekerja secara akurat.`;
+
+                const cleanup = () => {
+                    modal.classList.add('hidden');
+                    confirmBtn.onclick = null;
+                    cancelBtn.onclick = null;
+                };
+
+                confirmBtn.onclick = () => {
+                    cleanup();
+                    if (onConfirm) onConfirm();
+                };
+
+                cancelBtn.onclick = () => {
+                    cleanup();
+                    if (onCancel) onCancel();
+                };
+
+                modal.classList.remove('hidden');
+            },
+
+            showDeniedModal() {
+                const modal = document.getElementById('gps-denied-modal');
+                if (modal) modal.classList.remove('hidden');
+                else alert('Izin lokasi belum diberikan. Silakan aktifkan izin lokasi di Pengaturan HP > Aplikasi > DriverTrack > Izin > Lokasi.');
+            },
+
+            async ensurePermission(featureName = 'Fitur Lokasi') {
+                const current = await this.checkPermission();
+                if (current === 'granted') return true;
+
+                return new Promise((resolve) => {
+                    this.showPermissionModal(
+                        featureName,
+                        async () => {
+                            const granted = await this.requestNativePermission();
+                            if (granted) {
+                                showToast('✓ Izin lokasi GPS berhasil diaktifkan', 'emerald');
+                                resolve(true);
+                            } else {
+                                this.showDeniedModal();
+                                resolve(false);
+                            }
+                        },
+                        () => {
+                            resolve(false);
+                        }
+                    );
+                });
+            },
+
+            async getCurrentPosition(options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }) {
+                if (this.isNative()) {
+                    try {
+                        const pos = await window.Capacitor.Plugins.Geolocation.getCurrentPosition(options);
+                        return {
+                            coords: {
+                                latitude: pos.coords.latitude,
+                                longitude: pos.coords.longitude,
+                                accuracy: pos.coords.accuracy || 15
+                            },
+                            timestamp: pos.timestamp || Date.now()
+                        };
+                    } catch (e) {
+                        console.warn('Capacitor getCurrentPosition fallback to navigator:', e);
+                    }
+                }
+                return new Promise((resolve, reject) => {
+                    if (!navigator.geolocation) return reject(new Error('GPS tidak didukung'));
+                    navigator.geolocation.getCurrentPosition(
+                        (p) => resolve(p),
+                        (e) => reject(e),
+                        options
+                    );
+                });
+            },
+
+            async watchPosition(onSuccess, onError, options = { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 }) {
+                if (this.isNative()) {
+                    try {
+                        const watchId = await window.Capacitor.Plugins.Geolocation.watchPosition(options, (pos, err) => {
+                            if (err) {
+                                if (onError) onError(err);
+                            } else if (pos) {
+                                if (onSuccess) onSuccess({
+                                    coords: {
+                                        latitude: pos.coords.latitude,
+                                        longitude: pos.coords.longitude,
+                                        accuracy: pos.coords.accuracy || 15
+                                    },
+                                    timestamp: pos.timestamp || Date.now()
+                                });
+                            }
+                        });
+                        return { type: 'capacitor', id: watchId };
+                    } catch (e) {
+                        console.warn('Capacitor watchPosition fallback:', e);
+                    }
+                }
+                if (navigator.geolocation) {
+                    const id = navigator.geolocation.watchPosition(onSuccess, onError, options);
+                    return { type: 'navigator', id };
+                }
+                return null;
+            },
+
+            async clearWatch(watchObj) {
+                if (!watchObj) return;
+                if (watchObj.type === 'capacitor' && this.isNative()) {
+                    try {
+                        await window.Capacitor.Plugins.Geolocation.clearWatch({ id: watchObj.id });
+                    } catch (e) {}
+                } else if (navigator.geolocation) {
+                    navigator.geolocation.clearWatch(watchObj.id || watchObj);
+                }
+            }
+        };
+
         // Global App State & Map Variables
         let ordersList = [];
         let activeTab = 'dashboard';
@@ -1864,20 +2109,59 @@
             return null;
         }
 
+        function updatePreload(percent, text) {
+            const bar = document.getElementById('preload-progress-bar');
+            const pct = document.getElementById('preload-percent');
+            const stat = document.getElementById('preload-status-text');
+            if (bar) bar.style.width = `${percent}%`;
+            if (pct) pct.innerText = `${percent}%`;
+            if (stat && text) {
+                stat.innerHTML = percent < 100 
+                    ? `<i class="fa-solid fa-circle-notch fa-spin text-lime-400 text-xs"></i> ${text}`
+                    : `<i class="fa-solid fa-circle-check text-lime-400 text-xs"></i> ${text}`;
+            }
+        }
+
+        function dismissPreload() {
+            const screen = document.getElementById('app-preload-screen');
+            if (!screen || screen.dataset.dismissed) return;
+            screen.dataset.dismissed = 'true';
+            updatePreload(100, 'Siap mengaspal! 🚀');
+            setTimeout(() => {
+                screen.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
+                setTimeout(() => {
+                    screen.style.display = 'none';
+                }, 700);
+            }, 350);
+        }
+
         window.onload = async function() {
+            updatePreload(25, 'Memuat data profil driver...');
             loadUserProfile();
+            
+            updatePreload(50, 'Menyiapkan database lokal...');
             await initStorage();
+            
+            updatePreload(75, 'Memeriksa screenshot & performa...');
             const purged = purgeOldScreenshots();
             if (purged > 0) setTimeout(() => showToast(`🧹 ${purged} screenshot lama (>${SCREENSHOT_RETENTION_DAYS} hari) dibersihkan. Data pesanan tetap aman.`, 'indigo'), 600);
             initInsightsDate();
             onCategoryChange();
+            
+            updatePreload(90, 'Menyusun ringkasan pesanan...');
             renderAllViews();
             updateBackupWarningUI();
             updateLightBackupInfo();
             updateStorageIndicator();
             loadFuelRateIntoSettingInput();
             updateGrokKeyUI();
+            
+            updatePreload(100, 'Siap mengaspal! 🚀');
+            dismissPreload();
         };
+
+        // Fallback pengaman agar preload pasti tertutup setelah maksimal 2.5 detik
+        setTimeout(() => dismissPreload(), 2500);
 
         // Data CONTOH murni fiktif untuk fitur "Muat data contoh" di Settings.
         // Semua nama/alamat di bawah ini SENGAJA dibuat generik (bukan nama
@@ -3285,29 +3569,481 @@ ATURAN:
             });
         }
 
-        async function processImageWithGrok(base64DataUrl, idx = 0) {
-            const photo = aiPhotoMode;
-            const suffix = idx === 0 ? '' : `-${idx}`;
-            const loading = document.getElementById('ocr-loading' + suffix) || document.getElementById(`extra-ocr-loading-${idx}`);
-            if (loading) loading.classList.remove('hidden');
-            try {
-                const p = await aiExtract(base64DataUrl);
-                if (p) {
-                    aiApply(p, n => document.getElementById(`form-${n}${suffix}`),
-                        () => idx === 0 ? onCategoryChange() : onExtraCategoryChange(idx),
-                        () => idx === 0 ? updatePaymentMethodFromAmount() : updateExtraPaymentMethod(idx));
-                    showToast(p._label ? '✨ Label SPX terbaca. Cek ulang No. Pesanan & Kode Ambil (ada di Catatan) sebelum disimpan.' : photo ? '✨ AI membaca foto. Periksa lagi hasilnya sebelum disimpan.' : (idx === 0 ? '✨ AI Berhasil Membaca Screenshot!' : `✨ AI Berhasil Membaca Pesanan #${idx + 1}!`), photo ? 'amber' : 'emerald');
+// ═══════════════════════════════════════════════════════════════════════
+// OCR 3-TIER FALLBACK SYSTEM
+// Tier 1 → Google ML Kit (Offline Native Android)
+// Tier 2 → Groq Vision API (Online)
+// Tier 3 → Tesseract.js (Offline Web Fallback)
+// ═══════════════════════════════════════════════════════════════════════
+
+async function processImageWithGrok(base64DataUrl, idx = 0) {
+    const photo = aiPhotoMode;
+    const suffix = idx === 0 ? '' : `-${idx}`;
+    const loading = document.getElementById('ocr-loading' + suffix) || document.getElementById(`extra-ocr-loading-${idx}`);
+    if (loading) loading.classList.remove('hidden');
+
+    try {
+        let p = null;
+
+        // ── TIER 1: Google ML Kit (Capacitor Plugin — Offline Native) ─────────
+        p = await jalankanMLKit(base64DataUrl);
+        if (p) {
+            console.log('[OCR] Tier-1 ML Kit ✓');
+        }
+
+        // ── TIER 2: Groq Vision API (Online) ─────────────────────────────────
+        if (!p) {
+            if (navigator.onLine && getGrokApiKey()) {
+                console.log('[OCR] Tier-1 gagal/skip → Tier-2 Groq API...');
+                try {
+                    p = await aiExtract(base64DataUrl);
+                    if (p) console.log('[OCR] Tier-2 Groq ✓');
+                } catch (e2) {
+                    console.warn('[OCR] Tier-2 Groq error:', e2);
                 }
-            } catch (err) {
-                console.warn('AI OCR error:', err); showToast('Gagal memproses gambar.', 'rose');
-            } finally {
-                if (loading) loading.classList.add('hidden');
-                if (idx === 0) { // waktu diterima = sekarang
-                    const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-                    const ot = document.getElementById('form-ordertime'); if (ot) ot.value = now.toISOString().slice(0, 16);
-                }
+            } else {
+                console.log('[OCR] Tier-2 skip (offline atau key kosong).');
             }
         }
+
+        // ── TIER 3: Tesseract.js (Offline Web Fallback) ───────────────────────
+        if (!p) {
+            console.warn('[OCR] Tier-2 gagal/skip → Tier-3 Tesseract.js...');
+            showToast('Memproses dengan AI Lokal (Tesseract)...', 'amber');
+            try {
+                p = await jalankanTesseract(base64DataUrl);
+                if (p) console.log('[OCR] Tier-3 Tesseract ✓');
+            } catch (e3) {
+                console.warn('[OCR] Tier-3 Tesseract error:', e3);
+            }
+        }
+
+        // ── Terapkan hasil ke form ────────────────────────────────────────────
+        if (p) {
+            aiApply(p, n => document.getElementById(`form-${n}${suffix}`),
+                () => idx === 0 ? onCategoryChange() : onExtraCategoryChange(idx),
+                () => idx === 0 ? updatePaymentMethodFromAmount() : updateExtraPaymentMethod(idx));
+            showToast(photo ? '✨ AI membaca foto. Periksa lagi hasilnya.' : '✨ Berhasil membaca gambar!', 'emerald');
+        } else {
+            showToast('Semua metode OCR gagal. Isi form secara manual.', 'rose');
+        }
+    } catch (err) {
+        console.warn('[OCR] Fatal error:', err);
+        showToast('Gagal memproses gambar.', 'rose');
+    } finally {
+        if (loading) loading.classList.add('hidden');
+        if (idx === 0) {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const ot = document.getElementById('form-ordertime');
+            if (ot) ot.value = now.toISOString().slice(0, 16);
+        }
+    }
+}
+
+// ── TIER 1: Google ML Kit via Capacitor Plugin ────────────────────────────
+// Berjalan secara native di Android (offline, cepat, tanpa internet).
+// processImage() MEMBUTUHKAN path file lokal, bukan base64 data URL.
+// Alur: base64 → tulis ke cache dir via Filesystem → pass path → hapus file.
+// Di browser/laptop, Capacitor.Plugins.TextRecognition tidak ada
+// → fungsi return null sehingga sistem otomatis lanjut ke Tier 2.
+async function jalankanMLKit(base64DataUrl) {
+    let tempFileName = null;
+    try {
+        const mlkit = window.Capacitor &&
+            window.Capacitor.Plugins &&
+            window.Capacitor.Plugins.TextRecognition;
+        if (!mlkit) return null; // Tidak di Android → skip ke Tier 2
+
+        const fs = window.Capacitor.Plugins.Filesystem;
+        if (!fs) {
+            console.warn('[OCR] Filesystem plugin tidak tersedia.');
+            return null;
+        }
+
+        // ── Tulis base64 ke file sementara di cache dir Android ──────────
+        // Strip header "data:image/jpeg;base64," jika ada
+        const b64data = base64DataUrl.replace(/^data:image\/\w+;base64,/, '');
+        tempFileName = `ocr_tmp_${Date.now()}.jpg`;
+
+        await fs.writeFile({
+            path: tempFileName,
+            data: b64data,
+            directory: 'CACHE',   // Directory.Cache — tidak perlu izin storage
+            encoding: 'base64'
+        });
+
+        // ── Ambil URI absolut file agar ML Kit bisa membacanya ────────────
+        const uriResult = await fs.getUri({
+            path: tempFileName,
+            directory: 'CACHE'
+        });
+        const filePath = uriResult && uriResult.uri ? uriResult.uri : tempFileName;
+
+        // ── Panggil ML Kit Text Recognition ──────────────────────────────
+        const result = await mlkit.processImage({
+            path: filePath,
+            script: 'LATIN'  // Latin mencakup alfabet + angka (cukup untuk BINDO)
+        });
+
+        // result.text sudah berisi seluruh teks gabungan dari semua blok
+        const text = (result && result.text) ? result.text : '';
+
+        if (!text || text.trim().length < 10) return null;
+
+        console.log('[OCR] ML Kit raw text length:', text.length);
+        return ekstrakTeksLokal(text);
+
+    } catch (e) {
+        // Plugin error atau tidak tersedia → cascade ke Tier 2
+        console.info('[OCR] ML Kit tidak tersedia atau error:', e.message || e);
+        return null;
+    } finally {
+        // ── Hapus file sementara apapun hasilnya ─────────────────────────
+        if (tempFileName) {
+            try {
+                const fs2 = window.Capacitor &&
+                    window.Capacitor.Plugins &&
+                    window.Capacitor.Plugins.Filesystem;
+                if (fs2) await fs2.deleteFile({ path: tempFileName, directory: 'CACHE' });
+            } catch (_) { /* abaikan error hapus file */ }
+        }
+    }
+}
+
+// ── TIER 3: Tesseract.js (Offline Web Fallback) ───────────────────────────
+// Di-load ke RAM hanya saat dipanggil; dibebaskan setelah selesai.
+async function jalankanTesseract(base64DataUrl) {
+    if (typeof Tesseract === 'undefined') {
+        console.warn('[OCR] Tesseract.js tidak ditemukan di assets/ocr/');
+        return null;
+    }
+    try {
+        const worker = await Tesseract.createWorker('ind', 1, {
+            workerPath: 'assets/ocr/worker.min.js',
+            langPath:   'assets/ocr/',
+            corePath:   'assets/ocr/',
+            gzip: false   // file traineddata sudah di-unpack di assets/ocr/
+        });
+        const { data: { text } } = await worker.recognize(base64DataUrl);
+        await worker.terminate(); // Bebaskan RAM
+        if (!text || text.trim().length < 10) return null;
+        console.log('[OCR] Tesseract raw text length:', text.length);
+        return ekstrakTeksLokal(text);
+    } catch (e) {
+        console.error('[OCR] Tesseract error:', e);
+        return null;
+    }
+}
+
+// Alias mundur agar kode lain yang mungkin memanggil jalankanAILokal tidak error.
+const jalankanAILokal = jalankanTesseract;
+
+// Fungsi pembaca pola teks hasil OCR Tesseract — parser struktural 3-layout
+function ekstrakTeksLokal(rawText) {
+    const text  = (rawText || '').replace(/\r\n/g, '\n');
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+
+    /* -- Utilitas --------------------------------------------------- */
+    const toInt  = (str) => parseInt((str || '').replace(/\./g, '').replace(/[^\d]/g, ''), 10) || 0;
+    const clean  = (s)   => (s || '').replace(/[|\\\/~`^_={}<>*]{2,}/g, '').replace(/\s+/g, ' ').trim();
+    const joinAddr = (arr) => arr.map(clean).filter(Boolean).join(', ').replace(/,\s*,/g, ',').trim();
+    const findIdx = (re)  => lines.findIndex(l => re.test(l));
+
+    // Baris separator kota/provinsi ShopeeFood: "DISTRICT, KAB. REGENCY, JAWA TENGAH"
+    // Ini penanda AKHIR dari satu blok alamat (resto atau penerima)
+    const isCityBlock = (l) =>
+        /^[A-Z0-9\s,.()\-\/]+$/.test(l) &&
+        l.length > 8 &&
+        (/\bKAB\.\b|\bKOTA\b/i.test(l) ||
+         /\b(JAWA|BALI|SUMATERA|SUMATRA|SULAWESI|KALIMANTAN|PAPUA|NTB|NTT|DIY|DKI)\b/i.test(l));
+
+    // Apakah baris mengandung kata kunci section baru / sistem?
+    const isSys = (l) =>
+        /^(Pembayaran|Rincian|Informasi|Bukti|Total\s+\d|Bayar\s+tunai|Terima\s+Pembayaran|Tagih|No\.\s*Pesanan|Waktu\s*Pesanan|Berat\s|Besar\s|Salin$)/i.test(l) ||
+        /^(Pengirim|Penerima|Pembeli)\s*:/i.test(l);
+
+    /* == 1. DETEKSI JENIS STRUK ===================================== */
+    const isFood    = /Total\s+\d+\s+menu|Bayar\s+tunai\s+di\s+Resto|Rincian\s+Barang|Pembeli\s*:/i.test(text);
+    const isInstan  = /SPX\s*Instan|Instant|Sameday/i.test(text);
+    const isExpress = !isFood && (isInstan || /\bBerat\b|\bBesar\b|Pengirim\s*:|Rincian\s*Paket/i.test(text));
+
+    let category = isFood ? 'Food' : (isInstan ? 'Instan' : (isExpress ? 'SPX' : 'Food'));
+    let platform  = isFood ? 'ShopeeFood' : (isInstan ? 'SPX Instan' : (isExpress ? 'SPX' : 'ShopeeFood'));
+    if (/grab\s*food|grabfood/i.test(text))  { platform = 'Grab';  category = 'Food'; }
+    if (/gojek|go\s*food/i.test(text))       { platform = 'Gojek'; category = 'Food'; }
+
+    /* == 2. KODE ORDER & NO. PESANAN ================================ */
+    const matchCode = text.match(/#([A-Z0-9]{2,8})\b/i);
+    const codeOrder = matchCode
+        ? ('#' + matchCode[1].toUpperCase())
+            .replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered|Diterima)\b/gi, '').trim()
+        : '';
+    // Coba inline dulu ("No. Pesanan: 12345...") lalu coba lintas-baris
+    // (label "No. Pesanan" di baris N, angka panjang di baris N+1)
+    let orderNo = '';
+    const mOnoInline = text.match(/(?:No\.?\s*Pesanan|Nomor\s*Pesanan|Order\s*(?:ID|No\.?))\s*[:\-]?\s*(\d{14,20})/i);
+    if (mOnoInline) {
+        orderNo = mOnoInline[1].trim();
+    } else {
+        // Lintas-baris: cari baris label lalu periksa baris berikutnya
+        const iOnoLabel = findIdx(/^(?:No\.?\s*Pesanan|Nomor\s*Pesanan|Order\s*(?:ID|No\.?))\s*[:\-]?\s*$/i);
+        if (iOnoLabel >= 0 && iOnoLabel + 1 < lines.length) {
+            const nextLine = lines[iOnoLabel + 1].replace(/\s/g, '');
+            if (/^\d{14,20}$/.test(nextLine)) orderNo = lines[iOnoLabel + 1].trim();
+        }
+        // Fallback: angka 16-20 digit mandiri di teks
+        if (!orderNo) {
+            const mOnoFallback = text.match(/\b(\d{16,20})\b/);
+            if (mOnoFallback) orderNo = mOnoFallback[1].trim();
+        }
+    }
+
+    /* == 3. INDEKS LANDMARK BARIS =================================== */
+    const iCode     = findIdx(/#[A-Z0-9]{2,8}/i);
+    const iPengirim = findIdx(/^Pengirim\s*:/i);
+    const iPenerima = findIdx(/^Penerima\s*:/i);
+    const iPembeli  = findIdx(/^Pembeli\s*:/i);
+    const iRincian  = findIdx(/^Rincian\s+(Barang|Paket)/i);
+
+    let restoName = '', restoAddr = '', recipName = '', recipAddr = '';
+
+    /* == 4-5. EKSTRAKSI NAMA & ALAMAT =============================== */
+
+    if (isExpress || isInstan) {
+        /* -- SPX LAYOUT ---------------------------------------------
+           [#kode]
+           [restoAddr baris...]     ← blok sebelum "Pengirim:"
+           Pengirim: NAMA           ← restoName (mungkin wrap ke baris berikut)
+           [recipAddr baris...]     ← blok sebelum "Penerima:"
+           Penerima: NAMA           ← recipName (mungkin wrap ke baris berikut)
+        ----------------------------------------------------------- */
+        const inlineVal = (lineStr, re) => { const m = lineStr.match(re); return m ? m[1].trim() : ''; };
+
+        // restoName: inline "Pengirim: ..." + kemungkinan baris lanjutan (nama terpotong)
+        if (iPengirim >= 0) {
+            const parts = [inlineVal(lines[iPengirim], /^Pengirim\s*:\s*(.+)/i)];
+            for (let j = iPengirim + 1; j <= iPengirim + 3 && j < lines.length; j++) {
+                const l = lines[j];
+                if (isSys(l) || isCityBlock(l) || /^(Penerima|Pembayaran|Rincian|Bukti)/i.test(l)) break;
+                parts.push(clean(l));
+            }
+            restoName = parts.filter(Boolean).join(' ').trim();
+        }
+
+        // restoAddr: baris antara [#kode] dan "Pengirim:"
+        if (iPengirim > 0) {
+            const start = iCode >= 0 ? iCode + 1 : 0;
+            const arr = [];
+            for (let i = start; i < iPengirim; i++) {
+                const l = clean(lines[i]);
+                if (l && !/#[A-Z0-9]/i.test(l)) arr.push(l);
+            }
+            restoAddr = joinAddr(arr);
+        }
+
+        // recipName: inline "Penerima: ..." + kemungkinan baris lanjutan
+        if (iPenerima >= 0) {
+            const parts = [inlineVal(lines[iPenerima], /^Penerima\s*:\s*(.+)/i)];
+            for (let j = iPenerima + 1; j <= iPenerima + 3 && j < lines.length; j++) {
+                const l = lines[j];
+                if (isSys(l) || isCityBlock(l) || /^(Pengirim|Pembayaran|Rincian|Bukti)/i.test(l)) break;
+                parts.push(clean(l));
+            }
+            recipName = parts.filter(Boolean).join(' ').trim();
+        }
+
+        // recipAddr: baris antara akhir blok restoName dan "Penerima:"
+        if (iPengirim >= 0 && iPenerima > iPengirim) {
+            const nameExtra = (restoName.split(/\s+/).length > 6) ? 2 : 1;
+            const arr = [];
+            for (let i = iPengirim + nameExtra; i < iPenerima; i++) {
+                const l = clean(lines[i]);
+                if (l) arr.push(l);
+            }
+            recipAddr = joinAddr(arr);
+        }
+
+    } else {
+        /* -- SHOPEEFOOD LAYOUT --------------------------------------
+           [#kode]
+           [icon OCR garbage?]
+           [restoName baris 1..n]   ← bold title resto, mungkin multi-baris
+           [restoAddr baris...]     ← alamat jalan resto
+           KECAMATAN, KAB.X, JAWA  ← CITY BLOCK → batas akhir restoAddr
+           [recipAddr baris...]     ← alamat tujuan penerima
+           KECAMATAN, KAB.X, JAWA  ← CITY BLOCK → batas akhir recipAddr
+           Pembeli: NAMA
+           Catatan: ...
+        ----------------------------------------------------------- */
+
+        // recipName dari label "Pembeli:" atau "Penerima:"
+        const iRecipLabel = iPembeli >= 0 ? iPembeli : iPenerima;
+        if (iRecipLabel >= 0) {
+            const re = iPembeli >= 0 ? /^Pembeli\s*:\s*(.+)/i : /^Penerima\s*:\s*(.+)/i;
+            const m = lines[iRecipLabel].match(re);
+            recipName = m ? m[1].trim() : '';
+        }
+
+        const searchEnd = iRecipLabel >= 0 ? iRecipLabel : lines.length;
+        const startSearch = iCode >= 0 ? iCode + 1 : 0;
+
+        // Pola yang BUKAN nama resto (skip)
+        const SKIP = /^(\d+|#\S+)$|^(Total|Bayar|Tunai|COD|Rp\s*\d|No\.|Waktu|Status|Pembeli|Penerima|Pengirim|Catatan|Alamat|Detail|Pesanan|Informasi|Rincian|Pembayaran|Shopee|Grab|Gojek|SPX|Diterima|Diambil|Diantar|Selesai|Menuju|Salin)/i;
+
+        // Cari baris mulai nama resto (huruf kapital, bukan garbage, bukan alamat, bukan keyword)
+        let cursor = startSearch;
+        let restoStart = -1;
+        while (cursor < searchEnd) {
+            const cl = clean(lines[cursor]);
+            // Strip prefix garbage OCR seperti "G1)", "1)", "())" di awal
+            const stripped = cl.replace(/^[^A-Z\u00C0-\u024F\w]*/, '').trim();
+            if (stripped.length > 4 && /^[A-Z\u00C0-\u024F]/.test(stripped) &&
+                !SKIP.test(stripped) && !isCityBlock(stripped)) {
+                restoStart = cursor;
+                break;
+            }
+            cursor++;
+        }
+
+        if (restoStart >= 0) {
+            // Nama resto bisa multi-baris (contoh: "Warung Sate Kambing Muda Pak H Bunder -" + "Kartasura")
+            // Berhenti saat ketemu baris alamat (Jl./RT/RW) atau city block
+            const nameParts = [];
+            let i = restoStart;
+            while (i < searchEnd) {
+                const cl = clean(lines[i]);
+                // Strip prefix garbage OCR di baris pertama saja.
+                // Pola: "A1) ", "1) ", "(1) ", "A) ", dst. yang dihasilkan OCR sebelum nama resto.
+                // Catatan: [^A-Z]+ TIDAK bisa menghapus "A1)" karena "A" adalah huruf kapital.
+                // Gunakan regex eksplisit yang mengenali pola <huruf?><angka+><tanda kurung/titik>.
+                const raw = i === restoStart
+                    ? cl.replace(/^(?:[A-Z]?\d+[).]\s*|\([A-Z0-9]+\)\s*|[^A-Za-z\u00C0-\u024F]+)/, '').trim()
+                    : cl;
+                if (!raw || isCityBlock(raw) || SKIP.test(raw) || isSys(raw)) break;
+                // Baris alamat (Jl., RT dst) → nama selesai
+                if (/\b(Jl\.|Jalan|RT[\s./]|RW[\s./]|No\.\s*\d|Gg\.|Gang|Blok\s+[A-Z]\d)/i.test(raw)) break;
+                nameParts.push(raw);
+                i++;
+                if (nameParts.length >= 4) break;
+            }
+            restoName = nameParts.join(' ').trim();
+            cursor = i;
+
+            // ── Blok 1: restoAddr ───────────────────────────────────────
+            // Kumpulkan semua baris hingga city block pertama (inklusif)
+            const restoAddrParts = [];
+            while (cursor < searchEnd) {
+                const cl = clean(lines[cursor]);
+                if (!cl || isSys(cl) || /^(Pembeli|Penerima)/i.test(cl)) break;
+                restoAddrParts.push(cl);
+                cursor++;
+                // Jika baris terakhir yang baru ditambah adalah city block → blok resto selesai
+                if (isCityBlock(restoAddrParts[restoAddrParts.length - 1])) break;
+            }
+            restoAddr = joinAddr(restoAddrParts);
+
+            // ── Blok 2: recipAddr ───────────────────────────────────────
+            // Kumpulkan semua baris hingga city block berikutnya (inklusif).
+            // Setiap baris di-strip prefix nomor/huruf OCR ("2) ", "1. ", dsb.)
+            // yang sering muncul sebelum alamat penerima di struk ShopeeFood.
+            const stripAddrPrefix = s => s.replace(/^(?:[A-Z]?\d+[).]\s*|\([A-Z0-9]+\)\s*)/, '').trim();
+            const recipAddrParts = [];
+            while (cursor < searchEnd) {
+                const cl = stripAddrPrefix(clean(lines[cursor]));
+                if (!cl || isSys(cl) || /^(Pembeli|Penerima)/i.test(cl)) break;
+                recipAddrParts.push(cl);
+                cursor++;
+                if (isCityBlock(recipAddrParts[recipAddrParts.length - 1])) break;
+            }
+            recipAddr = joinAddr(recipAddrParts);
+        }
+    }
+
+    /* == 6. NOMINAL PEMBAYARAN / COD ================================ */
+    let cashAmount = 0;
+    const cashSources = [
+        /Terima\s*Pembayaran\s*dari\s*Pembeli\s*(?:Rp\.?\s*)?([\d.]+)/i,
+        /Tagih\s*dari\s*Penerima\s*(?:Rp\.?\s*)?([\d.]+)/i,
+        /Tagih\s*dari\s*Pengirim\s*(?:Rp\.?\s*)?([\d.]+)/i,
+        /(?:COD|Tunai|Uang\s*Tunai)\s*[:\-]?\s*(?:Rp\.?\s*)?([\d.]+)/i,
+        /(?:Total\s*(?:Bayar|Tagihan?)|Tagih)\s*[:\-]?\s*(?:Rp\.?\s*)?([\d.]+)/i
+    ];
+    for (const re of cashSources) {
+        const m = text.match(re);
+        if (m) { cashAmount = toInt(m[1]); break; }
+    }
+    const cashLabel = cashAmount > 0
+        ? 'Tunai (Rp' + cashAmount.toLocaleString('id-ID') + ')'
+        : 'Non-Tunai (Rp0)';
+
+    /* == 7. RINGKASAN MENU (Food) ==================================== */
+    let totalMenu = '';
+    if (isFood) {
+        const mTotal = text.match(/Total\s+(\d+)\s+menu/i);
+        const menuStart = iRincian >= 0 ? iRincian + 1 : 0;
+        const menuItems = [];
+        for (let i = menuStart; i < lines.length; i++) {
+            const l = lines[i];
+            if (/^Total\s+\d+\s+menu/i.test(l) || /^(Informasi|No\.\s*Pesanan|Waktu)/i.test(l)) break;
+            if (/^\d+\s*[xX\u00d7]\s*\S/.test(l) || /\b\d+\s*porsi\b/i.test(l)) {
+                const item = l.replace(/\s*Rp[\d.,]+\s*$/i, '').replace(/\s+/g, ' ').trim();
+                if (item) menuItems.push(item);
+            } else if (menuItems.length > 0 && l && !/^Rp/i.test(l) && !/^\d+\s*[xX]/.test(l) && !isSys(l)) {
+                const cont = l.replace(/\s*Rp[\d.,]+\s*$/i, '').trim();
+                if (cont) menuItems[menuItems.length - 1] += ' ' + cont;
+            }
+            if (menuItems.length >= 6) break;
+        }
+        totalMenu = menuItems.length
+            ? menuItems.join(', ')
+            : (mTotal ? mTotal[1] + ' menu' : '');
+    }
+
+    /* == 8. BERAT & DIMENSI ========================================= */
+    const matchLines = (re) => { for (const l of lines) { const m = l.match(re); if (m) return (m[1]||'').trim(); } return ''; };
+    const weight      = matchLines(/Berat\s*[:\-]?\s*([\d.,]+\s*(?:kg|gr|gram))/i);
+    const dimensions  = matchLines(/(?:Besar|Dimensi|Ukuran|Size)\s*[:\-]?\s*([\d]+\s*[xX\u00d7]\s*[\d]+\s*[xX\u00d7]\s*[\d]+\s*(?:cm)?)/i);
+    const itemCategory = matchLines(/(?:Kategori|Jenis\s*Barang|Item\s*Type)\s*[:\-]?\s*([^\n\r]+)/i);
+
+    /* == 9. CATATAN (inline ATAU baris berikutnya) ================== */
+    // "Catatan: teks"  → inline
+    // "Catatan:\nteks" → next line
+    let rawNotes = '';
+    for (let i = 0; i < lines.length; i++) {
+        if (/^Catatan\s*:/i.test(lines[i])) {
+            const inline = lines[i].match(/^Catatan\s*:\s*(.+)/i);
+            if (inline && inline[1].trim()) {
+                rawNotes = inline[1].trim();
+            } else if (lines[i + 1] && !isSys(lines[i + 1]) && !isCityBlock(lines[i + 1])) {
+                rawNotes = lines[i + 1].trim();
+            }
+            break;
+        }
+    }
+
+    /* == 10. SUSUN CATATAN AKHIR ==================================== */
+    const extraParts = [];
+    if (rawNotes) extraParts.push(rawNotes);
+    if (isExpress || isInstan) {
+        const trackingNo = (text.match(/\b(SPXID[A-Z0-9]+)\b/i) || [])[1] || '';
+        if (trackingNo) extraParts.push('No. Resi: ' + trackingNo);
+        const pickupCode = matchLines(/(?:Kode\s*(?:Ambil|Pengambilan)|Pickup\s*Code)\s*:\s*([^\n\r]+)/i);
+        if (pickupCode) extraParts.push('Kode Ambil: ' + pickupCode);
+        const deadline = matchLines(/(?:Batas\s*(?:Kirim|Pengiriman)|Deadline)\s*:\s*([^\n\r]+)/i);
+        if (deadline) extraParts.push('Batas Kirim: ' + deadline);
+    }
+    extraParts.push('Bayar: ' + cashLabel);
+
+    return {
+        category, platform,
+        restoName, restoAddr,
+        recipName, recipAddr,
+        notes: extraParts.join(' | '),
+        codeOrder, totalMenu, orderNo, cashAmount,
+        weight, dimensions, itemCategory
+    };
+}
 
         // AI Fusion di modal Edit Gabungan
         async function ecScan(key, input) {
@@ -4524,29 +5260,26 @@ ATURAN:
 
             const fallbackAddr = point.role === 'resto' ? (sub.restoAddr || sub.restoName) : (sub.recipAddr || sub.recipName);
 
-            if (!navigator.geolocation) {
-                const fallback = getFallbackCoordinates(fallbackAddr, point.role === 'resto');
-                if (confirm(`GPS browser tidak didukung. Gunakan titik koordinat estimasi (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin?`)) {
-                    applyCheckin(fallback.lat, fallback.lon, 30);
+            window.DriverGPS.ensurePermission(`Check-in Titik #${pointIndex + 1} (${point.role === 'resto' ? 'Resto' : 'Penerima'})`).then(async (granted) => {
+                if (!granted) {
+                    const fallback = getFallbackCoordinates(fallbackAddr, point.role === 'resto');
+                    const useFallback = confirm(`Izin lokasi GPS belum diaktifkan.\n\nApakah Anda ingin menggunakan koordinat area pesanan (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin sekarang?`);
+                    if (useFallback) applyCheckin(fallback.lat, fallback.lon, 25);
+                    return;
                 }
-                return;
-            }
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => { applyCheckin(position.coords.latitude, position.coords.longitude, position.coords.accuracy); },
-                (error) => {
-                    let msg = 'Gagal mengambil lokasi GPS.';
-                    if (error.code === error.PERMISSION_DENIED) msg = 'Izin lokasi GPS ditolak/tidak aktif di browser.';
-                    else if (error.code === error.TIMEOUT) msg = 'Waktu pencarian sinyal GPS habis.';
-                    else if (error.code === error.POSITION_UNAVAILABLE) msg = 'Sinyal GPS tidak tersedia saat ini.';
+                try {
+                    const position = await window.DriverGPS.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+                    applyCheckin(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                } catch (error) {
                     console.warn("GPS Checkin error:", error);
+                    let msg = 'Gagal mengambil sinyal GPS.';
                     const fallback = getFallbackCoordinates(fallbackAddr, point.role === 'resto');
                     const useFallback = confirm(`${msg}\n\nApakah Anda ingin menggunakan koordinat area pesanan (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin sekarang?`);
                     if (useFallback) applyCheckin(fallback.lat, fallback.lon, 25);
                     else showToast(msg, 'rose');
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
+                }
+            });
         }
 
         // Ganti urutan titik order gabungan yang lagi dibuka di modal Detail
@@ -5022,33 +5755,27 @@ ATURAN:
                 initOrderMap(order);
             };
 
-            if (!navigator.geolocation) {
-                const fallback = getFallbackCoordinates(role === 'resto' ? (order.restoAddr || order.restoName) : (order.recipAddr || order.recipName), role === 'resto');
-                if (confirm(`GPS browser tidak didukung. Gunakan titik koordinat estimasi (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin?`)) {
-                    applyCheckin(fallback.lat, fallback.lon, 30);
-                } else {
-                    renderCheckinBox(orderId, role);
-                }
-                return;
-            }
+            const fallbackAddr = role === 'resto' ? (order.restoAddr || order.restoName) : (order.recipAddr || order.recipName);
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    applyCheckin(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
-                },
-                (error) => {
-                    let msg = 'Gagal mengambil lokasi GPS.';
-                    if (error.code === error.PERMISSION_DENIED) {
-                        msg = 'Izin lokasi GPS ditolak/tidak aktif di browser.';
-                    } else if (error.code === error.TIMEOUT) {
-                        msg = 'Waktu pencarian sinyal GPS habis.';
-                    } else if (error.code === error.POSITION_UNAVAILABLE) {
-                        msg = 'Sinyal GPS tidak tersedia saat ini.';
+            window.DriverGPS.ensurePermission(`Check-in ${role === 'resto' ? 'Resto / Pengirim' : 'Penerima'}`).then(async (granted) => {
+                if (!granted) {
+                    const fallback = getFallbackCoordinates(fallbackAddr, role === 'resto');
+                    const useFallback = confirm(`Izin lokasi GPS belum diaktifkan.\n\nApakah Anda ingin menggunakan koordinat area pesanan (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin sekarang?`);
+                    if (useFallback) {
+                        applyCheckin(fallback.lat, fallback.lon, 25);
+                    } else {
+                        renderCheckinBox(orderId, role);
                     }
-                    console.warn("GPS Checkin error:", error);
+                    return;
+                }
 
-                    // Fallback konfirmasi cerdas jika pengujian dilakukan di browser tanpa izin GPS / file://
-                    const fallback = getFallbackCoordinates(role === 'resto' ? (order.restoAddr || order.restoName) : (order.recipAddr || order.recipName), role === 'resto');
+                try {
+                    const position = await window.DriverGPS.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+                    applyCheckin(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+                } catch (error) {
+                    console.warn("GPS Checkin error:", error);
+                    let msg = 'Gagal mengambil sinyal GPS.';
+                    const fallback = getFallbackCoordinates(fallbackAddr, role === 'resto');
                     const useFallback = confirm(`${msg}\n\nApakah Anda ingin menggunakan koordinat area pesanan (${fallback.lat.toFixed(4)}, ${fallback.lon.toFixed(4)}) untuk simulasi checkin sekarang?`);
                     if (useFallback) {
                         applyCheckin(fallback.lat, fallback.lon, 25);
@@ -5056,9 +5783,8 @@ ATURAN:
                         showToast(msg, 'rose');
                         renderCheckinBox(orderId, role);
                     }
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
+                }
+            });
         }
 
         function scrollToCheckinSection() {
@@ -6353,7 +7079,7 @@ ATURAN:
                 } else if (name) {
                     headerAvatar.innerHTML = `<span class="font-extrabold text-sm">${name.charAt(0).toUpperCase()}</span>`;
                 } else {
-                    headerAvatar.innerHTML = `<i class="fa-solid fa-user"></i>`;
+                    headerAvatar.innerHTML = `<img src="assets/app-logo.png" alt="Avatar" class="w-full h-full object-cover p-0.5">`;
                 }
             }
 
@@ -6383,7 +7109,7 @@ ATURAN:
                 } else if (name) {
                     profileAvatarContainer.innerHTML = `<span class="font-extrabold text-2xl">${name.charAt(0).toUpperCase()}</span>`;
                 } else {
-                    profileAvatarContainer.innerHTML = `<i class="fa-solid fa-user text-2xl"></i>`;
+                    profileAvatarContainer.innerHTML = `<img src="assets/app-logo.png" alt="Foto Profil" class="w-full h-full object-cover p-1">`;
                 }
             }
             if (profileChips) {
@@ -7237,6 +7963,70 @@ ATURAN:
             </div>
         </div>
     </div>
+
+    <!-- Modal Dialog Izin Lokasi GPS DriverTrack -->
+    <div id="gps-permission-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 text-center animate-fade-in space-y-4" onclick="event.stopPropagation()">
+            <div class="w-16 h-16 mx-auto bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+                <i class="fa-solid fa-location-crosshairs animate-pulse"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-extrabold text-slate-900" id="gps-perm-title">Izinkan Akses Lokasi (GPS)</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed" id="gps-perm-desc">
+                    Aplikasi membutuhkan izin akses GPS pada perangkat untuk mengaktifkan fitur ini.
+                </p>
+            </div>
+            <div class="bg-slate-50 rounded-2xl p-3 text-left space-y-2 border border-slate-100 text-[11px] text-slate-600">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                    <span>Mencatat rute pergerakan driver (Limnas)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                    <span>Menghitung estimasi konsumsi BBM akurat</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-500 text-xs"></i>
+                    <span>Check-in titik awal driver &amp; resto otomatis</span>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400">Tekan "Izinkan Lokasi", lalu pilih "Saat aplikasi digunakan" pada dialog HP.</p>
+            <div class="flex gap-2 pt-1">
+                <button type="button" id="gps-perm-cancel-btn" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold py-2.5 rounded-xl transition">
+                    Batal
+                </button>
+                <button type="button" id="gps-perm-confirm-btn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-xl shadow-md shadow-indigo-200 transition">
+                    Izinkan Lokasi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Panduan Jika Izin Ditolak -->
+    <div id="gps-denied-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl border border-slate-100 text-center space-y-4" onclick="event.stopPropagation()">
+            <div class="w-16 h-16 mx-auto bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-2xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-extrabold text-slate-900">Izin Lokasi Belum Aktif</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    Aplikasi belum mendapatkan izin lokasi GPS dari perangkat HP Anda.
+                </p>
+            </div>
+            <div class="bg-amber-50/60 border border-amber-200/60 rounded-2xl p-3.5 text-left space-y-1.5 text-[11px] text-amber-900">
+                <p class="font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-gear"></i> Cara Mengaktifkan di HP:</p>
+                <p>1. Buka <b>Pengaturan (Settings)</b> di HP Anda</p>
+                <p>2. Masuk ke <b>Aplikasi / Kelola Aplikasi</b></p>
+                <p>3. Pilih aplikasi <b>DriverTrack</b></p>
+                <p>4. Buka menu <b>Izin (Permissions) &gt; Lokasi</b></p>
+                <p>5. Pilih <b>"Izinkan hanya saat aplikasi digunakan"</b></p>
+            </div>
+            <button type="button" onclick="document.getElementById('gps-denied-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl shadow-md transition">
+                Saya Mengerti
+            </button>
+        </div>
+    </div>
     <script>
     /* ===== Sistem notifikasi: penyimpanan penuh, pesanan baru, rangkuman pendapatan harian ===== */
     (function(){
@@ -7451,7 +8241,14 @@ ATURAN:
       };
 
       /* --- Kotak titik awal di modal detail --- */
-      function geo(ok,fail){ if(!navigator.geolocation){fail('GPS tidak didukung');return;} navigator.geolocation.getCurrentPosition(ok,function(e){fail('Izin/sinyal GPS gagal');},{enableHighAccuracy:true,timeout:10000,maximumAge:0}); }
+      function geo(ok,fail){
+        window.DriverGPS.ensurePermission('Titik Awal Driver').then(function(granted){
+          if(!granted){ fail('Izin lokasi tidak diberikan'); return; }
+          window.DriverGPS.getCurrentPosition({enableHighAccuracy:true,timeout:10000,maximumAge:0})
+            .then(ok)
+            .catch(function(e){ console.warn('GPS error:', e); fail('Izin/sinyal GPS gagal'); });
+        });
+      }
       function nearestTrack(ts){ var d=dayData(ymd(new Date(ts))), best=null; d.pts.forEach(function(p){ if(p[0]<=ts&&ts-p[0]<=3600000) best=p; }); return best; }
       window.setStartCheckin=function(id,mode){
         var o=ordersList.find(function(x){return x.id===id;}); if(!o) return;
@@ -7492,13 +8289,80 @@ ATURAN:
         try{localStorage.setItem(TP+k,JSON.stringify(d));}catch(e){}
         renderTrackCard(); statusText();
       }
-      function startTrack(){ if(watchId!==null||!navigator.geolocation) return; watchId=navigator.geolocation.watchPosition(record,function(){statusText('Izin lokasi ditolak/tidak tersedia');},{enableHighAccuracy:true,maximumAge:5000,timeout:30000}); }
-      function stopTrack(){ if(watchId!==null){navigator.geolocation.clearWatch(watchId); watchId=null;} }
+      async function startTrack(){
+        if(watchId!==null) return;
+        var perm = await window.DriverGPS.checkPermission();
+        if(perm !== 'granted') {
+          statusText();
+          return;
+        }
+        watchId = await window.DriverGPS.watchPosition(
+          record,
+          function(){ statusText('Izin lokasi ditolak/tidak tersedia'); },
+          {enableHighAccuracy:true,maximumAge:5000,timeout:30000}
+        );
+        statusText();
+      }
+      async function stopTrack(){
+        if(watchId!==null){
+          await window.DriverGPS.clearWatch(watchId);
+          watchId=null;
+        }
+      }
       // Browser menghentikan GPS saat halaman tersembunyi; begitu aplikasi dibuka lagi, daftarkan ulang agar titik langsung terekam.
       document.addEventListener('visibilitychange',function(){ if(!document.hidden && gp().track){ stopTrack(); startTrack(); } });
-      function statusText(m){ var el=$('dp-status'); if(!el) return; var d=dayData(ymd(new Date())); el.innerText=m||(gp().track?(watchId!==null?'Limnas aktif · hari ini '+d.km.toFixed(2)+' km · '+rp(d.km*getFuelRate()):'Limnas menunggu izin lokasi'):'Limnas nonaktif'); }
+      function statusText(m){
+        var el=$('dp-status'); if(!el) return;
+        var d=dayData(ymd(new Date()));
+        if(m) {
+          el.innerText = m;
+        } else if(gp().track) {
+          if(watchId!==null) {
+            el.innerHTML = '<span class="text-emerald-700 font-bold">● Limnas aktif</span> · hari ini '+d.km.toFixed(2)+' km · '+rp(d.km*getFuelRate());
+          } else {
+            el.innerHTML = '<span class="text-amber-700 font-bold">⚠️ Limnas menunggu izin lokasi</span> <span class="text-[9px] underline ml-1 text-indigo-600 font-bold">Klik untuk izinkan</span>';
+          }
+        } else {
+          el.innerText = 'Limnas nonaktif';
+        }
+      }
+      window.onToggleDriverPref = async function(type, el) {
+        if(el.checked) {
+          el.checked = false;
+          var title = type === 'track' ? 'Limnas (Pelacak Pergerakan)' : 'Check Point Titik Awal Driver';
+          var granted = await window.DriverGPS.ensurePermission(title);
+          if(granted) {
+            el.checked = true;
+            window.saveDriverPrefs();
+            if(type === 'track') {
+              startTrack();
+              showToast('✓ Limnas aktif merekam rute', 'emerald');
+            } else {
+              showToast('✓ Check point titik awal aktif', 'emerald');
+            }
+          } else {
+            el.checked = false;
+            window.saveDriverPrefs();
+          }
+        } else {
+          window.saveDriverPrefs();
+        }
+      };
+      window.checkOrPromptGPSStatus = async function() {
+        if(!gp().track && !gp().start) {
+          showToast('Aktifkan Check point atau Limnas untuk memulai', 'indigo');
+          return;
+        }
+        var granted = await window.DriverGPS.ensurePermission('Akses Lokasi Driver');
+        if(granted) {
+          if(gp().track && watchId === null) startTrack();
+          statusText();
+          showToast('✓ Izin lokasi aktif', 'emerald');
+        }
+      };
       window.saveDriverPrefs=function(){
-        var p={start:$('dp-start').checked,track:$('dp-track').checked}; localStorage.setItem(PK,JSON.stringify(p));
+        var p={start:$('dp-start')?$('dp-start').checked:false,track:$('dp-track')?$('dp-track').checked:false};
+        localStorage.setItem(PK,JSON.stringify(p));
         if(p.track) startTrack(); else stopTrack();
         statusText(); renderTrackCard(); renderAllViews();
         if(currentDetailOrder&&$('start-checkin-box')) renderStartBox(currentDetailOrder);
@@ -7531,7 +8395,15 @@ ATURAN:
       document.addEventListener('DOMContentLoaded',function(){
         var p=gp(); if($('dp-start')) $('dp-start').checked=p.start; if($('dp-track')) $('dp-track').checked=p.track;
         var y=new Date(); y.setDate(y.getDate()-1); finalize(ymd(y));
-        if(p.track) startTrack(); statusText(); setTimeout(renderTrackCard,800);
+        if(p.track) {
+          window.DriverGPS.checkPermission().then(function(perm){
+            if(perm === 'granted') startTrack();
+            else statusText();
+          });
+        } else {
+          statusText();
+        }
+        setTimeout(renderTrackCard,800);
       });
       setInterval(midnightCheck,30000);
     })();
