@@ -788,7 +788,7 @@
                         <i class="fa-solid fa-plug"></i> Hubungkan
                     </button>
                 </div>
-                <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage). Dapatkan key di Admin></p>
+                <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage). Dapatkan key di <a href="https://console.groq.com" target="_blank" class="underline font-bold">console.groq.com</a></p>
             </div>
 
             <!-- AI API Connected Status -->
@@ -1306,7 +1306,7 @@
             <!-- Backup & Restore -->
             <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-2.5">
                 <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-database text-indigo-600"></i> Backup & Restore Data</p>
-                <p class="text-[11px] text-slate-400 leading-relaxed">Semua data pesanan (termasuk titik checkin GPS resto & penerima) tersimpan hanya di HP ini. Backup rutin supaya tidak hilang kalau cache browser terhapus atau ganti HP.</p>
+                <p class="text-[11px] text-slate-400 leading-relaxed">Semua data pesanan (termasuk titik checkin GPS resto & penerima) dan riwayat rute Limnas tersimpan hanya di HP ini. Backup rutin supaya tidak hilang kalau cache browser terhapus atau ganti HP.</p>
                 <div class="grid grid-cols-2 gap-2 pt-1">
                     <button onclick="exportData()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 rounded-xl transition active:scale-95 flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-download"></i> Export Data
@@ -1374,7 +1374,7 @@
                         <i class="fa-solid fa-trash-can mr-1"></i> Hapus API Key Tersimpan
                     </button>
                 </div>
-                
+                <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Dapatkan API Key di <a href="https://console.groq.com" target="_blank" class="text-indigo-500 font-bold underline">console.groq.com</a></p>
             </div>
 
             <!-- Mode Posisi Pesanan (Check Point / Google Maps) -->
@@ -2604,6 +2604,8 @@
                     totalOrders: subset.length,
                     ordersList: subset
                 };
+                const limnasLight = (typeof collectLimnasBackup === 'function') ? collectLimnasBackup(days) : null;
+                if (limnasLight) payload.limnas = limnasLight;
                 const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -2617,7 +2619,7 @@
 
                 localStorage.setItem(LIGHT_BACKUP_TIMESTAMP_KEY, JSON.stringify({ at: now.toISOString(), days }));
                 updateLightBackupInfo();
-                showToast(`Backup ringan ${days} hari: ${subset.length} pesanan (${formatBytes(blob.size)}).`, 'emerald');
+                showToast(`Backup ringan ${days} hari: ${subset.length} pesanan${limnasLight ? ` + ${limnasLight.totalDays} hari Limnas` : ''} (${formatBytes(blob.size)}).`, 'emerald');
             } catch (e) {
                 console.error(e);
                 showToast('Gagal membuat backup ringan.', 'rose');
@@ -2669,7 +2671,16 @@
                     totalOrders: ordersList.length,
                     ordersList: ordersList
                 };
-                const jsonStr = JSON.stringify(payload, null, 2);
+                // Limnas (riwayat rute & km harian) ikut di backup pribadi; ditulis ringkas agar file tidak membengkak.
+                const limnasBackup = (typeof collectLimnasBackup === 'function') ? collectLimnasBackup() : null;
+                let jsonStr;
+                if (limnasBackup) {
+                    jsonStr = JSON.stringify(Object.assign({}, payload, { limnas: '__LIMNAS__' }), null, 2);
+                    const at = jsonStr.lastIndexOf('"__LIMNAS__"');
+                    jsonStr = jsonStr.slice(0, at) + JSON.stringify(limnasBackup) + jsonStr.slice(at + '"__LIMNAS__"'.length);
+                } else {
+                    jsonStr = JSON.stringify(payload, null, 2);
+                }
                 const blob = new Blob([jsonStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
 
@@ -2687,7 +2698,7 @@
 
                 localStorage.setItem(BACKUP_TIMESTAMP_KEY, now.toISOString());
                 updateBackupWarningUI();
-                showToast(`Export berhasil: ${ordersList.length} pesanan disimpan.`, "emerald");
+                showToast(`Export berhasil: ${ordersList.length} pesanan${limnasBackup ? ` + ${limnasBackup.totalDays} hari Limnas` : ''} disimpan.`, "emerald");
             } catch (e) {
                 console.error(e);
                 showToast("Gagal export data. Coba lagi.", "rose");
@@ -2734,8 +2745,10 @@
                 }
 
                 pendingImportOrders = candidateList;
+                window.__pendingImportLimnas = (!Array.isArray(parsed) && parsed.limnas && typeof parseLimnasBackup === 'function') ? parseLimnasBackup(parsed.limnas) : null;
                 document.getElementById('import-modal-desc').innerText =
                     `File valid, berisi ${candidateList.length} pesanan${invalidCount > 0 ? ` (${invalidCount} item terlewati karena tidak lengkap)` : ''}${pendingImportProfile ? ' & profil driver' : ''}.${pendingImportLight ? ' Ini backup ringan (tanpa screenshot) — disarankan pilih GABUNG agar screenshot yang ada tidak hilang.' : ''}`;
+                if (window.__pendingImportLimnas) document.getElementById('import-modal-desc').innerText += describeLimnasBackup(window.__pendingImportLimnas) + ' ikut dipulihkan.';
                 document.getElementById('import-modal').classList.remove('hidden');
                 event.target.value = '';
             };
@@ -2750,6 +2763,7 @@
             document.getElementById('import-modal').classList.add('hidden');
             pendingImportOrders = null;
             pendingImportProfile = null;
+            window.__pendingImportLimnas = null;
         }
 
         function confirmImport(mode) {
@@ -2778,11 +2792,20 @@
                 saveUserProfile(userProfile);
             }
 
+            // Limnas: hanya menulis kunci drivertrack_track_YYYY-MM-DD; hari lokal yang tidak ada di file tidak dihapus.
+            let limnasMsg = '';
+            if (window.__pendingImportLimnas && typeof restoreLimnasBackup === 'function') {
+                const lr = restoreLimnasBackup(window.__pendingImportLimnas, mode);
+                const done = lr.restored + lr.merged;
+                if (done > 0) limnasMsg = ` Limnas: ${done} hari dipulihkan.`;
+                if (lr.failed > 0) limnasMsg += ` (${lr.failed} hari gagal disimpan, penyimpanan penuh)`;
+            }
+
             saveToLocalStorage();
             renderAllViews();
             updateStorageIndicator();
             closeImportModal();
-            showToast(`Import berhasil (${mode === 'overwrite' ? 'timpa' : 'gabung'}): ${validIncoming.length} pesanan diproses.`, "emerald");
+            showToast(`Import berhasil (${mode === 'overwrite' ? 'timpa' : 'gabung'}): ${validIncoming.length} pesanan diproses.${limnasMsg}`, "emerald");
         }
 
         function updateBackupWarningUI() {
@@ -9274,6 +9297,101 @@ window.RoadRouter=(function(){
 
   updateRangeUI();
   try{ window.renderOrdersList(); }catch(e){}
+})();
+</script>
+
+<script id="limnas-backup-js">
+/* =====================================================================
+   BACKUP LIMNAS (pelacak pergerakan) — ikut di Export/Import Data pribadi
+   Data: localStorage 'drivertrack_track_YYYY-MM-DD' = { km, pts:[[ts,lat,lon],...] }
+   Tidak dimasukkan ke file Database Resto (riwayat lokasi bersifat pribadi).
+   ===================================================================== */
+(function(){
+  'use strict';
+  var TP='drivertrack_track_', DAY_RE=/^\d{4}-\d{2}-\d{2}$/;
+  var MAX_DAYS=400, MAX_PTS=3000, MAX_PTS_IN=20000, VERSION=1;
+
+  function validPt(p){
+    if(!Array.isArray(p) || p.length<3) return false;
+    var t=Number(p[0]), la=Number(p[1]), lo=Number(p[2]);
+    return isFinite(t) && t>1e11 && isFinite(la) && isFinite(lo) && Math.abs(la)<=90 && Math.abs(lo)<=180;
+  }
+  function km2(a,b,c,d){ var R=6371,t=Math.PI/180,dl=(c-a)*t,dn=(d-b)*t,
+    h=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*t)*Math.cos(c*t)*Math.sin(dn/2)*Math.sin(dn/2);
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(h))); }
+  /* Hitung ulang jarak dengan aturan yang sama seperti perekam Limnas */
+  function recomputeKm(pts){
+    var km=0;
+    for(var i=1;i<pts.length;i++){
+      var a=pts[i-1], b=pts[i], dist=km2(a[1],a[2],b[1],b[2]), dt=(b[0]-a[0])/1000;
+      if(dist<0.03) continue;
+      if(dt>0 && dist/(dt/3600)>140) continue;
+      if(dt<=900) km+=dist;
+    }
+    return +km.toFixed(3);
+  }
+  function thin(pts){ while(pts.length>MAX_PTS) pts=pts.filter(function(_,i){ return i%2===0; }); return pts; }
+  function readDay(k){ try{ var d=JSON.parse(localStorage.getItem(TP+k)); return (d&&Array.isArray(d.pts))?d:null; }catch(e){ return null; } }
+
+  /* maxDays: batasi hanya N hari terakhir (backup ringan); kosong = semua */
+  window.collectLimnasBackup=function(maxDays){
+    var days={}, n=0, cutoff=null;
+    if(maxDays){ var c=new Date(); c.setHours(0,0,0,0); c.setDate(c.getDate()-maxDays); cutoff=c.getTime(); }
+    try{
+      for(var i=0;i<localStorage.length;i++){
+        var key=localStorage.key(i); if(!key || key.indexOf(TP)!==0) continue;
+        var k=key.slice(TP.length); if(!DAY_RE.test(k)) continue;           // abaikan 'drivertrack_track_final' dll.
+        if(cutoff!==null && new Date(k+'T00:00:00').getTime()<cutoff) continue;
+        var d=readDay(k); if(!d) continue;
+        var pts=d.pts.filter(validPt).map(function(p){ return [Number(p[0]),Number(p[1]),Number(p[2])]; });
+        if(!pts.length) continue;
+        days[k]={km:+(Number(d.km)||0).toFixed(3), pts:pts}; n++;
+      }
+    }catch(e){ console.warn('Limnas backup:',e); }
+    return n ? {version:VERSION, totalDays:n, days:days} : null;
+  };
+
+  /* Validasi & bersihkan data masuk. Mengembalikan {days, totalDays, totalPts} atau null */
+  window.parseLimnasBackup=function(obj){
+    if(!obj || typeof obj!=='object' || !obj.days || typeof obj.days!=='object') return null;
+    if(Number(obj.version)>VERSION) return null;
+    var out={}, n=0, tp=0;
+    Object.keys(obj.days).slice(0,MAX_DAYS).forEach(function(k){
+      if(!DAY_RE.test(k)) return;
+      var d=obj.days[k]; if(!d || !Array.isArray(d.pts) || d.pts.length>MAX_PTS_IN) return;
+      var pts=d.pts.filter(validPt).map(function(p){ return [Number(p[0]),+Number(p[1]).toFixed(5),+Number(p[2]).toFixed(5)]; })
+                   .sort(function(a,b){ return a[0]-b[0]; });
+      if(!pts.length) return;
+      var km=Number(d.km); if(!isFinite(km) || km<0 || km>2000) km=recomputeKm(pts);
+      out[k]={km:+km.toFixed(3), pts:pts}; n++; tp+=pts.length;
+    });
+    return n ? {days:out, totalDays:n, totalPts:tp} : null;
+  };
+
+  /* mode 'merge': gabung titik per hari (tanpa duplikat); 'overwrite': hari yang ada di file menggantikan hari lokal.
+     Hari lokal yang TIDAK ada di file tidak pernah dihapus. */
+  window.restoreLimnasBackup=function(parsed, mode){
+    var res={restored:0, merged:0, kept:0, failed:0};
+    if(!parsed || !parsed.days) return res;
+    Object.keys(parsed.days).forEach(function(k){
+      var inc=parsed.days[k], loc=readDay(k), final=inc;
+      if(loc && loc.pts.length && mode!=='overwrite'){
+        var seen={}, union=[];
+        loc.pts.filter(validPt).concat(inc.pts).forEach(function(p){ var t=Number(p[0]); if(!seen[t]){ seen[t]=1; union.push([t,Number(p[1]),Number(p[2])]); } });
+        union.sort(function(a,b){ return a[0]-b[0]; });
+        if(union.length===inc.pts.length){ final=inc; res.restored++; }                       // file ⊇ lokal
+        else if(union.length===loc.pts.filter(validPt).length){ res.kept++; return; }          // lokal ⊇ file → biarkan
+        else { union=thin(union); final={km:recomputeKm(union), pts:union}; res.merged++; }
+      } else res.restored++;
+      try{ localStorage.setItem(TP+k, JSON.stringify({km:final.km, pts:thin(final.pts.slice())})); }
+      catch(e){ res.failed++; }
+    });
+    return res;
+  };
+
+  window.describeLimnasBackup=function(parsed){
+    return parsed ? ' & riwayat Limnas ('+parsed.totalDays+' hari)' : '';
+  };
 })();
 </script>
 
