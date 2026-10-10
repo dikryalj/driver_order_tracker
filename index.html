@@ -63,27 +63,28 @@
             return googleMapsLoadPromise;
         }
 
-        // Peta dasar TANPA API key. CARTO kini memberi cap "API KEY REQUIRED" pada tile tanpa key,
-        // jadi dipakai OpenStreetMap. Jika tile OSM gagal 6x berturut-turut, otomatis pindah ke Esri.
+        // Peta dasar TANPA API key. OpenStreetMap memblokir permintaan tanpa Referer (mis. file:///) dengan
+        // tile "Access blocked" (HTTP 403 tapi tetap berupa gambar, jadi tidak terdeteksi sebagai error).
+        // Karena itu Esri dipakai sebagai peta utama; bila tile gagal 6x berturut-turut, pindah ke OpenStreetMap.
         function createBaseTileLayer() {
-            const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                attribution: 'Tiles &copy; Esri'
             });
             let errors = 0, switched = false;
-            osm.on('tileload', function () { errors = 0; });
-            osm.on('tileerror', function () {
-                if (switched || !osm._map) return;
+            esri.on('tileload', function () { errors = 0; });
+            esri.on('tileerror', function () {
+                if (switched || !esri._map) return;
                 if (++errors < 6) return;
                 switched = true;
-                const map = osm._map;
-                map.removeLayer(osm);
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                const map = esri._map;
+                map.removeLayer(esri);
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
-                    attribution: 'Tiles &copy; Esri'
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 }).addTo(map);
             });
-            return osm;
+            return esri;
         }
     </script>
 
@@ -379,11 +380,169 @@
     html body section[id^="tab-"]:not(.hidden)>*:nth-child(n+6){animation-delay:.3s}
     @media (prefers-reduced-motion:reduce){html body *,html body *::before,html body *::after{animation:none!important;transition:none!important}}
     </style>
+    <style id="theme-lime" media="not all">
+    /* Tema LIME RIDER (mengikuti referensi DriverTrack Sales Lime): latar lime muda, kartu arang, aksen #A6FF1F, tombol pil putih. Hanya tampilan */
+    :root{--ink:#14170F;--dark:#161914;--lime:#A6FF1F;--mute:#6B7160;--glass:rgba(255,255,255,.9);--line:rgba(20,23,15,.08)}
+    html body{background:linear-gradient(180deg,#F8FFEC 0%,#EDFFD2 55%,#E2FAB5 100%) fixed!important}
+    html body #tab-dashboard::before{display:none!important}
+    html body header.sticky{background:rgba(248,255,236,.85)!important}
+    html body .card-shadow,html body .shadow-xl,html body .shadow-md{border:1px solid rgba(166,255,31,.3);box-shadow:0 14px 30px rgba(70,120,0,.11),0 2px 4px rgba(70,120,0,.05)!important}
+    html body .border-slate-100,html body .border-slate-50{border-color:rgba(166,255,31,.3)!important}
+    html body .bg-slate-50,html body .bg-slate-100{background:rgba(166,255,31,.13)!important}
+    html body .purple-card-gradient{background:linear-gradient(150deg,#272C21 0%,#161914 55%,#0E100C 100%)!important;box-shadow:0 24px 46px rgba(22,25,20,.32),0 0 0 1px rgba(166,255,31,.25),0 0 44px rgba(166,255,31,.22)!important}
+    html body .purple-card-gradient::before{background:radial-gradient(circle,rgba(166,255,31,.3),transparent 65%)!important}
+    html body .purple-card-gradient>.absolute{background:rgba(166,255,31,.18)!important}
+    html body .purple-card-gradient .glass-pill{background:rgba(166,255,31,.16)!important;border-color:rgba(166,255,31,.42)!important;color:var(--lime)!important}
+    html body #header-driver-avatar{background:rgba(166,255,31,.55)}
+    html body button.bg-indigo-600{box-shadow:0 10px 20px rgba(22,25,20,.28),0 0 16px rgba(166,255,31,.3)}
+    html body .dm-box{background:rgba(166,255,31,.14);border-color:rgba(166,255,31,.38);box-shadow:inset 0 0 18px rgba(166,255,31,.08)}
+    html body .dm-icon{filter:drop-shadow(0 0 6px rgba(166,255,31,.8))}
+    html body .theme-opt.is-active{border-color:#161914;box-shadow:0 0 0 3px rgba(166,255,31,.75)}
+    </style>
+    <style id="theme-neon" media="not all">
+    /* Tema NEON CHARCOAL — MANDIRI (di atas dasar Default, tidak memakai blok Sales). Hanya tampilan. */
+    html[data-ui-theme="neon"] body{background:#F3F4F1!important;color:#15171A}
+    /* Header arang membulat + sapaan besar, pencarian, dua tombol lime (hanya di Home) */
+    html[data-ui-theme="neon"] header.sticky{position:relative!important;background:linear-gradient(160deg,#23272B,#15171A 70%)!important;border:0!important;border-radius:0 0 34px 34px;padding:16px 18px 20px!important;box-shadow:0 18px 36px rgba(21,23,26,.3);backdrop-filter:none!important}
+    html[data-ui-theme="neon"] header #header-greeting{color:rgba(255,255,255,.65)!important}
+    html[data-ui-theme="neon"] header #header-driver-name{color:#fff!important}
+    html[data-ui-theme="neon"] header #header-driver-avatar{background:#99FF33!important;color:#15171A!important;--tw-ring-color:rgba(153,255,51,.65)}
+    html[data-ui-theme="neon"] header button{background:rgba(255,255,255,.1)!important;color:#fff!important;border-radius:16px!important}
+    html[data-ui-theme="neon"] header button i{color:#fff!important}
+    html[data-ui-theme="neon"] body:has(#tab-dashboard:not(.hidden)) header .nx-home{display:block}
+    html[data-ui-theme="neon"] body:has(#tab-dashboard:not(.hidden)) header #header-greeting,
+    html[data-ui-theme="neon"] body:has(#tab-dashboard:not(.hidden)) header #header-driver-name{display:none}
+    .nx-hi{margin:14px 0 0;font-size:28px;line-height:1.15;font-weight:400;color:#fff}
+    .nx-nm{margin:0;font-size:28px;line-height:1.15;font-weight:800;color:#fff}
+    .nx-search{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6)}
+    .nx-search input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font-size:14px;font-family:inherit}
+    .nx-search input::placeholder{color:rgba(255,255,255,.55)}
+    .nx-search button{background:transparent!important;border:0;color:rgba(255,255,255,.75)!important;padding:0!important}
+    .nx-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .nx-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 8px;border-radius:18px;border:0;cursor:pointer;font-family:inherit;font-size:14px;font-weight:800;background:#99FF33!important;color:#15171A!important;box-shadow:0 10px 22px rgba(153,255,51,.35)}
+    .nx-btn i{color:#15171A!important}.nx-btn:active{transform:scale(.97)}
+    /* Permukaan & kartu */
+    html[data-ui-theme="neon"] body .card-shadow,html[data-ui-theme="neon"] body .shadow-xl,html[data-ui-theme="neon"] body .shadow-md{border:1px solid rgba(21,23,26,.05)!important;box-shadow:0 12px 28px rgba(21,23,26,.08),0 2px 4px rgba(21,23,26,.04)!important}
+    html[data-ui-theme="neon"] body .rounded-3xl{border-radius:28px!important}
+    html[data-ui-theme="neon"] body .rounded-2xl{border-radius:22px!important}
+    html[data-ui-theme="neon"] body .bg-slate-50{background:#F1F3EE!important}
+    html[data-ui-theme="neon"] body .border-slate-100,html[data-ui-theme="neon"] body .border-slate-50{border-color:rgba(21,23,26,.06)!important}
+    /* Warna aksen: indigo/ungu -> arang & lime */
+    html[data-ui-theme="neon"] body :is(.text-indigo-500,.text-indigo-600,.text-indigo-700,.text-indigo-800,.text-violet-500,.text-violet-600,.text-violet-700){color:#15171A!important}
+    html[data-ui-theme="neon"] body :is(.bg-indigo-50,.bg-indigo-100,.bg-violet-50,.bg-violet-100,.bg-purple-50){background:rgba(153,255,51,.22)!important}
+    html[data-ui-theme="neon"] body :is(.border-indigo-100,.border-indigo-200,.border-indigo-400,.border-violet-200){border-color:rgba(153,255,51,.6)!important}
+    html[data-ui-theme="neon"] body .bg-indigo-600,html[data-ui-theme="neon"] body .hover\:bg-indigo-700:hover{background:#99FF33!important;color:#15171A!important}
+    html[data-ui-theme="neon"] body .bg-indigo-600 :is(.text-white,i,span){color:#15171A!important}
+    html[data-ui-theme="neon"] body button.bg-indigo-600{box-shadow:0 10px 20px rgba(153,255,51,.38)}
+    /* Hero */
+    html[data-ui-theme="neon"] body .purple-card-gradient{background:linear-gradient(150deg,#262B2F 0%,#15171A 60%,#0D0E10 100%)!important;border-radius:30px!important;box-shadow:0 22px 44px rgba(21,23,26,.3),0 0 0 1px rgba(153,255,51,.2),0 0 36px rgba(153,255,51,.16)!important}
+    html[data-ui-theme="neon"] body .purple-card-gradient::before{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(153,255,51,.26),transparent 65%)}
+    html[data-ui-theme="neon"] body .purple-card-gradient .glass-pill{background:rgba(153,255,51,.15)!important;border-color:rgba(153,255,51,.4)!important;color:#99FF33!important}
+    html[data-ui-theme="neon"] body .dm-box{background:rgba(153,255,51,.14);border-color:rgba(153,255,51,.4)}
+    html[data-ui-theme="neon"] body .dm-icon{filter:drop-shadow(0 0 6px rgba(153,255,51,.8))}
+    /* Navigasi: putih, tombol (+) lime melayang */
+    html[data-ui-theme="neon"] body nav.fixed{background:#fff!important;border:0!important;border-radius:28px 28px 0 0;box-shadow:0 -12px 30px rgba(21,23,26,.1)}
+    html[data-ui-theme="neon"] body nav .purple-gradient{background:#99FF33!important;color:#15171A!important;box-shadow:0 14px 28px rgba(153,255,51,.55)!important}
+    /* Scan Struk: area unggah gelap dengan siku lime & garis laser */
+    html[data-ui-theme="neon"] body #dropzone{border:0!important;position:relative;overflow:hidden;padding:44px 20px!important;border-radius:26px!important;
+      background:linear-gradient(#99FF33,#99FF33) 14px 14px/28px 4px no-repeat,linear-gradient(#99FF33,#99FF33) 14px 14px/4px 28px no-repeat,
+        linear-gradient(#99FF33,#99FF33) calc(100% - 14px) 14px/28px 4px no-repeat,linear-gradient(#99FF33,#99FF33) calc(100% - 14px) 14px/4px 28px no-repeat,
+        linear-gradient(#99FF33,#99FF33) 14px calc(100% - 14px)/28px 4px no-repeat,linear-gradient(#99FF33,#99FF33) 14px calc(100% - 14px)/4px 28px no-repeat,
+        linear-gradient(#99FF33,#99FF33) calc(100% - 14px) calc(100% - 14px)/28px 4px no-repeat,linear-gradient(#99FF33,#99FF33) calc(100% - 14px) calc(100% - 14px)/4px 28px no-repeat,
+        #15171A!important}
+    html[data-ui-theme="neon"] body #dropzone::after{content:"";position:absolute;left:0;right:0;top:12%;height:3px;pointer-events:none;background:linear-gradient(90deg,transparent,#99FF33,transparent);box-shadow:0 0 18px 4px rgba(153,255,51,.65);animation:nx-scan 3.2s ease-in-out infinite}
+    @keyframes nx-scan{0%,100%{top:14%}50%{top:84%}}
+    @media (prefers-reduced-motion:reduce){html[data-ui-theme="neon"] body #dropzone::after{animation:none;top:50%}}
+    html[data-ui-theme="neon"] body #dropzone :is(.text-slate-700,.text-slate-400){color:rgba(255,255,255,.8)!important}
+    html[data-ui-theme="neon"] body #dropzone i{color:#99FF33!important}
+    html[data-ui-theme="neon"] body #camera-wrap-main label{background:#99FF33!important;color:#15171A!important;box-shadow:0 10px 22px rgba(153,255,51,.35)}
+    /* ===== PESANAN / ORDERAN: kartu seperti "Active delivery" + kartu detail peta ===== */
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders)>div{border:0!important;border-radius:26px!important;padding:16px!important;background:#fff!important;box-shadow:0 10px 26px rgba(21,23,26,.07),0 1px 3px rgba(21,23,26,.04)!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders)>div:hover{border-color:transparent!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders)>div>div:first-child{border-bottom:0!important;padding-bottom:0!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders)>div>div:first-child>div>span:first-child{background:#E8FFC2!important;color:#15171A!important;border:0!important;border-radius:999px!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) :is(.bg-violet-50,.bg-amber-100,.bg-emerald-100){border-radius:999px!important;border-color:transparent!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) .bg-violet-50{background:#F1F3EE!important;color:#15171A!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) h4{font-size:15px!important;font-weight:800!important;color:#15171A!important;letter-spacing:-.01em}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) img{border:0!important;border-radius:16px!important;box-shadow:0 6px 14px rgba(21,23,26,.12)!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) .border-t{border-top:1px solid rgba(21,23,26,.06)!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button{border-radius:999px!important;padding:7px 12px!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button[onclick^="openOrderDetailModal"]{background:#15171A!important;color:#99FF33!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button[onclick^="openOrderDetailModal"] i{color:#99FF33!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button[onclick^="openEditModal"]{background:#F1F3EE!important;color:#15171A!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button[onclick^="openEditModal"] i{color:#15171A!important}
+    html[data-ui-theme="neon"] body #search-input{border-radius:18px!important;background:#fff!important;border:1px solid rgba(21,23,26,.08)!important;box-shadow:0 6px 16px rgba(21,23,26,.05)}
+    html[data-ui-theme="neon"] body #search-input:focus{border-color:#99FF33!important;box-shadow:0 0 0 3px rgba(153,255,51,.35)!important;outline:0}
+    /* Detail pesanan / peta: kartu putih membulat, "Navigasi Google Maps" arang, "Checkin" lime */
+    html[data-ui-theme="neon"] body [class*="bg-indigo-50/"]{background:#fff!important;border:1px solid rgba(21,23,26,.06)!important;border-radius:28px!important;box-shadow:0 14px 30px rgba(21,23,26,.1)}
+    html[data-ui-theme="neon"] body [class*="bg-indigo-50/"] .text-indigo-900{color:#15171A!important;font-weight:800}
+    html[data-ui-theme="neon"] body #detail-map-container{border:0!important;border-radius:24px!important;box-shadow:0 10px 24px rgba(21,23,26,.14)!important}
+    html[data-ui-theme="neon"] body #map-mode-selector{background:#F1F3EE!important;border:0!important;border-radius:999px!important}
+    html[data-ui-theme="neon"] body #map-mode-selector button{border-radius:999px!important}
+    html[data-ui-theme="neon"] body #detail-calculated-distance{background:#15171A!important;color:#99FF33!important;border-radius:999px!important}
+    html[data-ui-theme="neon"] body #btn-gmap-route{background:#15171A!important;color:#fff!important;border-radius:999px!important;padding:14px 10px!important;font-size:12px!important;box-shadow:0 10px 22px rgba(21,23,26,.25)!important}
+    html[data-ui-theme="neon"] body #btn-gmap-route i{color:#fff!important}
+    html[data-ui-theme="neon"] body #btn-gmap-resto{background:#fff!important;color:#15171A!important;border:1px solid rgba(21,23,26,.1)!important;border-radius:999px!important;padding:12px 14px!important}
+    html[data-ui-theme="neon"] body #btn-gmap-resto i{color:#15171A!important}
+    html[data-ui-theme="neon"] body [onclick*="heckin"]:is(button,a){background:#99FF33!important;color:#15171A!important;border-radius:999px!important;box-shadow:0 10px 22px rgba(153,255,51,.38)!important}
+    html[data-ui-theme="neon"] body [onclick*="heckin"]:is(button,a) :is(i,span){color:#15171A!important}
+    /* ===== Kartu "Active delivery" (markup khusus Neon) ===== */
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) .nxc{cursor:pointer;display:block}
+    .nxc-top{display:flex;align-items:center;justify-content:space-between}
+    .nxc-t{font-size:15px;color:#15171A;font-weight:500}
+    .nxc-badge{background:#E3FFB8;color:#2E6B00;font-size:13px;font-weight:700;padding:4px 14px;border-radius:999px}
+    .nxc-badge.done{background:#ECEEE8;color:#4B5047}
+    .nxc-mid{display:flex;align-items:center;gap:12px;margin-top:14px}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-logo{width:52px;height:52px;padding:0!important;border:0;display:flex;align-items:center;justify-content:center;border-radius:50%!important;color:#fff;font-size:20px;flex-shrink:0;box-shadow:0 6px 14px rgba(21,23,26,.18)}
+    .nxc-info{min-width:0;flex:1}
+    .nxc-name{margin:0;font-size:16px;font-weight:800;color:#15171A;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .nxc-plat{margin:3px 0 0;font-size:14px;color:#4B5047;display:flex;align-items:center;gap:6px}
+    .nxc-time{margin-left:auto;font-size:10.5px;color:#8A8F84;white-space:nowrap}
+    .nxc-line{height:1px;background:rgba(21,23,26,.08);margin:14px 0 12px}
+    .nxc-bot{display:flex;align-items:center;justify-content:space-between}
+    .nxc-cp{display:flex;align-items:center;gap:8px;font-size:15px;color:#2B2F2A}
+    .nxc-cp i{color:#6B7280;font-size:20px}.nxc-cp.off{color:#8A8F84}.nxc-cp.off i{color:#C9CCC2}
+    .nxc-price{font-size:16px;font-weight:800;color:#15171A}
+    .nxc-acts{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-ico{width:34px;height:34px;padding:0!important;border:0;display:flex;align-items:center;justify-content:center;border-radius:50%!important;background:#F1F3EE!important;color:#15171A!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-ico i{color:#15171A!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-del{background:#FFE9EC!important}html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-del i{color:#E11D48!important}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-go{width:auto;padding:0 14px!important;gap:6px;border-radius:999px!important;background:#15171A!important;color:#99FF33!important;font-size:12px;font-weight:800}
+    html[data-ui-theme="neon"] body :is(#orders-container,#home-recent-orders) button.nxc-go i{color:#99FF33!important}
+    html[data-ui-theme="neon"] body #home-orders-title{font-size:0}
+    html[data-ui-theme="neon"] body #home-orders-title::before{content:"Pesanan Aktif";font-size:20px;font-weight:800;color:#15171A}
+    /* PETA: tile tetap dari createBaseTileLayer() (Esri/OSM). Hanya gaya. */
+    html[data-ui-theme="neon"] body .leaflet-container{border-radius:24px;background:#E9ECE4;font-family:inherit}
+    html[data-ui-theme="neon"] body .leaflet-bar{border:0!important;border-radius:14px!important;overflow:hidden;box-shadow:0 8px 18px rgba(21,23,26,.2)!important}
+    html[data-ui-theme="neon"] body .leaflet-bar a{background:#fff!important;color:#15171A!important;border-bottom:1px solid rgba(21,23,26,.08)!important}
+    html[data-ui-theme="neon"] body .leaflet-bar a:hover{background:#99FF33!important}
+    html[data-ui-theme="neon"] body .leaflet-control-attribution{background:rgba(255,255,255,.8)!important;border-radius:10px 0 0 0;font-size:9px}
+    html[data-ui-theme="neon"] body .leaflet-popup-content-wrapper{border-radius:18px;box-shadow:0 12px 26px rgba(21,23,26,.25)}
+    html[data-ui-theme="neon"] body .theme-opt.is-active{border-color:#15171A;box-shadow:0 0 0 3px rgba(153,255,51,.75)}
+    </style>
+    <style id="theme-polish">
+    /* Poles tema (hanya bayangan, glow, border halus). Tidak mengubah ukuran/tata letak. */
+    /* === SALES (Lime) === */
+    html[data-ui-theme="sales"] body .purple-card-gradient{background:linear-gradient(150deg,#2D3227 0%,#1E211D 55%,#121411 100%)!important;box-shadow:0 24px 46px rgba(30,33,29,.32),0 0 0 1px rgba(221,255,0,.2),0 0 42px rgba(221,255,0,.18)!important}
+    html[data-ui-theme="sales"] body .card-shadow,html[data-ui-theme="sales"] body .shadow-xl{border:1px solid rgba(255,255,255,.75);box-shadow:0 14px 30px rgba(30,33,29,.1),0 2px 4px rgba(30,33,29,.05)!important}
+    html[data-ui-theme="sales"] body button.bg-indigo-600{box-shadow:0 10px 20px rgba(30,33,29,.28),0 0 16px rgba(221,255,0,.22)}
+    html[data-ui-theme="sales"] body .dm-box{background:rgba(221,255,0,.13);border-color:rgba(221,255,0,.32);box-shadow:inset 0 0 18px rgba(221,255,0,.08)}
+    html[data-ui-theme="sales"] body .dm-icon{filter:drop-shadow(0 0 6px rgba(221,255,0,.7))}
+    /* === FOCUS (Biru) === */
+    html[data-ui-theme="focus"] body .purple-card-gradient{box-shadow:0 26px 50px rgba(62,91,255,.32),0 0 44px rgba(210,244,74,.2)!important}
+    html[data-ui-theme="focus"] body .card-shadow{border:1px solid rgba(62,91,255,.09);box-shadow:0 14px 32px rgba(40,55,120,.11),0 2px 4px rgba(40,55,120,.05)!important}
+    html[data-ui-theme="focus"] body .dm-box{background:rgba(255,255,255,.16);border-color:rgba(210,244,74,.4)}
+    html[data-ui-theme="focus"] body .dm-icon{filter:drop-shadow(0 0 6px rgba(210,244,74,.8))}
+    /* === DEFAULT === */
+    html[data-ui-theme="default"] body .purple-card-gradient{box-shadow:0 24px 46px rgba(79,70,229,.34),0 0 38px rgba(139,92,246,.22)!important}
+    html[data-ui-theme="default"] body .card-shadow{border-color:rgba(99,102,241,.12);box-shadow:0 12px 28px rgba(79,70,229,.1),0 1px 3px rgba(15,23,42,.05)!important}
+    </style>
     <style id="daily-message-css">
     /* Pesan harian driver: netral, mengikuti warna kartu hero di semua tema */
     .dm-box{display:flex;align-items:flex-start;gap:8px;margin-top:12px;padding:10px 12px;border-radius:16px;
             background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.12);position:relative;z-index:1}
     .dm-icon{font-size:14px;line-height:1.35;flex-shrink:0}
+    .nx-home{display:none}
     .dm-text{margin:0;font-size:12px;line-height:1.45;font-weight:600;color:#fff;word-break:break-word}
     </style>
     <style id="theme-switcher-ui">
@@ -403,7 +562,7 @@
     (function(){
       var KEY='drivertrack_ui_theme';
       var current='default';
-      try{ var _t=localStorage.getItem(KEY); if(_t==='sales'||_t==='focus') current=_t; }catch(e){}
+      try{ var _t=localStorage.getItem(KEY); if(_t==='sales'||_t==='focus'||_t==='lime'||_t==='neon') current=_t; }catch(e){}
 
       /* pola arsir untuk grafik tema Sales */
       var cache={};
@@ -421,14 +580,14 @@
           tb:t.backgroundColor,tt:t.titleColor,tbc:t.bodyColor,tr:t.cornerRadius,tp:t.padding,td:t.displayColors,tc:t.caretSize};
       }
       function applyChart(name){
-        var on = name==='sales'||name==='focus';
+        var on = name==='sales'||name==='focus'||name==='lime'||name==='neon';
         if(!window.Chart||!orig) return;
         var d=Chart.defaults, l=d.plugins.legend.labels, t=d.plugins.tooltip;
         if(on){
           d.font.family = name==='focus' ? "'Plus Jakarta Sans',sans-serif" : "'Urbanist','Plus Jakarta Sans',sans-serif"; d.color='#7E807B';
           d.scale.grid.color='rgba(27,29,26,.05)'; d.scale.border.display=false;
           l.usePointStyle=true; l.pointStyle='circle'; l.boxWidth=8;
-          t.backgroundColor='#1E211D'; t.titleColor='#DDFF00'; t.bodyColor='#fff';
+          t.backgroundColor='#1E211D'; t.titleColor = (name==='lime'||name==='neon') ? (name==='neon' ? '#99FF33' : '#A6FF1F') : '#DDFF00'; t.bodyColor='#fff';
           t.cornerRadius=16; t.padding=11; t.displayColors=false; t.caretSize=0;
         }else{
           d.font.family=orig.font; d.color=orig.color; d.scale.grid.color=orig.grid; d.scale.border.display=orig.border;
@@ -438,41 +597,46 @@
         }
       }
       function applyCss(name){
-        var on = name==='sales', fe=document.getElementById('theme-focus');
+        var on = name==='sales'||name==='lime', fe=document.getElementById('theme-focus'), le=document.getElementById('theme-lime'), ne=document.getElementById('theme-neon');
         if(fe) fe.media = name==='focus' ? 'all' : 'not all';
+        if(le) le.media = name==='lime' ? 'all' : 'not all';
+        if(ne) ne.media = name==='neon' ? 'all' : 'not all';
         ['theme-override','theme-override-2'].forEach(function(id){
           var el=document.getElementById(id); if(el) el.media = on ? 'all' : 'not all';
         });
         document.documentElement.setAttribute('data-ui-theme', name);
-        var mt=document.getElementById('meta-theme-color'); if(mt) mt.setAttribute('content', on ? '#E8E6EE' : (name==='focus' ? '#FFFFFF' : '#F4F5FB'));
+        var mt=document.getElementById('meta-theme-color'); if(mt) mt.setAttribute('content', name==='neon' ? '#F3F4F1' : name==='lime' ? '#EEFFD6' : (on ? '#E8E6EE' : (name==='focus' ? '#FFFFFF' : '#F4F5FB')));
       }
       function syncButtons(){
         document.querySelectorAll('[data-theme-opt]').forEach(function(b){
           b.classList.toggle('is-active', b.getAttribute('data-theme-opt')===current);
         });
       }
-      window.__isSales=function(){return current==='sales';};
+      window.__isSales=function(){return current==='sales'||current==='lime';};
+      window.__isNeon=function(){return current==='neon';};
+      window.__isLime=function(){return current==='lime';};
       window.__isFocus=function(){return current==='focus';};
       /* Tema Focus: petakan warna grafik bawaan ke palet biru/lime/lavender (tanpa mengubah fungsi grafik) */
       if(window.Chart&&Chart.register){
         var FM={'#10B981':'#3E5BFF','rgba(16,185,129,0.35)':'rgba(62,91,255,0.3)','#F43F5E':'#D2F44A','rgba(244,63,94,0.35)':'rgba(210,244,74,0.45)',
           '#6366F1':'#3E5BFF','#F97316':'#3E5BFF','#EA580C':'#D2F44A','#16A34A':'#B9B8F2','#059669':'#111318'};
-        var mp=function(c){return Array.isArray(c)?c.map(mp):(FM[c]||c);};
+        var FN={'#10B981':'#99FF33','rgba(16,185,129,0.35)':'rgba(153,255,51,0.4)','#F43F5E':'#15171A','rgba(244,63,94,0.35)':'rgba(21,23,26,0.35)','#6366F1':'#15171A','#F97316':'#99FF33','#EA580C':'#15171A','#16A34A':'#6FCF1B','#059669':'#15171A'};
+        var mp=function(c){return Array.isArray(c)?c.map(mp):(((window.__isNeon&&window.__isNeon())?FN:FM)[c]||c);};
         Chart.register({id:'focusRecolor',beforeUpdate:function(ch){
-          if(!window.__isFocus()) return;
+          if(!window.__isFocus() && !(window.__isNeon&&window.__isNeon())) return;
           ch.data.datasets.forEach(function(ds){ if(ds.backgroundColor) ds.backgroundColor=mp(ds.backgroundColor); if(typeof ds.borderRadius==='number') ds.borderRadius=10; });
         }});
       }
       window.getUITheme=function(){return current;};
       window.syncThemeButtons=syncButtons;
       window.setUITheme=function(name){
-        current = (name==='sales'||name==='focus') ? name : 'default';
+        current = (name==='sales'||name==='focus'||name==='lime'||name==='neon') ? name : 'default';
         try{ localStorage.setItem(KEY,current); }catch(e){}
         applyCss(current); applyChart(current); syncButtons();
         /* gambar ulang grafik agar warna mengikuti tema (memakai fungsi render yang sudah ada) */
         try{ if(typeof renderAllViews==='function') renderAllViews(); }catch(e){ console.warn(e); }
         try{ if(typeof activeTab!=='undefined' && activeTab==='insights' && typeof renderInsightsView==='function') renderInsightsView(); }catch(e){ console.warn(e); }
-        if(typeof showToast==='function'){ try{ showToast({sales:'Tema Sales aktif',focus:'Tema Focus aktif','default':'Tema Default aktif'}[current]); }catch(e){} }
+        if(typeof showToast==='function'){ try{ showToast({sales:'Tema Sales aktif',focus:'Tema Focus aktif',lime:'Tema Lime Rider aktif',neon:'Tema Neon Charcoal aktif','default':'Tema Default aktif'}[current]); }catch(e){} }
       };
 
       /* terapkan tema tersimpan sedini mungkin (sebelum render pertama) */
@@ -583,6 +747,12 @@
                 </div>
             </div>
         </div>
+        <div class="nx-home max-w-md mx-auto w-full">
+            <p id="nx-greeting" class="nx-hi">Selamat Pagi,</p>
+            <p id="nx-name" class="nx-nm">Driver! 👋</p>
+            <div class="nx-search"><i class="fa-solid fa-magnifying-glass"></i><input id="nx-search-input" type="text" placeholder="Cari Resto / Orderan" autocomplete="off" onkeydown="if(event.key==='Enter')nxGoSearch()"><button type="button" onclick="switchTab('upload')" aria-label="Scan struk"><i class="fa-solid fa-qrcode"></i></button></div>
+            <div class="nx-actions"><button type="button" class="nx-btn" onclick="switchTab('upload')"><i class="fa-solid fa-expand"></i> Scan Struk AI</button><button type="button" class="nx-btn" onclick="nxOpenMapsResto()"><i class="fa-solid fa-location-dot"></i> Maps Resto</button></div>
+        </div>
     </header>
 
     <main class="max-w-md mx-auto w-full px-4 pt-4 flex-1">
@@ -684,7 +854,7 @@
 
             <div class="flex items-center justify-between pt-1">
                 <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                    <span>Pesanan Terbaru</span>
+                    <span id="home-orders-title">Pesanan Terbaru</span>
                     <span id="home-count-badge" class="bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-extrabold">0</span>
                 </h3>
                 <button onclick="switchTab('orders')" class="text-xs font-bold text-indigo-600 hover:text-indigo-700">Lihat Semua</button>
@@ -1211,7 +1381,7 @@
             <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-3">
                 <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-palette text-indigo-600"></i> Tema Tampilan</p>
                 <p class="text-[11px] text-slate-400 leading-relaxed">Pilih gaya tampilan aplikasi. Hanya mengubah warna dan gaya, data serta fitur tidak terpengaruh. Pilihan tersimpan di perangkat ini.</p>
-                <div class="grid grid-cols-3 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                     <button type="button" data-theme-opt="default" onclick="setUITheme('default')" class="theme-opt">
                         <span class="sw" style="background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%)"><span style="position:absolute;right:8px;bottom:8px;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.35)"></span></span>
                         <span class="lbl"><span>Default (Indigo)</span><i class="fa-solid fa-circle-check chk"></i></span>
@@ -1223,6 +1393,14 @@
                     <button type="button" data-theme-opt="focus" onclick="setUITheme('focus')" class="theme-opt">
                         <span class="sw" style="background:#3E5BFF"><span style="position:absolute;right:8px;bottom:8px;width:16px;height:16px;border-radius:50%;background:#D2F44A"></span><span style="position:absolute;left:8px;top:8px;width:34px;height:8px;border-radius:99px;background:#DFDDF8"></span></span>
                         <span class="lbl"><span>Focus (Biru)</span><i class="fa-solid fa-circle-check chk"></i></span>
+                    </button>
+                    <button type="button" data-theme-opt="lime" onclick="setUITheme('lime')" class="theme-opt">
+                        <span class="sw" style="background:linear-gradient(180deg,#F7FFEA,#DDFAA8)"><span style="position:absolute;left:8px;top:8px;width:46px;height:20px;border-radius:8px;background:#161914"></span><span style="position:absolute;left:14px;top:14px;width:20px;height:8px;border-radius:99px;background:#A6FF1F"></span><span style="position:absolute;right:8px;bottom:8px;width:18px;height:18px;border-radius:50%;background:#A6FF1F;box-shadow:0 0 10px #A6FF1F"></span></span>
+                        <span class="lbl"><span>Lime Rider (Baru)</span><i class="fa-solid fa-circle-check chk"></i></span>
+                    </button>
+                    <button type="button" data-theme-opt="neon" onclick="setUITheme('neon')" class="theme-opt">
+                        <span class="sw" style="background:#F3F4F1"><span style="position:absolute;left:0;right:0;top:0;height:26px;border-radius:0 0 14px 14px;background:#15171A"></span><span style="position:absolute;left:8px;top:8px;width:30px;height:9px;border-radius:99px;background:#99FF33"></span><span style="position:absolute;right:8px;bottom:7px;width:30px;height:12px;border-radius:99px;background:#99FF33;box-shadow:0 0 10px #99FF33"></span></span>
+                        <span class="lbl"><span>Neon Charcoal (Baru)</span><i class="fa-solid fa-circle-check chk"></i></span>
                     </button>
                 </div>
             </div>
@@ -4863,6 +5041,7 @@ function ekstrakTeksLokal(rawText) {
         }
 
         function createOrderCardHTML(o) {
+            if (window.__isNeon && window.__isNeon() && typeof createNeonOrderCardHTML === 'function') return createNeonOrderCardHTML(o);
             if (o.isCombined) return createCombinedOrderCardHTML(o);
             const isCash = o.cashAmount > 0;
             const payBadge = isCash 
@@ -5459,7 +5638,7 @@ function ekstrakTeksLokal(rawText) {
                             const routeCoords = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
 
                             const mapPolylineCombined = L.polyline(routeCoords, {
-                                color: (window.__isSales && window.__isSales()) ? '#1E211D' : '#6366F1', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round'
+                                color: (window.__isNeon && window.__isNeon()) ? '#22C55E' : ((window.__isSales && window.__isSales()) ? '#1E211D' : '#6366F1'), weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round'
                             }).addTo(leafletMapInstance);
                             leafletMapInstance.fitBounds(mapPolylineCombined.getBounds(), { padding: [35, 35] });
 
@@ -6994,6 +7173,8 @@ function ekstrakTeksLokal(rawText) {
             const palettes = {
                 default: { SPX: '#F97316', 'SPX Instan': '#F59E0B', ShopeeFood: '#EA580C', Grab: '#16A34A', Gojek: '#059669', Lainnya: '#6366F1' },
                 sales:   { SPX: '#1E211D', 'SPX Instan': '#7A8F00', ShopeeFood: '#A9BF00', Grab: '#5C6650', Gojek: '#8E9486', Lainnya: '#C9CCC2' },
+                neon:    { SPX: '#15171A', 'SPX Instan': '#4C8A00', ShopeeFood: '#99FF33', Grab: '#5C6650', Gojek: '#8E9486', Lainnya: '#C9CCC2' },
+                lime:    { SPX: '#161914', 'SPX Instan': '#4C8A00', ShopeeFood: '#A6FF1F', Grab: '#5C6650', Gojek: '#8E9486', Lainnya: '#C9CCC2' },
                 focus:   { SPX: '#3E5BFF', 'SPX Instan': '#00A3FF', ShopeeFood: '#FF7A45', Grab: '#12B76A', Gojek: '#111318', Lainnya: '#9AA0B8' }
             };
             const pal = palettes[theme] || palettes.default;
@@ -8935,7 +9116,7 @@ window.RoadRouter=(function(){
       if(dt>GAP||dk>=SPARSE_KM){ conns.push({a:pa,b:pb,t:dt>GAP?'gap':'sparse',dk:dk}); solid.push([pb]); }   // aplikasi ditinggal: isi lewat JALAN
       else { solid[solid.length-1].push(pb); denseKm+=dk; }
     }
-    var col=isSales()?'#1E211D':'#6366F1', all=[], jobs=[], roadKm=denseKm, nOk=0, nWait=0;
+    var col=(window.__isNeon&&window.__isNeon())?'#22C55E':(isSales()?'#1E211D':'#6366F1'), all=[], jobs=[], roadKm=denseKm, nOk=0, nWait=0;
     // 1) jejak GPS rapat -> ditempel ke jalan (map matching). Sebelum selesai, tampil jejak GPS asli (bukan perkiraan).
     solid.forEach(function(sg){
       var ll=sg.map(ll2); all=all.concat(ll);
@@ -9297,6 +9478,71 @@ window.RoadRouter=(function(){
 
   updateRangeUI();
   try{ window.renderOrdersList(); }catch(e){}
+})();
+</script>
+
+<script id="neon-theme-js">
+/* Tema Neon Charcoal: sinkron sapaan besar, pencarian & Maps Resto (hanya tampil di tema Neon) */
+(function(){
+  function nxSync(){
+    var g=document.getElementById('header-greeting'), n=document.getElementById('header-driver-name');
+    var G=document.getElementById('nx-greeting'), N=document.getElementById('nx-name');
+    if(!g||!n||!G||!N) return;
+    var gt=(g.textContent||'').replace(/\s*\u{1F44B}\s*$/u,'').trim()+',', nt=(n.textContent||'Driver').trim()+'! \u{1F44B}';
+    if(G.textContent!==gt) G.textContent=gt;
+    if(N.textContent!==nt) N.textContent=nt;
+  }
+  window.nxGoSearch=function(){
+    var v=(document.getElementById('nx-search-input')||{}).value||'';
+    var si=document.getElementById('search-input'); if(si) si.value=v;
+    if(typeof switchTab==='function') switchTab('orders');
+    if(typeof renderAllViews==='function') renderAllViews();
+  };
+  window.nxOpenMapsResto=function(){ window.open('https://www.google.com/maps/search/restoran+terdekat','_blank','noopener'); };
+
+  /* Kartu pesanan khusus tema Neon Charcoal (meniru kartu "Active delivery"). Data & aksi sama dengan kartu biasa. */
+  window.createNeonOrderCardHTML=function(o){
+    var esc=(typeof escapeHtml==='function')?escapeHtml:function(x){return String(x==null?'':x).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+    var comb=!!o.isCombined, subs=o.subOrders||[];
+    var real=function(c){return !!c && !c.provisional;};
+    var anyCp=real(o.restoCheckin)||real(o.recipCheckin)||subs.some(function(s){return real(s.restoCheckin)||real(s.recipCheckin);});
+    var done=comb?(subs.length>0&&subs.every(function(s){return !!s.recipCheckin;})):!!o.recipCheckin;
+    var time=new Date(o.timestamp).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+    var plat=(typeof effPlatform==='function')?effPlatform(o):(o.platform||'Lainnya');
+    var PI={'ShopeeFood':['fa-bag-shopping','#EE4D2D'],'SPX':['fa-box','#EE4D2D'],'SPX Instan':['fa-bolt','#F59E0B'],'Grab':['fa-circle','#00B14F'],'Gojek':['fa-circle','#00AA13'],'Lainnya':['fa-mobile-screen','#6B7280']};
+    var pi=PI[plat]||PI.Lainnya, logoBg, logoIc, name, platHtml;
+    if(comb){
+      logoBg='#15171A'; logoIc='fa-link" style="color:#99FF33';
+      name=esc(o.restoName)+' \u2192 '+esc(o.recipName);
+      platHtml='<i class="fa-solid fa-link" style="color:#15171A"></i> Gabungan \u2022 '+subs.length+' pesanan';
+    } else {
+      var cat=o.category;
+      logoBg=(cat==='Instan')?'#15171A':'#EE4D2D';
+      logoIc=(cat==='SPX'?'fa-box':(cat==='Instan'?'fa-bolt" style="color:#99FF33':'fa-utensils'));
+      name=esc(o.restoName);
+      platHtml='<i class="fa-solid '+pi[0]+'" style="color:'+pi[1]+'"></i> '+esc(plat);
+    }
+    var price=(o.orderIncome||0)>0?'Rp'+Number(o.orderIncome).toLocaleString('id-ID'):'-';
+    var id=String(o.id).replace(/'/g,'');
+    return '<div class="nxc" onclick="openOrderDetailModal(\''+id+'\')">'+
+      '<div class="nxc-top"><span class="nxc-t">'+(done?'Delivery selesai':'Active delivery')+'</span><span class="nxc-badge'+(done?' done':'')+'">'+(done?'Selesai':'Active')+'</span></div>'+
+      '<div class="nxc-mid"><button type="button" class="nxc-logo" style="background:'+logoBg+'" onclick="event.stopPropagation();openImageModal(\''+(o.screenshot||'')+'\')" aria-label="Lihat screenshot"><i class="fa-solid '+logoIc+'"></i></button>'+
+      '<div class="nxc-info"><p class="nxc-name">'+name+'</p><p class="nxc-plat">'+platHtml+'<span class="nxc-time">'+time+'</span></p></div></div>'+
+      '<div class="nxc-line"></div>'+
+      '<div class="nxc-bot"><span class="nxc-cp'+(anyCp?'':' off')+'"><i class="fa-solid fa-circle-check"></i> '+(anyCp?'Checkpoint':'Belum checkpoint')+'</span><span class="nxc-price">'+price+'</span></div>'+
+      '<div class="nxc-acts"><button type="button" class="nxc-ico" onclick="event.stopPropagation();openEditModal(\''+id+'\')" aria-label="Edit pesanan"><i class="fa-solid fa-pen-to-square"></i></button>'+
+      '<button type="button" class="nxc-ico nxc-del" onclick="event.stopPropagation();deleteOrder(\''+id+'\')" aria-label="Hapus pesanan"><i class="fa-solid fa-trash"></i></button>'+
+      '<button type="button" class="nxc-ico nxc-go" onclick="event.stopPropagation();openOrderDetailModal(\''+id+'\')"><i class="fa-solid fa-route"></i> Detail</button></div>'+
+    '</div>';
+  };
+  function init(){
+    nxSync();
+    try{
+      var mo=new MutationObserver(nxSync);
+      ['header-greeting','header-driver-name'].forEach(function(id){ var el=document.getElementById(id); if(el) mo.observe(el,{childList:true,characterData:true,subtree:true}); });
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 </script>
 
