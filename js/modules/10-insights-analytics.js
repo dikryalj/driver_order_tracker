@@ -593,16 +593,32 @@
             if (!o) return [];
             const list = [];
             if (o.isCombined && Array.isArray(o.subOrders) && o.subOrders.length > 0) {
-                // Pesanan dobel: ambil setiap sub-order. Jika resto nama sama pada dobel, keduanya masuk
+                // Pesanan dobel / gabungan:
+                // Setiap sub-order dibaca mandiri:
+                // - Jika resto sama pada kedua sub-order (mis. RM Singgalang & RM Singgalang) -> masuk 2x (+2 order).
+                // - Jika resto berbeda pada sub-order (mis. RM Singgalang & Soto Boyolali) -> masing-masing resto masuk 1x (+1 order).
                 o.subOrders.forEach(sub => {
-                    if (sub && sub.restoName) list.push(normRestoName(sub.restoName));
+                    if (sub) {
+                        const rn = normRestoName(sub.restoName || sub.namaResto || '');
+                        if (rn && rn !== '-' && rn !== '—' && !/^\d+\s*pengirim$/i.test(rn)) {
+                            list.push(rn);
+                        }
+                    }
                 });
-                if (list.length === 0 && o.restoName) list.push(normRestoName(o.restoName));
+                if (list.length === 0 && o.restoName) {
+                    const rn = normRestoName(o.restoName);
+                    if (rn && rn !== '-' && rn !== '—' && !/^\d+\s*pengirim$/i.test(rn)) {
+                        list.push(rn);
+                    }
+                }
             } else if (o.restoName) {
                 // Pesanan single
-                list.push(normRestoName(o.restoName));
+                const rn = normRestoName(o.restoName);
+                if (rn && rn !== '-' && rn !== '—' && !/^\d+\s*pengirim$/i.test(rn)) {
+                    list.push(rn);
+                }
             }
-            return list.filter(n => n && n !== '-' && n !== '—');
+            return list;
         }
         // "Azdan Seblak ×2 + Seblak Prasmanan" (nama sama digabung dengan jumlah)
         function getOrderRestoLabel(o) {
@@ -727,12 +743,16 @@
             const map = {};
 
             function getCleanKey(name) {
-                let k = String(name || '').toLowerCase();
-                try { k = k.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
-                k = k.replace(/\brumah\s+makan\b/gi, 'rm');
-                k = k.replace(/\br\.?m\.?\b/gi, 'rm');
-                k = k.replace(/[^a-z0-9]+/g, ' ').trim();
-                return k;
+                let s = String(name || '').toLowerCase();
+                try { s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+                // Pisahkan nama cabang / outlet setelah tanda hubung, kurung, atau koma
+                // Misal: "Rumah Makan Padang Singgalang - Kartasura" -> "Rumah Makan Padang Singgalang"
+                let base = s.split(/\s*[-–—,(]\s*/)[0] || s;
+                base = base.replace(/\brumah\s+makan\b/gi, 'rm');
+                base = base.replace(/\br\.?m\.?\b/gi, 'rm');
+                base = base.replace(/\bwarung\s+makan\b/gi, 'wm');
+                base = base.replace(/[^a-z0-9]+/g, ' ').trim();
+                return base || s.replace(/[^a-z0-9]+/g, ' ').trim();
             }
 
             // Ambil seluruh data 30 hari terakhir (full sebulan) secara realtime dari ordersList
