@@ -62,21 +62,18 @@
         }
 
         // ============================================================
-        // PERIOD TOGGLE: Harian | Mingguan
+        // PERIOD TOGGLE: Harian | Mingguan | Bulanan
         // ============================================================
         function setInsightsPeriodMode(mode) {
             insightsPeriodMode = mode;
             const btnDaily = document.getElementById('btn-period-daily');
             const btnWeekly = document.getElementById('btn-period-weekly');
-            if (btnDaily && btnWeekly) {
-                if (mode === 'daily') {
-                    btnDaily.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition';
-                    btnWeekly.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition';
-                } else {
-                    btnWeekly.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition';
-                    btnDaily.className = 'flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition';
-                }
-            }
+            const btnMonthly = document.getElementById('btn-period-monthly');
+            const activeCls = 'flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition';
+            const inactiveCls = 'flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition';
+            if (btnDaily) btnDaily.className = (mode === 'daily') ? activeCls : inactiveCls;
+            if (btnWeekly) btnWeekly.className = (mode === 'weekly') ? activeCls : inactiveCls;
+            if (btnMonthly) btnMonthly.className = (mode === 'monthly') ? activeCls : inactiveCls;
             renderInsightsView();
         }
 
@@ -94,6 +91,28 @@
             const s = start.toLocaleDateString('id-ID', opts);
             const e = end.toLocaleDateString('id-ID', opts);
             return `${s} – ${e}`;
+        }
+
+        function getInsightsTargetOrders() {
+            if (!ordersList || !Array.isArray(ordersList)) return [];
+            if (insightsPeriodMode === 'monthly') {
+                const year = insightsSelectedDate.getFullYear();
+                const month = insightsSelectedDate.getMonth();
+                const monthStart = new Date(year, month, 1, 0, 0, 0, 0);
+                const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+                return ordersList.filter(o => {
+                    const ts = new Date(o.timestamp);
+                    return ts >= monthStart && ts <= monthEnd;
+                });
+            } else if (insightsPeriodMode === 'weekly') {
+                const { start: weekStart, end: weekEnd } = getWeekBounds(insightsSelectedDate);
+                return ordersList.filter(o => {
+                    const ts = new Date(o.timestamp);
+                    return ts >= weekStart && ts <= weekEnd;
+                });
+            } else {
+                return ordersList.filter(o => isSameDay(o.timestamp, insightsSelectedDate));
+            }
         }
 
         function toggleExtraCharts() {
@@ -137,37 +156,60 @@
             renderInsightsWeekStrip();
 
             // ----------------------------------------------------------------
-            // DAILY vs WEEKLY mode
+            // PERIOD MODE: DAILY vs WEEKLY vs MONTHLY
             // ----------------------------------------------------------------
             const { start: weekStart, end: weekEnd } = getWeekBounds(insightsSelectedDate);
             const weekOrders = ordersList.filter(o => {
                 const ts = new Date(o.timestamp);
                 return ts >= weekStart && ts <= weekEnd;
             });
+            const dayOrders = ordersList.filter(o => isSameDay(o.timestamp, insightsSelectedDate));
+
+            const curYear = insightsSelectedDate.getFullYear();
+            const curMonth = insightsSelectedDate.getMonth();
+            const monthStart = new Date(curYear, curMonth, 1, 0, 0, 0, 0);
+            const monthEnd = new Date(curYear, curMonth + 1, 0, 23, 59, 59, 999);
+            const monthOrders = ordersList.filter(o => {
+                const ts = new Date(o.timestamp);
+                return ts >= monthStart && ts <= monthEnd;
+            });
 
             const isWeekly = insightsPeriodMode === 'weekly';
+            const isMonthly = insightsPeriodMode === 'monthly';
+
+            // Target orders yang aktif
+            const targetOrders = isMonthly ? monthOrders : (isWeekly ? weekOrders : dayOrders);
 
             // Judul kartu
             const progressTitleEl = document.getElementById('insights-progress-title');
             const ordersTitleEl = document.getElementById('insights-orders-title');
-            if (progressTitleEl) progressTitleEl.innerText = isWeekly ? "Weekly Progress" : "Today's Progress";
-            if (ordersTitleEl) ordersTitleEl.innerText = isWeekly ? "This Week's Orders" : "Today's Orders";
-
-            // Range label
-            const rangeEl = document.getElementById('insights-range-label');
-            if (rangeEl) {
-                rangeEl.innerText = isWeekly ? formatWeekRange(weekStart, weekEnd) : '';
+            if (progressTitleEl) {
+                progressTitleEl.innerText = isMonthly ? "Monthly Progress" : (isWeekly ? "Weekly Progress" : "Today's Progress");
+            }
+            if (ordersTitleEl) {
+                ordersTitleEl.innerText = isMonthly ? "This Month's Orders" : (isWeekly ? "This Week's Orders" : "Today's Orders");
             }
 
-            // Badge grafik
-            const badgeEl = document.getElementById('comparison-chart-badge');
-            if (badgeEl) badgeEl.innerText = isWeekly ? '7 Hari' : 'Hari Ini';
-            const subtitleEl = document.getElementById('comparison-chart-subtitle');
-            if (subtitleEl) subtitleEl.innerText = isWeekly ? 'Perbandingan 7 hari (Senin - Minggu)' : 'Pendapatan & BBM hari terpilih per jam';
+            // Range label di bawah filter
+            const rangeEl = document.getElementById('insights-range-label');
+            if (rangeEl) {
+                if (isMonthly) {
+                    const monthFmt = monthNames[curMonth];
+                    rangeEl.innerText = `1 ${monthFmt} – ${monthEnd.getDate()} ${monthFmt} ${curYear}`;
+                } else if (isWeekly) {
+                    rangeEl.innerText = formatWeekRange(weekStart, weekEnd);
+                } else {
+                    rangeEl.innerText = insightsSelectedDate.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+                }
+            }
 
-            // 2. Pilih pesanan yang akan diarahkan
-            const dayOrders = ordersList.filter(o => isSameDay(o.timestamp, insightsSelectedDate));
-            const targetOrders = isWeekly ? weekOrders : dayOrders;
+            // Badge grafik comparison
+            const badgeEl = document.getElementById('comparison-chart-badge');
+            if (badgeEl) badgeEl.innerText = isMonthly ? '30 Hari' : (isWeekly ? '7 Hari' : 'Hari Ini');
+            const subtitleEl = document.getElementById('comparison-chart-subtitle');
+            if (subtitleEl) {
+                subtitleEl.innerText = isMonthly ? 'Perbandingan 7 hari minggu terpilih' : (isWeekly ? 'Perbandingan 7 hari (Senin - Minggu)' : 'Pendapatan & BBM hari terpilih per jam');
+            }
 
             // 3. Hitung Agregasi Data (jumlah pesanan dihitung per subOrder untuk Gabungan)
             const totalOrders = countOrderUnits(targetOrders);
@@ -192,8 +234,9 @@
 
             const netIncome = Math.max(0, totalIncome - totalFuel);
 
-            // Target (harian atau mingguan)
-            const effectiveTarget = isWeekly ? (insightsDailyTarget * 7) : insightsDailyTarget;
+            // Target (harian, mingguan, atau bulanan)
+            const daysInMonth = monthEnd.getDate();
+            const effectiveTarget = isMonthly ? (insightsDailyTarget * daysInMonth) : (isWeekly ? (insightsDailyTarget * 7) : insightsDailyTarget);
 
             // 4. Update Circular Donut Ring Progress
             const ringEl = document.getElementById('insights-ring-progress');
@@ -211,7 +254,9 @@
 
             {
                 const isTodaySel = isSameDay(insightsSelectedDate, new Date());
-                if (ringSubEl) ringSubEl.innerText = isWeekly ? 'Minggu ini' : (isTodaySel ? 'Hari ini' : insightsSelectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
+                if (ringSubEl) {
+                    ringSubEl.innerText = isMonthly ? 'Bulan ini' : (isWeekly ? 'Minggu ini' : (isTodaySel ? 'Hari ini' : insightsSelectedDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })));
+                }
                 if (ringValEl) ringValEl.innerText = totalOrders;
                 if (ringUnitEl) ringUnitEl.innerText = 'order';
             }
@@ -254,7 +299,9 @@
             if (barNetProg) barNetProg.style.width = `${totalIncome > 0 ? Math.min(100, (netIncome / totalIncome) * 100) : 0}%`;
 
             // 7. Render List Pesanan
-            if (isWeekly) {
+            if (isMonthly) {
+                renderWeeklyOrdersList(monthOrders, monthStart);
+            } else if (isWeekly) {
                 renderWeeklyOrdersList(weekOrders, weekStart);
             } else {
                 renderInsightsOrdersList(dayOrders);
@@ -263,8 +310,9 @@
             // 8. Render Comparison Chart
             renderComparisonChart(weekStart);
 
-            // 9. Render Realtime Resto Rank (Data 30 Hari Penuh)
-            renderRestoRank();
+            // 9. Render Realtime Resto Rank & Platform Chart sesuai periode aktif (Harian, Mingguan, Bulanan)
+            renderRestoRank(targetOrders, insightsPeriodMode);
+            renderPlatformChart(targetOrders, insightsPeriodMode);
         }
 
         // ============================================================
@@ -683,70 +731,97 @@
         }
 
         function renderCharts() {
-            const filtered = getFilteredOrders();
+            const targetOrders = getInsightsTargetOrders();
 
-            // Hourly distribution
+            // Hourly distribution (berdasarkan targetOrders periode aktif)
             const hours = Array(24).fill(0);
-            filtered.forEach(o => {
+            targetOrders.forEach(o => {
                 const h = new Date(o.timestamp).getHours();
                 hours[h]++;
             });
 
             if (chartHoursInstance) chartHoursInstance.destroy();
 
-            const ctx1 = document.getElementById('chart-hours').getContext('2d');
-            chartHoursInstance = new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`),
-                    datasets: [{
-                        label: 'Jumlah Order',
-                        data: hours,
-                        ...(window.__isSales && window.__isSales() ? {
-                            backgroundColor: hours.map(v => (v > 0 && v === Math.max(...hours)) ? '#1E211D' : window.__hatch()),
-                            borderColor: 'rgba(27,29,26,.25)', borderWidth: 1,
-                            borderRadius: 10, borderSkipped: false
-                        } : {
-                            backgroundColor: '#6366F1',
-                            borderRadius: 6
-                        })
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0 } },
-                        x: { grid: { display: false } }
+            const canvasHours = document.getElementById('chart-hours');
+            if (canvasHours) {
+                const ctx1 = canvasHours.getContext('2d');
+                chartHoursInstance = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`),
+                        datasets: [{
+                            label: 'Jumlah Order',
+                            data: hours,
+                            ...(window.__isSales && window.__isSales() ? {
+                                backgroundColor: hours.map(v => (v > 0 && v === Math.max(...hours)) ? '#1E211D' : window.__hatch()),
+                                borderColor: 'rgba(27,29,26,.25)', borderWidth: 1,
+                                borderRadius: 10, borderSkipped: false
+                            } : {
+                                backgroundColor: '#6366F1',
+                                borderRadius: 6
+                            })
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { precision: 0 } },
+                            x: { grid: { display: false } }
+                        }
                     }
-                }
-            });
+                });
+            }
 
-            renderRestoRank();
-
-            renderPlatformChart(filtered);
+            renderRestoRank(targetOrders, insightsPeriodMode);
+            renderPlatformChart(targetOrders, insightsPeriodMode);
         }
 
-
         // Peringkat resto: daftar HTML (nama penuh, jumlah, bar).
-        // 1. Full sebulan / 30 hari terakhir secara realtime dari ordersList.
-        // 2. Pesanan single & dobel dihitung. Jika dobel dari resto sama, keduanya masuk data (+2).
-        // 3. Seleksi leaderboard berjenjang:
-        //    - Top 1: orderan > 10 (min. 11 order)
-        //    - Top 2: orderan > 5  (min. 6 order)
-        //    - Top 3: orderan > 3  (min. 4 order)
-        //    - Top 4: orderan > 2  (min. 3 order)
-        function renderRestoRank() {
+        // 1. Dinamis menyesuaikan periode My Schedule (Harian, Mingguan, Bulanan).
+        // 2. Pesanan single & dobel dihitung.
+        //    - Dobel dari resto sama: masuk 2x (+2 order).
+        //    - Dobel dari resto beda: masing-masing resto masuk 1x (+1 order).
+        // 3. Seleksi leaderboard berjenjang sesuai periode:
+        //    - Bulanan (30 hari): Top 1 > 10, Top 2 > 5, Top 3 > 3, Top 4 > 2
+        //    - Mingguan (7 hari): Top 1 > 5, Top 2 > 3, Top 3 > 2, Top 4 > 1
+        //    - Harian (1 hari): Top 1 > 2, Top 2 ≥ 2, Top 3 ≥ 1, Top 4 ≥ 1
+        function renderRestoRank(orders, mode) {
             const el = document.getElementById('resto-rank-list');
             if (!el) return;
-            const map = {};
+
+            const currentMode = mode || insightsPeriodMode || 'daily';
+            const badgeEl = document.getElementById('resto-rank-badge');
+            const subtitleEl = document.getElementById('resto-rank-subtitle');
+
+            // Update Badge & Subtitle sesuai mode
+            if (badgeEl) {
+                if (currentMode === 'monthly') {
+                    badgeEl.innerText = 'Bulanan (30 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                } else if (currentMode === 'weekly') {
+                    badgeEl.innerText = 'Mingguan (7 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                } else {
+                    badgeEl.innerText = 'Harian (1 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                }
+            }
+
+            if (subtitleEl) {
+                if (currentMode === 'monthly') {
+                    subtitleEl.innerText = 'Top 1 > 10 • Top 2 > 5 • Top 3 > 3 • Top 4 > 2';
+                } else if (currentMode === 'weekly') {
+                    subtitleEl.innerText = 'Top 1 > 5 • Top 2 > 3 • Top 3 > 2 • Top 4 > 1';
+                } else {
+                    subtitleEl.innerText = 'Top 1 > 2 • Top 2 ≥ 2 • Top 3 ≥ 1 • Top 4 ≥ 1';
+                }
+            }
 
             function getCleanKey(name) {
                 let s = String(name || '').toLowerCase();
                 try { s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
-                // Pisahkan nama cabang / outlet setelah tanda hubung, kurung, atau koma
-                // Misal: "Rumah Makan Padang Singgalang - Kartasura" -> "Rumah Makan Padang Singgalang"
                 let base = s.split(/\s*[-–—,(]\s*/)[0] || s;
                 base = base.replace(/\brumah\s+makan\b/gi, 'rm');
                 base = base.replace(/\br\.?m\.?\b/gi, 'rm');
@@ -755,25 +830,18 @@
                 return base || s.replace(/[^a-z0-9]+/g, ' ').trim();
             }
 
-            // Ambil seluruh data 30 hari terakhir (full sebulan) secara realtime dari ordersList
-            const now = Date.now();
-            const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
-            const sourceOrders = (typeof ordersList !== 'undefined' && Array.isArray(ordersList))
-                ? ordersList.filter(o => {
-                    const ts = Number(o.timestamp) || new Date(o.orderTime || 0).getTime();
-                    return ts >= thirtyDaysAgo;
-                })
-                : [];
+            const map = {};
+            const sourceOrders = Array.isArray(orders) ? orders : getInsightsTargetOrders();
 
             sourceOrders.forEach(o => {
-                // getOrderRestoNames mengambil dari single maupun dobel (subOrders).
-                // Jika dobel dengan resto sama, keduanya masuk data (+2 order).
+                // getOrderRestoNames membaca single maupun dobel (subOrders).
+                // Jika dobel resto sama -> terhitung 2x (+2 order).
+                // Jika dobel resto beda -> masing-masing terhitung 1x (+1 order).
                 getOrderRestoNames(o).forEach(label => {
                     const key = getCleanKey(label);
                     if (!key) return;
                     if (!map[key]) map[key] = { name: label, n: 0 };
                     map[key].n++;
-                    // Simpan nama dengan panjang/detail terbaik
                     if (label.length > map[key].name.length) {
                         map[key].name = label;
                     }
@@ -783,17 +851,34 @@
             // Urutkan semua resto berdasarkan jumlah order terbanyak
             const allSorted = Object.values(map).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
 
-            // Kriteria seleksi bertingkat:
-            // Top 1: orderan > 10 (min. 11 order)
-            // Top 2: orderan > 5  (min. 6 order)
-            // Top 3: orderan > 3  (min. 4 order)
-            // Top 4: orderan > 2  (min. 3 order)
-            const criteria = [
-                { rank: 1, min: 11, label: '> 10 order' },
-                { rank: 2, min: 6,  label: '> 5 order' },
-                { rank: 3, min: 4,  label: '> 3 order' },
-                { rank: 4, min: 3,  label: '> 2 order' }
-            ];
+            // Kriteria seleksi bertingkat dinamis sesuai periode:
+            let criteria;
+            let emptyMsg;
+            if (currentMode === 'monthly') {
+                criteria = [
+                    { rank: 1, min: 11, label: '> 10 order' },
+                    { rank: 2, min: 6,  label: '> 5 order' },
+                    { rank: 3, min: 4,  label: '> 3 order' },
+                    { rank: 4, min: 3,  label: '> 2 order' }
+                ];
+                emptyMsg = 'Kriteria 30 Hari (Bulanan): Top 1 (&gt;10 order), Top 2 (&gt;5 order), Top 3 (&gt;3 order), Top 4 (&gt;2 order).';
+            } else if (currentMode === 'weekly') {
+                criteria = [
+                    { rank: 1, min: 6, label: '> 5 order' },
+                    { rank: 2, min: 4, label: '> 3 order' },
+                    { rank: 3, min: 3, label: '> 2 order' },
+                    { rank: 4, min: 2, label: '> 1 order' }
+                ];
+                emptyMsg = 'Kriteria 7 Hari (Mingguan): Top 1 (&gt;5 order), Top 2 (&gt;3 order), Top 3 (&gt;2 order), Top 4 (&gt;1 order).';
+            } else {
+                criteria = [
+                    { rank: 1, min: 3, label: '> 2 order' },
+                    { rank: 2, min: 2, label: '≥ 2 order' },
+                    { rank: 3, min: 1, label: '≥ 1 order' },
+                    { rank: 4, min: 1, label: '≥ 1 order' }
+                ];
+                emptyMsg = 'Kriteria 1 Hari (Harian): Top 1 (&gt;2 order), Top 2 (&ge;2 order), Top 3 (&ge;1 order), Top 4 (&ge;1 order).';
+            }
 
             const rows = [];
             for (let i = 0; i < allSorted.length && i < criteria.length; i++) {
@@ -816,7 +901,7 @@
                         <i class="fa-solid fa-store-slash text-slate-300 text-2xl mb-2 block"></i>
                         <p class="text-xs font-bold text-slate-700">Belum Ada Resto di Leaderboard</p>
                         <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
-                            Kriteria 30 hari: Top 1 (&gt;10 order), Top 2 (&gt;5 order), Top 3 (&gt;3 order), Top 4 (&gt;2 order).
+                            ${emptyMsg}
                         </p>
                     </div>`;
                 return;
@@ -833,8 +918,24 @@
                 </div>`).join('');
         }
 
-        function renderPlatformChart(filtered) {
-            const breakdown = computePlatformBreakdown(filtered);
+        function renderPlatformChart(orders, mode) {
+            const currentMode = mode || insightsPeriodMode || 'daily';
+            const badgeEl = document.getElementById('platform-chart-badge');
+            if (badgeEl) {
+                if (currentMode === 'monthly') {
+                    badgeEl.innerText = 'Bulanan (30 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                } else if (currentMode === 'weekly') {
+                    badgeEl.innerText = 'Mingguan (7 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                } else {
+                    badgeEl.innerText = 'Harian (1 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                }
+            }
+
+            const sourceOrders = Array.isArray(orders) ? orders : getInsightsTargetOrders();
+            const breakdown = computePlatformBreakdown(sourceOrders);
             const order = ['SPX', 'SPX Instan', 'ShopeeFood', 'Grab', 'Gojek', 'Lainnya'];
             const platforms = Object.keys(breakdown).sort((a, b) => {
                 const ia = order.indexOf(a), ib = order.indexOf(b);
@@ -851,53 +952,60 @@
             const pal = palettes[theme] || palettes.default;
             const colorOf = p => pal[p] || pal.Lainnya;
 
-            if (chartPlatformInstance) chartPlatformInstance.destroy();
-            const ctx3 = document.getElementById('chart-platform').getContext('2d');
-            const maxIncome = Math.max(0, ...platforms.map(p => breakdown[p].income));
-            chartPlatformInstance = new Chart(ctx3, {
-                type: 'bar',
-                data: {
-                    labels: platforms,
-                    datasets: [{
-                        label: 'Pendapatan (Rp)',
-                        data: platforms.map(p => breakdown[p].income),
-                        backgroundColor: platforms.map(colorOf),
-                        borderRadius: 8,
-                        borderSkipped: false,
-                        // order tanpa pendapatan tetap terlihat sebagai batang tipis
-                        minBarLength: 6,
-                        maxBarThickness: 46
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { callbacks: {
-                            label: ctx => `Rp${Math.round(ctx.parsed.y).toLocaleString('id-ID')} · ${breakdown[ctx.label].orders} order`
-                        } }
+            if (chartPlatformInstance) {
+                chartPlatformInstance.destroy();
+                chartPlatformInstance = null;
+            }
+            const canvasEl = document.getElementById('chart-platform');
+            if (canvasEl) {
+                const ctx3 = canvasEl.getContext('2d');
+                const maxIncome = Math.max(0, ...platforms.map(p => breakdown[p].income));
+                chartPlatformInstance = new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: platforms,
+                        datasets: [{
+                            label: 'Pendapatan (Rp)',
+                            data: platforms.map(p => breakdown[p].income),
+                            backgroundColor: platforms.map(colorOf),
+                            borderRadius: 8,
+                            borderSkipped: false,
+                            minBarLength: 6,
+                            maxBarThickness: 46
+                        }]
                     },
-                    scales: {
-                        y: { beginAtZero: true, suggestedMax: maxIncome > 0 ? undefined : 10000,
-                             ticks: { callback: v => v >= 1000 ? `${Math.round(v / 100) / 10}k` : v } },
-                        x: { grid: { display: false }, ticks: { font: { weight: '600' } } }
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: {
+                                label: ctx => `Rp${Math.round(ctx.parsed.y).toLocaleString('id-ID')} · ${breakdown[ctx.label].orders} order`
+                            } }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, suggestedMax: maxIncome > 0 ? undefined : 10000,
+                                 ticks: { callback: v => v >= 1000 ? `${Math.round(v / 100) / 10}k` : v } },
+                            x: { grid: { display: false }, ticks: { font: { weight: '600' } } }
+                        }
                     }
-                }
-            });
+                });
+            }
 
             const listEl = document.getElementById('platform-breakdown-list');
-            if (platforms.length === 0) {
-                listEl.innerHTML = `<div class="col-span-2 text-center text-[11px] text-slate-400 py-2">Belum ada data pendapatan.</div>`;
-                return;
+            if (listEl) {
+                if (platforms.length === 0) {
+                    listEl.innerHTML = `<div class="col-span-2 text-center text-[11px] text-slate-400 py-3">Belum ada data pendapatan untuk periode ini.</div>`;
+                    return;
+                }
+                listEl.innerHTML = platforms.map(p => `
+                    <div class="plat-item bg-slate-50 rounded-xl p-2.5 border border-slate-100" style="border-left:4px solid ${colorOf(p)}">
+                        <p class="text-[10px] font-bold text-slate-500">${escapeHtml(p)}</p>
+                        <p class="text-xs font-extrabold text-slate-900">Rp${Math.round(breakdown[p].income).toLocaleString('id-ID')}</p>
+                        <p class="text-[9.5px] text-slate-400">${breakdown[p].orders} order</p>
+                    </div>
+                `).join('');
             }
-            listEl.innerHTML = platforms.map(p => `
-                <div class="plat-item bg-slate-50 rounded-xl p-2.5 border border-slate-100" style="border-left:4px solid ${colorOf(p)}">
-                    <p class="text-[10px] font-bold text-slate-500">${escapeHtml(p)}</p>
-                    <p class="text-xs font-extrabold text-slate-900">Rp${Math.round(breakdown[p].income).toLocaleString('id-ID')}</p>
-                    <p class="text-[9.5px] text-slate-400">${breakdown[p].orders} order</p>
-                </div>
-            `).join('');
         }
 
         function openImageModal(src, title = "Screenshot Detail") {

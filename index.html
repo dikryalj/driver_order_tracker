@@ -570,10 +570,11 @@
                     </button>
                 </div>
 
-                <!-- Toggle Harian | Mingguan -->
-                <div class="flex items-center justify-center gap-1 bg-slate-100 p-1 rounded-2xl w-52 mx-auto mt-2">
+                <!-- Toggle Harian | Mingguan | Bulanan -->
+                <div class="flex items-center justify-center gap-1 bg-slate-100 p-1 rounded-2xl w-72 mx-auto mt-2">
                     <button type="button" id="btn-period-daily" onclick="setInsightsPeriodMode('daily')" class="flex-1 py-1.5 text-xs font-bold rounded-xl bg-white text-emerald-700 shadow-sm transition">Harian</button>
                     <button type="button" id="btn-period-weekly" onclick="setInsightsPeriodMode('weekly')" class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition">Mingguan</button>
+                    <button type="button" id="btn-period-monthly" onclick="setInsightsPeriodMode('monthly')" class="flex-1 py-1.5 text-xs font-bold rounded-xl text-slate-500 hover:text-slate-900 transition">Bulanan</button>
                 </div>
                 <p id="insights-range-label" class="text-xs font-bold text-slate-500 mt-0.5"></p>
             </div>
@@ -721,9 +722,9 @@
                                 <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                                     <i class="fa-solid fa-store text-indigo-500"></i> Resto Paling Sering Order
                                 </h4>
-                                <p class="text-[10px] text-slate-400 font-semibold mt-0.5">Top 1 &gt; 10 • Top 2 &gt; 5 • Top 3 &gt; 3 • Top 4 &gt; 2</p>
+                                <p id="resto-rank-subtitle" class="text-[10px] text-slate-400 font-semibold mt-0.5">Top 1 &gt; 2 • Top 2 ≥ 2 • Top 3 ≥ 1 • Top 4 ≥ 1</p>
                             </div>
-                            <span class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full flex-shrink-0">30 Hari</span>
+                            <span id="resto-rank-badge" class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian</span>
                         </div>
                         <div id="resto-rank-list" class="space-y-2.5"></div>
                     </div>
@@ -733,7 +734,7 @@
                             <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-chart-pie text-violet-500"></i> Pendapatan per Platform
                             </h4>
-                            <span class="text-[10px] font-bold text-slate-400">Breakdown</span>
+                            <span id="platform-chart-badge" class="text-[10px] font-bold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian</span>
                         </div>
                         <div class="h-56">
                             <canvas id="chart-platform"></canvas>
