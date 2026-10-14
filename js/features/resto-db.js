@@ -55,14 +55,19 @@
     if(typeof ordersList==='undefined' || !ordersList) return out;
     ordersList.forEach(function(o){
       if(!o) return;
+      // Jangan masukkan pesanan Instan karena pengirimnya perorangan/rumah tangga, bukan resto/toko
+      if(o.category==='Instan' || o.platform==='SPX Instan') return;
       (o.isCombined ? (o.subOrders||[]) : [o]).forEach(function(h){
         if(!h) return;
+        if(h.category==='Instan' || h.platform==='SPX Instan') return;
         var c=h.restoCheckin; if(!c || c.provisional) return;
         var lat=Number(c.lat), lng=Number(c.lon!=null?c.lon:c.lng);
         if(!validCoord(lat,lng)) return;
         var k=normKey(h.restoName); if(!k) return;
+        var cat=catOf(h.category||o.category);
+        if(cat==='Instant') return; // Lewati Instan
         var ts=Number(c.timestamp)||0, prev=out[k];
-        var rec={namaResto:cleanText(h.restoName,200), alamatResto:cleanAddr(h.restoAddr), lat:r6(lat), lng:r6(lng), kategori:catOf(h.category||o.category), ts:ts};
+        var rec={namaResto:cleanText(h.restoName,200), alamatResto:cleanAddr(h.restoAddr), lat:r6(lat), lng:r6(lng), kategori:cat, ts:ts};
         if(!prev){ out[k]=rec; }
         else if(ts>prev.ts){ if(!rec.alamatResto) rec.alamatResto=prev.alamatResto; if(!rec.kategori) rec.kategori=prev.kategori; out[k]=rec; }
         else { if(!prev.alamatResto) prev.alamatResto=rec.alamatResto; if(!prev.kategori) prev.kategori=rec.kategori; }
@@ -75,10 +80,13 @@
     var all={}, st=loadStore(), od=fromOrders();
     Object.keys(st).forEach(function(k){
       var e=st[k]; if(!e || !validCoord(Number(e.lat),Number(e.lng))) return;
-      all[k]={namaResto:cleanText(e.namaResto,200), alamatResto:cleanText(e.alamatResto,400), lat:Number(e.lat), lng:Number(e.lng), kategori:catOf(e.kategori), ts:Number(e.ts)||0};
+      var cat = catOf(e.kategori);
+      if(cat==='Instant') return; // Instan bukan resto/toko
+      all[k]={namaResto:cleanText(e.namaResto,200), alamatResto:cleanText(e.alamatResto,400), lat:Number(e.lat), lng:Number(e.lng), kategori:cat||'Food', ts:Number(e.ts)||0};
     });
     Object.keys(od).forEach(function(k){
       var e=od[k], cur=all[k];
+      if(e.kategori==='Instant') return; // Lewati Instan
       if(!cur){ all[k]=e; return; }
       if(e.ts>cur.ts){ if(!e.alamatResto) e.alamatResto=cur.alamatResto; if(!e.kategori) e.kategori=cur.kategori; all[k]=e; }
       else { if(!cur.alamatResto) cur.alamatResto=e.alamatResto; if(!cur.kategori) cur.kategori=e.kategori; }

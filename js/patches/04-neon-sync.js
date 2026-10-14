@@ -17,6 +17,20 @@
   var _allRestosMap = null;
   var _allRestosLayer = null;
   var _cachedRestos = [];
+  var _currentCategory = 'all';
+  var _currentSearchQuery = '';
+
+  function isInstantResto(r) {
+    if (!r) return true;
+    var c = String(r.kategori || '').toLowerCase();
+    return c === 'instant' || c === 'instan' || /instant|instan/i.test(c);
+  }
+
+  function getRestoCat(r) {
+    var c = String((r && r.kategori) || '').toLowerCase();
+    if (/spx|express|reguler|regular|toko|paket/i.test(c)) return 'Express';
+    return 'Food';
+  }
 
   window.nxOpenMapsResto = function() {
     var modal = document.getElementById('modal-maps-resto');
@@ -28,28 +42,90 @@
       : {};
     
     var keys = Object.keys(restosObj);
-    _cachedRestos = keys.map(function(k) { return restosObj[k]; });
+    // KECUALIKAN Instan: karena instan adalah pengirim perorangan/rumah pribadi, bukan resto/toko
+    _cachedRestos = keys.map(function(k) { return restosObj[k]; }).filter(function(r) {
+      return !isInstantResto(r);
+    });
 
-    var countLabel = document.getElementById('maps-resto-count-label');
-    var emptyNotice = document.getElementById('maps-resto-empty-notice');
-    if (countLabel) {
-      countLabel.textContent = _cachedRestos.length + ' resto tersimpan di perangkat ini';
-    }
+    _currentCategory = 'all';
+    _currentSearchQuery = '';
+    var searchInput = document.getElementById('maps-resto-search');
+    if (searchInput) searchInput.value = '';
 
-    if (emptyNotice) {
-      if (_cachedRestos.length === 0) {
-        emptyNotice.classList.remove('hidden');
-      } else {
-        emptyNotice.classList.add('hidden');
-      }
-    }
+    updateCategoryBadges();
+    updateTabButtonStyles();
 
     // Inisialisasi peta Leaflet jika belum ada
     setTimeout(function() {
       initAllRestosMap();
-      renderRestoMarkers(_cachedRestos);
+      applyRestoFilters();
     }, 150);
   };
+
+  function updateCategoryBadges() {
+    var foodCount = 0, spxCount = 0;
+    _cachedRestos.forEach(function(r) {
+      if (getRestoCat(r) === 'Express') spxCount++;
+      else foodCount++;
+    });
+
+    var bAll = document.getElementById('badge-count-all');
+    var bFood = document.getElementById('badge-count-food');
+    var bSpx = document.getElementById('badge-count-spx');
+    var countLabel = document.getElementById('maps-resto-count-label');
+
+    if (bAll) bAll.textContent = '(' + _cachedRestos.length + ')';
+    if (bFood) bFood.textContent = '(' + foodCount + ')';
+    if (bSpx) bSpx.textContent = '(' + spxCount + ')';
+    if (countLabel) {
+      countLabel.textContent = _cachedRestos.length + ' lokasi tersimpan (' + foodCount + ' Food, ' + spxCount + ' SPX)';
+    }
+  }
+
+  function updateTabButtonStyles() {
+    var tAll = document.getElementById('tab-resto-all');
+    var tFood = document.getElementById('tab-resto-food');
+    var tSpx = document.getElementById('tab-resto-spx');
+
+    var activeCls = 'px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white shadow-sm transition active:scale-95 flex items-center gap-1 flex-shrink-0';
+    var inactiveCls = 'px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 shadow-sm transition active:scale-95 flex items-center gap-1 flex-shrink-0';
+
+    if (tAll) tAll.className = (_currentCategory === 'all') ? activeCls : inactiveCls;
+    if (tFood) tFood.className = (_currentCategory === 'Food') ? activeCls : inactiveCls;
+    if (tSpx) tSpx.className = (_currentCategory === 'Express') ? activeCls : inactiveCls;
+  }
+
+  window.nxSetCategoryFilter = function(cat) {
+    _currentCategory = cat || 'all';
+    updateTabButtonStyles();
+    applyRestoFilters();
+  };
+
+  function applyRestoFilters() {
+    var q = String(_currentSearchQuery || '').toLowerCase().trim();
+    var filtered = _cachedRestos.filter(function(r) {
+      if (isInstantResto(r)) return false; // Pastikan Instan selalu dikecualikan
+
+      var rCat = getRestoCat(r);
+      if (_currentCategory === 'Food' && rCat !== 'Food') return false;
+      if (_currentCategory === 'Express' && rCat !== 'Express') return false;
+
+      if (q) {
+        var n = String(r.namaResto || '').toLowerCase();
+        var a = String(r.alamatResto || '').toLowerCase();
+        if (n.indexOf(q) === -1 && a.indexOf(q) === -1) return false;
+      }
+      return true;
+    });
+
+    var emptyNotice = document.getElementById('maps-resto-empty-notice');
+    if (emptyNotice) {
+      if (filtered.length === 0) emptyNotice.classList.remove('hidden');
+      else emptyNotice.classList.add('hidden');
+    }
+
+    renderRestoMarkers(filtered);
+  }
 
   function initAllRestosMap() {
     var mapEl = document.getElementById('all-restos-map');
@@ -80,30 +156,48 @@
     _allRestosLayer.clearLayers();
 
     var bounds = [];
-    var restoIcon = L.divIcon({
-      className: 'custom-resto-pin',
-      html: '<div style="background:#f59e0b;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;"><i class="fa-solid fa-store" style="font-size:12px;"></i></div>',
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
-      popupAnchor: [0, -14]
+
+    // Ikon Pin Khusus Food (Restoran/Kuliner) - Warna Oranye
+    var foodIcon = L.divIcon({
+      className: 'resto-pin-food',
+      html: '<div style="background:#f97316;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(249,115,22,0.45);border:2.5px solid #fff;"><i class="fa-solid fa-utensils" style="font-size:12px;"></i></div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -15]
+    });
+
+    // Ikon Pin Khusus SPX (Toko/Paket) - Warna Merah/Oranye khas SPX
+    var spxIcon = L.divIcon({
+      className: 'resto-pin-spx',
+      html: '<div style="background:#ee4d2d;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(238,77,45,0.45);border:2.5px solid #fff;"><i class="fa-solid fa-box" style="font-size:12px;"></i></div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15],
+      popupAnchor: [0, -15]
     });
 
     restos.forEach(function(r) {
-      if (!r || !r.lat || !r.lng) return;
+      if (!r || !r.lat || !r.lng || isInstantResto(r)) return;
       var lat = Number(r.lat), lng = Number(r.lng);
       if (isNaN(lat) || isNaN(lng)) return;
 
       bounds.push([lat, lng]);
+      var rCat = getRestoCat(r);
+      var icon = (rCat === 'Express') ? spxIcon : foodIcon;
+
+      var badgeHtml = (rCat === 'Express')
+        ? '<span style="display:inline-flex;align-items:center;gap:4px;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:6px;"><i class="fa-solid fa-box"></i> SPX (Toko)</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:4px;background:#ffedd5;color:#c2410c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:6px;"><i class="fa-solid fa-utensils"></i> Food (Restoran)</span>';
+
       var gmapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;
-      var popupContent = '<div style="min-width:180px;padding:2px;">' +
-        '<p style="font-weight:800;font-size:13px;margin:0 0 4px 0;color:#0f172a;">' + (r.namaResto || 'Resto') + '</p>' +
-        (r.alamatResto ? '<p style="font-size:11px;color:#64748b;margin:0 0 6px 0;line-height:1.3;">' + r.alamatResto + '</p>' : '') +
-        (r.kategori ? '<span style="display:inline-block;background:#fef3c7;color:#b45309;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;margin-bottom:8px;">' + r.kategori + '</span><br>' : '') +
-        '<a href="' + gmapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#4f46e5;color:#fff;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:8px;text-decoration:none;margin-top:4px;">' +
+      var popupContent = '<div style="min-width:190px;padding:2px;">' +
+        '<p style="font-weight:800;font-size:13px;margin:0 0 4px 0;color:#0f172a;">' + (r.namaResto || 'Lokasi') + '</p>' +
+        (r.alamatResto ? '<p style="font-size:11px;color:#64748b;margin:0 0 6px 0;line-height:1.35;">' + r.alamatResto + '</p>' : '') +
+        badgeHtml + '<br>' +
+        '<a href="' + gmapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#4f46e5;color:#fff;font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;text-decoration:none;margin-top:4px;">' +
         '<i class="fa-solid fa-diamond-turn-right"></i> Buka Google Maps</a>' +
         '</div>';
 
-      L.marker([lat, lng], { icon: restoIcon })
+      L.marker([lat, lng], { icon: icon })
         .bindPopup(popupContent)
         .addTo(_allRestosLayer);
     });
@@ -114,17 +208,8 @@
   }
 
   window.nxFilterMapsResto = function(query) {
-    var q = String(query || '').toLowerCase().trim();
-    if (!q) {
-      renderRestoMarkers(_cachedRestos);
-      return;
-    }
-    var filtered = _cachedRestos.filter(function(r) {
-      var n = String(r.namaResto || '').toLowerCase();
-      var a = String(r.alamatResto || '').toLowerCase();
-      return n.indexOf(q) !== -1 || a.indexOf(q) !== -1;
-    });
-    renderRestoMarkers(filtered);
+    _currentSearchQuery = String(query || '');
+    applyRestoFilters();
   };
 
   window.nxCloseMapsResto = function() {

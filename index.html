@@ -1604,10 +1604,23 @@
             <div class="p-3 bg-white border-b border-slate-100 flex gap-2">
                 <div class="relative flex-1">
                     <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-                    <input type="text" id="maps-resto-search" oninput="nxFilterMapsResto(this.value)" placeholder="Cari nama resto yang diingat..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-400">
+                    <input type="text" id="maps-resto-search" oninput="nxFilterMapsResto(this.value)" placeholder="Cari nama resto atau toko..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-400">
                 </div>
                 <button type="button" onclick="nxCenterCurrentLocation()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 active:scale-95" title="Pusatkan ke lokasi saya">
                     <i class="fa-solid fa-crosshairs"></i> Posisi Saya
+                </button>
+            </div>
+
+            <!-- Category Tabs: Pisahkan Food dan SPX (Instan Dikecualikan) -->
+            <div class="px-3 py-2 bg-slate-50 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                <button type="button" id="tab-resto-all" onclick="nxSetCategoryFilter('all')" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white shadow-sm transition active:scale-95 flex items-center gap-1 flex-shrink-0">
+                    Semua <span id="badge-count-all" class="text-[10px] opacity-80">(0)</span>
+                </button>
+                <button type="button" id="tab-resto-food" onclick="nxSetCategoryFilter('Food')" class="px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-amber-50 shadow-sm transition active:scale-95 flex items-center gap-1 flex-shrink-0">
+                    <i class="fa-solid fa-utensils text-[11px] text-amber-500"></i> Food <span id="badge-count-food" class="text-[10px] text-slate-400 font-semibold">(0)</span>
+                </button>
+                <button type="button" id="tab-resto-spx" onclick="nxSetCategoryFilter('Express')" class="px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-700 border border-slate-200 hover:bg-rose-50 shadow-sm transition active:scale-95 flex items-center gap-1 flex-shrink-0">
+                    <i class="fa-solid fa-box text-[11px] text-rose-500"></i> SPX (Toko) <span id="badge-count-spx" class="text-[10px] text-slate-400 font-semibold">(0)</span>
                 </button>
             </div>
 
