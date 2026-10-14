@@ -542,7 +542,7 @@
         </section>
 
         <!-- Section Insights (Sesuai Desain My Schedule & Today's Progress) -->
-        <section id="tab-insights" class="hidden space-y-4 pb-28">
+        <section id="tab-insights" class="hidden space-y-4 pb-36">
             <!-- Header My Schedule: Terpusat & Rapi Sesuai Gambar Referensi -->
             <div class="text-center space-y-2 pt-1">
                 <h2 class="text-lg font-black text-slate-900 tracking-tight">My Schedule</h2>
@@ -709,7 +709,7 @@
                             <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-clock text-amber-500"></i> Distribusi Jam Gacor
                             </h4>
-                            <span class="text-[10px] font-bold text-slate-400">24 Jam</span>
+                            <span id="hours-chart-badge" class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian (1 Hari)</span>
                         </div>
                         <div class="h-56">
                             <canvas id="chart-hours"></canvas>
@@ -722,9 +722,9 @@
                                 <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                                     <i class="fa-solid fa-store text-indigo-500"></i> Resto Paling Sering Order
                                 </h4>
-                                <p id="resto-rank-subtitle" class="text-[10px] text-slate-400 font-semibold mt-0.5">Top 1 &gt; 2 • Top 2 ≥ 2 • Top 3 ≥ 1 • Top 4 ≥ 1</p>
+                                <p id="resto-rank-subtitle" class="text-[10px] text-slate-400 font-semibold mt-0.5">Peringkat resto hari terpilih</p>
                             </div>
-                            <span id="resto-rank-badge" class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian</span>
+                            <span id="resto-rank-badge" class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian (1 Hari)</span>
                         </div>
                         <div id="resto-rank-list" class="space-y-2.5"></div>
                     </div>
@@ -734,13 +734,14 @@
                             <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-chart-pie text-violet-500"></i> Pendapatan per Platform
                             </h4>
-                            <span id="platform-chart-badge" class="text-[10px] font-bold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian</span>
+                            <span id="platform-chart-badge" class="text-[10px] font-bold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full flex-shrink-0">Harian (1 Hari)</span>
                         </div>
                         <div class="h-56">
                             <canvas id="chart-platform"></canvas>
                         </div>
                         <div id="platform-breakdown-list" class="grid grid-cols-2 gap-2 mt-3"></div>
                     </div>
+                    <div class="h-10"></div>
                 </div>
             </div>
         </section>

@@ -310,7 +310,8 @@
             // 8. Render Comparison Chart
             renderComparisonChart(weekStart);
 
-            // 9. Render Realtime Resto Rank & Platform Chart sesuai periode aktif (Harian, Mingguan, Bulanan)
+            // 9. Render Distribusi Jam Gacor, Resto Rank & Platform Chart sesuai periode aktif (Harian, Mingguan, Bulanan)
+            renderHourlyChart(targetOrders, insightsPeriodMode);
             renderRestoRank(targetOrders, insightsPeriodMode);
             renderPlatformChart(targetOrders, insightsPeriodMode);
         }
@@ -730,50 +731,73 @@
                 </div>`;
         }
 
-        function renderCharts() {
-            const targetOrders = getInsightsTargetOrders();
-
-            // Hourly distribution (berdasarkan targetOrders periode aktif)
-            const hours = Array(24).fill(0);
-            targetOrders.forEach(o => {
-                const h = new Date(o.timestamp).getHours();
-                hours[h]++;
-            });
-
-            if (chartHoursInstance) chartHoursInstance.destroy();
-
-            const canvasHours = document.getElementById('chart-hours');
-            if (canvasHours) {
-                const ctx1 = canvasHours.getContext('2d');
-                chartHoursInstance = new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`),
-                        datasets: [{
-                            label: 'Jumlah Order',
-                            data: hours,
-                            ...(window.__isSales && window.__isSales() ? {
-                                backgroundColor: hours.map(v => (v > 0 && v === Math.max(...hours)) ? '#1E211D' : window.__hatch()),
-                                borderColor: 'rgba(27,29,26,.25)', borderWidth: 1,
-                                borderRadius: 10, borderSkipped: false
-                            } : {
-                                backgroundColor: '#6366F1',
-                                borderRadius: 6
-                            })
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, ticks: { precision: 0 } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
+        function renderHourlyChart(orders, mode) {
+            const currentMode = mode || insightsPeriodMode || 'daily';
+            const badgeEl = document.getElementById('hours-chart-badge');
+            if (badgeEl) {
+                if (currentMode === 'monthly') {
+                    badgeEl.innerText = 'Bulanan (30 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                } else if (currentMode === 'weekly') {
+                    badgeEl.innerText = 'Mingguan (7 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                } else {
+                    badgeEl.innerText = 'Harian (1 Hari)';
+                    badgeEl.className = 'text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full flex-shrink-0';
+                }
             }
 
+            const canvasHours = document.getElementById('chart-hours');
+            if (!canvasHours) return;
+
+            const sourceOrders = Array.isArray(orders) ? orders : getInsightsTargetOrders();
+            const hours = Array(24).fill(0);
+            sourceOrders.forEach(o => {
+                const ts = Number(o.timestamp) || new Date(o.orderTime || 0).getTime();
+                if (ts) {
+                    const h = new Date(ts).getHours();
+                    if (h >= 0 && h < 24) hours[h]++;
+                }
+            });
+
+            if (chartHoursInstance) {
+                chartHoursInstance.destroy();
+                chartHoursInstance = null;
+            }
+
+            const ctx1 = canvasHours.getContext('2d');
+            chartHoursInstance = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: Array.from({length: 24}, (_, i) => `${String(i).padStart(2, '0')}:00`),
+                    datasets: [{
+                        label: 'Jumlah Order',
+                        data: hours,
+                        ...(window.__isSales && window.__isSales() ? {
+                            backgroundColor: hours.map(v => (v > 0 && v === Math.max(...hours)) ? '#1E211D' : window.__hatch()),
+                            borderColor: 'rgba(27,29,26,.25)', borderWidth: 1,
+                            borderRadius: 10, borderSkipped: false
+                        } : {
+                            backgroundColor: '#6366F1',
+                            borderRadius: 6
+                        })
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function renderCharts() {
+            const targetOrders = getInsightsTargetOrders();
+            renderHourlyChart(targetOrders, insightsPeriodMode);
             renderRestoRank(targetOrders, insightsPeriodMode);
             renderPlatformChart(targetOrders, insightsPeriodMode);
         }
@@ -783,10 +807,10 @@
         // 2. Pesanan single & dobel dihitung.
         //    - Dobel dari resto sama: masuk 2x (+2 order).
         //    - Dobel dari resto beda: masing-masing resto masuk 1x (+1 order).
-        // 3. Seleksi leaderboard berjenjang sesuai periode:
-        //    - Bulanan (30 hari): Top 1 > 10, Top 2 > 5, Top 3 > 3, Top 4 > 2
-        //    - Mingguan (7 hari): Top 1 > 5, Top 2 > 3, Top 3 > 2, Top 4 > 1
-        //    - Harian (1 hari): Top 1 > 2, Top 2 ≥ 2, Top 3 ≥ 1, Top 4 ≥ 1
+        // 3. Seleksi leaderboard:
+        //    - Harian (1 hari): Top resto hari terpilih (minimal 1 order).
+        //    - Mingguan (7 hari): Top resto 7 hari minggu terpilih (minimal 1 order).
+        //    - Bulanan (30 hari): Seleksi berjenjang (Top 1 > 10, Top 2 > 5, Top 3 > 3, Top 4 > 2).
         function renderRestoRank(orders, mode) {
             const el = document.getElementById('resto-rank-list');
             if (!el) return;
@@ -813,9 +837,9 @@
                 if (currentMode === 'monthly') {
                     subtitleEl.innerText = 'Top 1 > 10 • Top 2 > 5 • Top 3 > 3 • Top 4 > 2';
                 } else if (currentMode === 'weekly') {
-                    subtitleEl.innerText = 'Top 1 > 5 • Top 2 > 3 • Top 3 > 2 • Top 4 > 1';
+                    subtitleEl.innerText = 'Peringkat resto 7 hari (minggu terpilih)';
                 } else {
-                    subtitleEl.innerText = 'Top 1 > 2 • Top 2 ≥ 2 • Top 3 ≥ 1 • Top 4 ≥ 1';
+                    subtitleEl.innerText = 'Peringkat resto hari terpilih';
                 }
             }
 
@@ -851,55 +875,74 @@
             // Urutkan semua resto berdasarkan jumlah order terbanyak
             const allSorted = Object.values(map).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
 
-            // Kriteria seleksi bertingkat dinamis sesuai periode:
-            let criteria;
-            let emptyMsg;
+            const rows = [];
+            let emptyTitle = 'Belum Ada Pesanan Resto';
+            let emptyMsg = 'Belum ada data pesanan resto untuk periode ini.';
+
             if (currentMode === 'monthly') {
-                criteria = [
+                // Seleksi berjenjang Bulanan:
+                // Top 1: orderan > 10 (min. 11 order)
+                // Top 2: orderan > 5  (min. 6 order)
+                // Top 3: orderan > 3  (min. 4 order)
+                // Top 4: orderan > 2  (min. 3 order)
+                const tierLimits = [
                     { rank: 1, min: 11, label: '> 10 order' },
                     { rank: 2, min: 6,  label: '> 5 order' },
                     { rank: 3, min: 4,  label: '> 3 order' },
                     { rank: 4, min: 3,  label: '> 2 order' }
                 ];
+                let tierIdx = 0;
+                for (let i = 0; i < allSorted.length && tierIdx < tierLimits.length; i++) {
+                    const r = allSorted[i];
+                    while (tierIdx < tierLimits.length && r.n < tierLimits[tierIdx].min) {
+                        tierIdx++;
+                    }
+                    if (tierIdx < tierLimits.length) {
+                        rows.push({
+                            ...r,
+                            rank: tierLimits[tierIdx].rank,
+                            reqLabel: tierLimits[tierIdx].label
+                        });
+                        tierIdx++;
+                    }
+                }
+                emptyTitle = 'Belum Ada Resto di Leaderboard';
                 emptyMsg = 'Kriteria 30 Hari (Bulanan): Top 1 (&gt;10 order), Top 2 (&gt;5 order), Top 3 (&gt;3 order), Top 4 (&gt;2 order).';
             } else if (currentMode === 'weekly') {
-                criteria = [
-                    { rank: 1, min: 6, label: '> 5 order' },
-                    { rank: 2, min: 4, label: '> 3 order' },
-                    { rank: 3, min: 3, label: '> 2 order' },
-                    { rank: 4, min: 2, label: '> 1 order' }
-                ];
-                emptyMsg = 'Kriteria 7 Hari (Mingguan): Top 1 (&gt;5 order), Top 2 (&gt;3 order), Top 3 (&gt;2 order), Top 4 (&gt;1 order).';
-            } else {
-                criteria = [
-                    { rank: 1, min: 3, label: '> 2 order' },
-                    { rank: 2, min: 2, label: '≥ 2 order' },
-                    { rank: 3, min: 1, label: '≥ 1 order' },
-                    { rank: 4, min: 1, label: '≥ 1 order' }
-                ];
-                emptyMsg = 'Kriteria 1 Hari (Harian): Top 1 (&gt;2 order), Top 2 (&ge;2 order), Top 3 (&ge;1 order), Top 4 (&ge;1 order).';
-            }
-
-            const rows = [];
-            for (let i = 0; i < allSorted.length && i < criteria.length; i++) {
-                const r = allSorted[i];
-                const crit = criteria[i];
-                if (r.n >= crit.min) {
-                    rows.push({
-                        ...r,
-                        rank: crit.rank,
-                        reqLabel: crit.label
-                    });
-                } else {
-                    break;
+                // Mode Mingguan (7 Hari): Tampilkan hingga 4 resto teratas (minimal 1 order)
+                for (let i = 0; i < allSorted.length && i < 4; i++) {
+                    const r = allSorted[i];
+                    if (r.n >= 1) {
+                        rows.push({
+                            ...r,
+                            rank: i + 1,
+                            reqLabel: `${r.n} order`
+                        });
+                    }
                 }
+                emptyTitle = 'Belum Ada Pesanan Resto Minggu Ini';
+                emptyMsg = 'Pesanan makanan/toko dalam 7 hari minggu ini akan otomatis tampil di sini.';
+            } else {
+                // Mode Harian (1 Hari): Tampilkan hingga 4 resto teratas (minimal 1 order)
+                for (let i = 0; i < allSorted.length && i < 4; i++) {
+                    const r = allSorted[i];
+                    if (r.n >= 1) {
+                        rows.push({
+                            ...r,
+                            rank: i + 1,
+                            reqLabel: `${r.n} order`
+                        });
+                    }
+                }
+                emptyTitle = 'Belum Ada Pesanan Resto Hari Ini';
+                emptyMsg = 'Pesanan makanan/toko hari terpilih akan otomatis tampil di sini.';
             }
 
             if (!rows.length) {
                 el.innerHTML = `
                     <div class="text-center py-6 px-3">
                         <i class="fa-solid fa-store-slash text-slate-300 text-2xl mb-2 block"></i>
-                        <p class="text-xs font-bold text-slate-700">Belum Ada Resto di Leaderboard</p>
+                        <p class="text-xs font-bold text-slate-700">${emptyTitle}</p>
                         <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
                             ${emptyMsg}
                         </p>
