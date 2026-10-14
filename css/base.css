@@ -1,0 +1,41 @@
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #F4F5FB;
+            color: #1E1B4B;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+        .purple-gradient {
+            background: linear-gradient(135deg, #6366F1 0%, #7C3AED 50%, #8B5CF6 100%);
+        }
+        .purple-card-gradient {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        }
+        .glass-pill {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+        }
+        .card-shadow {
+            box-shadow: 0 4px 20px 0 rgba(15, 23, 42, 0.04);
+        }
+        .fab-shadow {
+            box-shadow: 0 10px 25px -3px rgba(99, 102, 241, 0.5);
+        }
+        .leaflet-container {
+            border-radius: 1rem;
+            z-index: 1;
+        }
+        .custom-pin-red, .custom-pin-green {
+            background: transparent !important;
+            border: none !important;
+        }
+        /* Peta: di perangkat sentuh (HP/tablet) peta TIDAK membuka Google Maps saat diketuk */
+        .map-hint-mobile { display: none; }
+        @media (pointer: coarse) {
+            .map-hint-desktop { display: none; }
+            .map-hint-mobile { display: inline; }
+            #detail-map-container, #map-checkin-placeholder { cursor: default !important; }
+        }
+    

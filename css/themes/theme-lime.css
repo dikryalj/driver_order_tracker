@@ -1,0 +1,18 @@
+    /* Tema LIME RIDER (mengikuti referensi DriverTrack Sales Lime): latar lime muda, kartu arang, aksen #A6FF1F, tombol pil putih. Hanya tampilan */
+    :root{--ink:#14170F;--dark:#161914;--lime:#A6FF1F;--mute:#6B7160;--glass:rgba(255,255,255,.9);--line:rgba(20,23,15,.08)}
+    html body{background:linear-gradient(180deg,#F8FFEC 0%,#EDFFD2 55%,#E2FAB5 100%) fixed!important}
+    html body #tab-dashboard::before{display:none!important}
+    html body header.sticky{background:rgba(248,255,236,.85)!important}
+    html body .card-shadow,html body .shadow-xl,html body .shadow-md{border:1px solid rgba(166,255,31,.3);box-shadow:0 14px 30px rgba(70,120,0,.11),0 2px 4px rgba(70,120,0,.05)!important}
+    html body .border-slate-100,html body .border-slate-50{border-color:rgba(166,255,31,.3)!important}
+    html body .bg-slate-50,html body .bg-slate-100{background:rgba(166,255,31,.13)!important}
+    html body .purple-card-gradient{background:linear-gradient(150deg,#272C21 0%,#161914 55%,#0E100C 100%)!important;box-shadow:0 24px 46px rgba(22,25,20,.32),0 0 0 1px rgba(166,255,31,.25),0 0 44px rgba(166,255,31,.22)!important}
+    html body .purple-card-gradient::before{background:radial-gradient(circle,rgba(166,255,31,.3),transparent 65%)!important}
+    html body .purple-card-gradient>.absolute{background:rgba(166,255,31,.18)!important}
+    html body .purple-card-gradient .glass-pill{background:rgba(166,255,31,.16)!important;border-color:rgba(166,255,31,.42)!important;color:var(--lime)!important}
+    html body #header-driver-avatar{background:rgba(166,255,31,.55)}
+    html body button.bg-indigo-600{box-shadow:0 10px 20px rgba(22,25,20,.28),0 0 16px rgba(166,255,31,.3)}
+    html body .dm-box{background:rgba(166,255,31,.14);border-color:rgba(166,255,31,.38);box-shadow:inset 0 0 18px rgba(166,255,31,.08)}
+    html body .dm-icon{filter:drop-shadow(0 0 6px rgba(166,255,31,.8))}
+    html body .theme-opt.is-active{border-color:#161914;box-shadow:0 0 0 3px rgba(166,255,31,.75)}
+    
