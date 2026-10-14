@@ -1,7 +1,7 @@
     /* Tema NEON CHARCOAL — MANDIRI (di atas dasar Default, tidak memakai blok Sales). Hanya tampilan. */
     html[data-ui-theme="neon"] body{background:#F3F4F1!important;color:#15171A}
     /* Header arang membulat + sapaan besar, pencarian, dua tombol lime (hanya di Home) */
-    html[data-ui-theme="neon"] header.sticky{position:relative!important;background:linear-gradient(160deg,#23272B,#15171A 70%)!important;border:0!important;border-radius:0 0 34px 34px;padding:16px 18px 20px!important;box-shadow:0 18px 36px rgba(21,23,26,.3);backdrop-filter:none!important}
+    html[data-ui-theme="neon"] header.sticky{position:sticky!important;top:0;z-index:30;background:linear-gradient(160deg,#23272B,#15171A 70%)!important;border:0!important;border-radius:0 0 34px 34px;padding:16px 18px 20px!important;box-shadow:0 18px 36px rgba(21,23,26,.3);backdrop-filter:none!important}
     html[data-ui-theme="neon"] header #header-greeting{color:rgba(255,255,255,.65)!important}
     html[data-ui-theme="neon"] header #header-driver-name{color:#fff!important}
     html[data-ui-theme="neon"] header #header-driver-avatar{background:#99FF33!important;color:#15171A!important;--tw-ring-color:rgba(153,255,51,.65)}

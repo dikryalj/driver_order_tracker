@@ -1,15 +1,10 @@
-    /* judul besar ala referensi */
-    html body #tab-dashboard::before{content:"Ini yang terjadi\A di orderanmu.";white-space:pre;display:block;font-size:2rem;font-weight:500;line-height:1.08;letter-spacing:-.035em;padding:2px 4px 2px;color:var(--ink)}
-    html body header.sticky button{border-radius:999px!important;background:rgba(255,255,255,.9)!important;color:var(--ink)!important}
-    html body header.sticky .bg-rose-500{background:#FF5B5B!important}
     /* hero */
     html body #hero-total-orders{font-size:2.5rem;font-weight:500;letter-spacing:-.03em;line-height:1.05}
     html body .purple-card-gradient{border-radius:34px!important;padding:22px!important}
     html body .purple-card-gradient .uppercase{text-transform:none;letter-spacing:0;font-size:.8rem;color:#A9ACA3!important}
-    html body div:has(>#hero-progress-bar){height:34px!important;padding:4px!important;overflow:visible!important;border-radius:999px!important}
-    html body #hero-progress-bar{position:relative;min-width:34px;border-radius:999px!important}
-    html body #hero-progress-bar::after{content:"\22EE";position:absolute;right:0;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;
-      background:#2A2E28;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px rgba(221,255,0,.35),0 4px 12px rgba(0,0,0,.4)}
+    html body div:has(>#hero-progress-bar){height:10px!important;padding:0!important;overflow:hidden!important;border-radius:999px!important}
+    html body #hero-progress-bar{position:relative;min-width:0!important;border-radius:999px!important}
+    html body #hero-progress-bar::after{display:none!important}
     html body .purple-card-gradient .grid{border:0!important;padding-top:6px!important;gap:10px!important}
     html body .purple-card-gradient .grid>div{position:relative;text-align:left!important;padding:14px 14px 12px!important;border-radius:24px!important;min-height:92px;
       display:flex;flex-direction:column;justify-content:space-between;background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.08)!important}
@@ -31,6 +26,7 @@
     html body div:has(>#finance-net){background-image:repeating-radial-gradient(circle at 105% -10%,transparent 0 12px,rgba(255,255,255,.08) 12px 13px)!important}
     html body div:has(>#finance-net)::after{background:rgba(255,255,255,.14)!important;color:#fff!important}
     html body div:has(>#finance-fuel){background:rgba(255,255,255,.55)!important;border:1px solid rgba(255,255,255,.8)!important}
+    html body div:has(>#finance-fuel)::after{background:rgba(27,29,26,.08)!important;color:var(--ink)!important}
     html body div:has(>#finance-fuel) span{color:var(--ink)!important}
     html body #finance-gross,html body #finance-net{font-size:1rem!important}
     /* kartu grafik */

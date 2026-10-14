@@ -65,7 +65,7 @@
     html body div:has(>#finance-net) span{color:#A9ACA3!important}
     html body #finance-net{color:#fff!important;font-size:.85rem}
     /* bottom nav: pil gelap melayang */
-    html body nav.fixed.bottom-0{left:14px!important;right:14px!important;bottom:14px!important;max-width:27rem;margin:0 auto;border-radius:34px;
+    html body nav.fixed.bottom-0{left:14px!important;right:14px!important;bottom:calc(12px + env(safe-area-inset-bottom, 0px))!important;max-width:27rem;margin:0 auto;border-radius:34px;
       background:var(--dark)!important;border:0!important;box-shadow:0 18px 40px rgba(30,33,29,.35);padding:10px 22px!important}
     html body nav .text-indigo-600{color:var(--lime)!important}
     html body nav .text-slate-400{color:#8C8F88!important}
