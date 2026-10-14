@@ -347,7 +347,7 @@
                         <i class="fa-solid fa-plug"></i> Hubungkan
                     </button>
                 </div>
-                <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage). Dapatkan key di <a href="https://console.groq.com" target="_blank" class="underline font-bold">console.groq.com</a></p>
+                <p class="text-[10px] text-rose-500"><i class="fa-solid fa-circle-info"></i> Key disimpan di perangkat ini saja (localStorage) untuk fitur AI Vision.</p>
             </div>
 
             <!-- AI API Connected Status -->
@@ -842,10 +842,6 @@
                     <span class="text-[11px] font-bold text-slate-700">Rangkuman pendapatan otomatis jam</span>
                     <input type="time" id="np-time" onchange="saveNotifPrefs()" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700">
                 </label>
-                <div class="flex items-center justify-between gap-3 bg-slate-50 rounded-xl px-3 py-2.5">
-                    <span class="text-[11px] font-bold text-slate-700">Notifikasi browser <span id="np-sys-status" class="font-medium text-slate-400">(nonaktif)</span></span>
-                    <button type="button" onclick="enableSystemNotif()" class="text-[10px] font-bold px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 active:scale-95 transition">Aktifkan</button>
-                </div>
                 <div class="grid grid-cols-2 gap-2">
                     <button type="button" onclick="openSummary(new Date(),{title:'Rangkuman pendapatan hari ini'})" class="bg-indigo-600 text-white text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Rangkuman hari ini</button>
                     <button type="button" onclick="checkStorageAlert(true)" class="bg-slate-100 text-slate-700 text-xs font-bold py-2.5 rounded-xl active:scale-95 transition">Cek penyimpanan</button>
@@ -944,7 +940,7 @@
                         <i class="fa-solid fa-trash-can mr-1"></i> Hapus API Key Tersimpan
                     </button>
                 </div>
-                <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Dapatkan API Key di <a href="https://console.groq.com" target="_blank" class="text-indigo-500 font-bold underline">console.groq.com</a></p>
+                <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Masukkan API Key untuk mengaktifkan fitur AI Vision.</p>
             </div>
 
             <!-- Mode Posisi Pesanan (Check Point / Google Maps) -->
@@ -1582,6 +1578,50 @@
             <button type="button" onclick="document.getElementById('gps-denied-modal').classList.add('hidden')" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl shadow-md transition">
                 Saya Mengerti
             </button>
+        </div>
+    </div>
+
+    <!-- Modal Maps Resto yang Diingat -->
+    <div id="modal-maps-resto" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all">
+        <div class="bg-white w-full sm:max-w-xl h-[88vh] sm:h-[80vh] rounded-t-[32px] sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-slide-up">
+            <!-- Header Modal -->
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center text-sm shadow-sm">
+                        <i class="fa-solid fa-store"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Peta Resto Diingat</h3>
+                        <p id="maps-resto-count-label" class="text-[10px] text-slate-500 font-semibold">Memuat lokasi resto...</p>
+                    </div>
+                </div>
+                <button type="button" onclick="nxCloseMapsResto()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Search & Actions -->
+            <div class="p-3 bg-white border-b border-slate-100 flex gap-2">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                    <input type="text" id="maps-resto-search" oninput="nxFilterMapsResto(this.value)" placeholder="Cari nama resto yang diingat..." class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-amber-400">
+                </div>
+                <button type="button" onclick="nxCenterCurrentLocation()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1 active:scale-95" title="Pusatkan ke lokasi saya">
+                    <i class="fa-solid fa-crosshairs"></i> Posisi Saya
+                </button>
+            </div>
+
+            <!-- Map Container -->
+            <div class="flex-1 relative w-full h-full min-h-[300px] bg-slate-100">
+                <div id="all-restos-map" class="w-full h-full z-0"></div>
+                <div id="maps-resto-empty-notice" class="hidden absolute inset-0 z-10 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+                    <div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-2">
+                        <i class="fa-solid fa-store-slash"></i>
+                    </div>
+                    <p class="text-xs font-bold text-slate-800">Belum Ada Titik Resto yang Diingat</p>
+                    <p class="text-[11px] text-slate-500 mt-1 max-w-xs leading-relaxed">Lakukan Check Point di resto atau Import Database Resto di tab Profil untuk menyimpan titik resto otomatis.</p>
+                </div>
+            </div>
         </div>
     </div>
 

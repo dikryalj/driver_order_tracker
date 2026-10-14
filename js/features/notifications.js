@@ -128,10 +128,29 @@
       }
       function tickSummary(){
         try{
-          if(known===null) return;
-          var now=new Date(), hm=prefs().summaryTime.split(':'), at=new Date(now); at.setHours(+hm[0]||21,+hm[1]||0,0,0);
-          if(now>=at&&lsGet(LK,'')!==ymd(now)&&dayOrders(now).length){ lsSet(LK,ymd(now)); autoSummary(now,'Rangkuman pendapatan hari ini'); }
-        }catch(e){console.warn(e);}
+          var now=new Date(), p=prefs();
+          var timeStr = p.summaryTime || '21:00';
+          var hm = timeStr.split(':');
+          var targetH = parseInt(hm[0], 10);
+          var targetM = parseInt(hm[1], 10);
+          if (isNaN(targetH)) targetH = 21;
+          if (isNaN(targetM)) targetM = 0;
+
+          var at = new Date(now);
+          at.setHours(targetH, targetM, 0, 0);
+
+          var todayStr = ymd(now);
+          var lastRun = lsGet(LK, '');
+
+          // Jika sekarang sudah mencapai atau melewati jam target hari ini
+          if (now >= at && lastRun !== todayStr) {
+            var ordersToday = dayOrders(now);
+            if (ordersToday && ordersToday.length > 0) {
+              lsSet(LK, todayStr);
+              autoSummary(now, 'Rangkuman pendapatan hari ini (' + timeStr + ')');
+            }
+          }
+        }catch(e){console.warn('[Notif] Error tickSummary:', e);}
       }
       function catchUp(){
         try{
@@ -163,13 +182,28 @@
       }
       var _save=saveToLocalStorage; saveToLocalStorage=function(){var r=_save.apply(this,arguments); try{onSaved();}catch(e){console.warn(e);} return r;};
       var _fail=reportSaveFailure; reportSaveFailure=function(e){ _fail(e); if(Date.now()-lastFailPopup>60000){lastFailPopup=Date.now(); pushNotif({type:'storage',title:'Penyimpanan penuh, data gagal tersimpan',body:'Backup data lalu hapus pesanan atau screenshot lama.'},{silent:true}); storageModal({fail:true,pct:null});} };
-      var _init=initStorage; initStorage=async function(){var r=await _init.apply(this,arguments); seed(); setTimeout(function(){catchUp();window.checkStorageAlert(false);},1500); return r;};
-      setTimeout(seed,4000); setInterval(tickSummary,30000); setInterval(function(){window.checkStorageAlert(false);},300000);
+      var _init=initStorage; initStorage=async function(){var r=await _init.apply(this,arguments); seed(); setTimeout(function(){catchUp();tickSummary();window.checkStorageAlert(false);},1500); return r;};
+      setTimeout(seed,2000);
+      setTimeout(tickSummary,3000);
+      setInterval(tickSummary,30000);
+      setInterval(function(){window.checkStorageAlert(false);},300000);
+      document.addEventListener('visibilitychange',function(){ if(!document.hidden) tickSummary(); });
 
       /* ---------- pengaturan ---------- */
-      function syncPrefs(){var p=prefs(); if($('np-order')) $('np-order').checked=p.order; if($('np-time')) $('np-time').value=p.summaryTime;
-        var st=$('np-sys-status'); if(st) st.innerText=!window.Notification?'(tidak didukung)':(p.sys&&Notification.permission==='granted'?'(aktif)':'(nonaktif)');}
-      window.saveNotifPrefs=function(){var p=prefs(); p.order=$('np-order').checked; p.summaryTime=$('np-time').value||'21:00'; lsSet(PK,p); syncPrefs();};
+      function syncPrefs(){
+        var p=prefs();
+        if($('np-order')) $('np-order').checked=p.order;
+        if($('np-time')) $('np-time').value=p.summaryTime;
+      }
+      window.saveNotifPrefs=function(){
+        var p=prefs();
+        if($('np-order')) p.order=$('np-order').checked;
+        if($('np-time')) p.summaryTime=$('np-time').value||'21:00';
+        lsSet(PK,p);
+        syncPrefs();
+        tickSummary();
+        if(typeof showToast==='function') showToast('Pengaturan notifikasi disimpan (' + p.summaryTime + ')','emerald');
+      };
       window.enableSystemNotif=function(){
         if(!window.Notification){ if(typeof showToast==='function') showToast('Browser ini tidak mendukung notifikasi sistem.','amber'); return; }
         Notification.requestPermission().then(function(r){var p=prefs(); p.sys=(r==='granted'); lsSet(PK,p); syncPrefs(); if(typeof showToast==='function') showToast(r==='granted'?'Notifikasi browser aktif':'Izin notifikasi ditolak',r==='granted'?'emerald':'amber');});

@@ -14,7 +14,142 @@
     if(typeof switchTab==='function') switchTab('orders');
     if(typeof renderAllViews==='function') renderAllViews();
   };
-  window.nxOpenMapsResto=function(){ window.open('https://www.google.com/maps/search/restoran+terdekat','_blank','noopener'); };
+  var _allRestosMap = null;
+  var _allRestosLayer = null;
+  var _cachedRestos = [];
+
+  window.nxOpenMapsResto = function() {
+    var modal = document.getElementById('modal-maps-resto');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    var restosObj = (window.DriverTrackRestoDB && typeof window.DriverTrackRestoDB.getAll === 'function')
+      ? window.DriverTrackRestoDB.getAll()
+      : {};
+    
+    var keys = Object.keys(restosObj);
+    _cachedRestos = keys.map(function(k) { return restosObj[k]; });
+
+    var countLabel = document.getElementById('maps-resto-count-label');
+    var emptyNotice = document.getElementById('maps-resto-empty-notice');
+    if (countLabel) {
+      countLabel.textContent = _cachedRestos.length + ' resto tersimpan di perangkat ini';
+    }
+
+    if (emptyNotice) {
+      if (_cachedRestos.length === 0) {
+        emptyNotice.classList.remove('hidden');
+      } else {
+        emptyNotice.classList.add('hidden');
+      }
+    }
+
+    // Inisialisasi peta Leaflet jika belum ada
+    setTimeout(function() {
+      initAllRestosMap();
+      renderRestoMarkers(_cachedRestos);
+    }, 150);
+  };
+
+  function initAllRestosMap() {
+    var mapEl = document.getElementById('all-restos-map');
+    if (!mapEl || typeof L === 'undefined') return;
+
+    if (!_allRestosMap) {
+      _allRestosMap = L.map('all-restos-map', {
+        zoomControl: true,
+        attributionControl: true
+      }).setView([-7.558, 110.771], 13);
+
+      if (typeof createBaseTileLayer === 'function') {
+        createBaseTileLayer().addTo(_allRestosMap);
+      } else {
+        L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+          maxZoom: 20,
+          subdomains: ['0', '1', '2', '3']
+        }).addTo(_allRestosMap);
+      }
+      _allRestosLayer = L.layerGroup().addTo(_allRestosMap);
+    } else {
+      _allRestosMap.invalidateSize();
+    }
+  }
+
+  function renderRestoMarkers(restos) {
+    if (!_allRestosMap || !_allRestosLayer) return;
+    _allRestosLayer.clearLayers();
+
+    var bounds = [];
+    var restoIcon = L.divIcon({
+      className: 'custom-resto-pin',
+      html: '<div style="background:#f59e0b;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 8px rgba(0,0,0,0.3);border:2px solid #fff;"><i class="fa-solid fa-store" style="font-size:12px;"></i></div>',
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14]
+    });
+
+    restos.forEach(function(r) {
+      if (!r || !r.lat || !r.lng) return;
+      var lat = Number(r.lat), lng = Number(r.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      bounds.push([lat, lng]);
+      var gmapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + lat + ',' + lng;
+      var popupContent = '<div style="min-width:180px;padding:2px;">' +
+        '<p style="font-weight:800;font-size:13px;margin:0 0 4px 0;color:#0f172a;">' + (r.namaResto || 'Resto') + '</p>' +
+        (r.alamatResto ? '<p style="font-size:11px;color:#64748b;margin:0 0 6px 0;line-height:1.3;">' + r.alamatResto + '</p>' : '') +
+        (r.kategori ? '<span style="display:inline-block;background:#fef3c7;color:#b45309;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;margin-bottom:8px;">' + r.kategori + '</span><br>' : '') +
+        '<a href="' + gmapsUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:4px;background:#4f46e5;color:#fff;font-size:10.5px;font-weight:700;padding:5px 10px;border-radius:8px;text-decoration:none;margin-top:4px;">' +
+        '<i class="fa-solid fa-diamond-turn-right"></i> Buka Google Maps</a>' +
+        '</div>';
+
+      L.marker([lat, lng], { icon: restoIcon })
+        .bindPopup(popupContent)
+        .addTo(_allRestosLayer);
+    });
+
+    if (bounds.length > 0) {
+      _allRestosMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+    }
+  }
+
+  window.nxFilterMapsResto = function(query) {
+    var q = String(query || '').toLowerCase().trim();
+    if (!q) {
+      renderRestoMarkers(_cachedRestos);
+      return;
+    }
+    var filtered = _cachedRestos.filter(function(r) {
+      var n = String(r.namaResto || '').toLowerCase();
+      var a = String(r.alamatResto || '').toLowerCase();
+      return n.indexOf(q) !== -1 || a.indexOf(q) !== -1;
+    });
+    renderRestoMarkers(filtered);
+  };
+
+  window.nxCloseMapsResto = function() {
+    var modal = document.getElementById('modal-maps-resto');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.nxCenterCurrentLocation = function() {
+    if (!_allRestosMap) return;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(pos) {
+        var lat = pos.coords.latitude, lng = pos.coords.longitude;
+        _allRestosMap.setView([lat, lng], 16);
+        var meIcon = L.divIcon({
+          className: 'me-pin',
+          html: '<div style="background:#3b82f6;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 6px rgba(59,130,246,0.3);"></div>',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+        L.marker([lat, lng], { icon: meIcon }).addTo(_allRestosLayer).bindPopup('Posisi Saya Saat Ini').openPopup();
+      }, function() {
+        if (typeof showToast === 'function') showToast('Tidak dapat membaca posisi GPS saat ini.', 'amber');
+      }, { enableHighAccuracy: true, timeout: 8000 });
+    }
+  };
 
   /* Kartu pesanan khusus tema Neon Charcoal (meniru kartu "Active delivery"). Data & aksi sama dengan kartu biasa. */
   window.createNeonOrderCardHTML=function(o){

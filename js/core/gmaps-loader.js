@@ -32,27 +32,27 @@
             return googleMapsLoadPromise;
         }
 
-        // Peta dasar TANPA API key. OpenStreetMap memblokir permintaan tanpa Referer (mis. file:///) dengan
-        // tile "Access blocked" (HTTP 403 tapi tetap berupa gambar, jadi tidak terdeteksi sebagai error).
-        // Karena itu Esri dipakai sebagai peta utama; bila tile gagal 6x berturut-turut, pindah ke OpenStreetMap.
+        // Peta dasar modern & terupdate (Google Maps Roadmap Tiles dengan fallback OSM).
+        // Google Maps menyediakan peta jalan, gang, dan POI paling akurat & terbaru di Indonesia.
         function createBaseTileLayer() {
-            const esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-                maxZoom: 19,
-                attribution: 'Tiles &copy; Esri'
+            const googleTiles = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                subdomains: ['0', '1', '2', '3'],
+                attribution: '&copy; Google Maps'
             });
             let errors = 0, switched = false;
-            esri.on('tileload', function () { errors = 0; });
-            esri.on('tileerror', function () {
-                if (switched || !esri._map) return;
+            googleTiles.on('tileload', function () { errors = 0; });
+            googleTiles.on('tileerror', function () {
+                if (switched || !googleTiles._map) return;
                 if (++errors < 6) return;
                 switched = true;
-                const map = esri._map;
-                map.removeLayer(esri);
+                const map = googleTiles._map;
+                map.removeLayer(googleTiles);
                 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 }).addTo(map);
             });
-            return esri;
+            return googleTiles;
         }
     

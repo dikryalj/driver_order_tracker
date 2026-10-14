@@ -313,6 +313,15 @@
                         recursive: true
                     });
 
+                    // Pastikan folder DriverTrack dibuat di Documents agar bisa dibuka di File Manager HP
+                    try {
+                        await Filesystem.mkdir({
+                            path: 'DriverTrack',
+                            directory: Directory.Documents || 'DOCUMENTS',
+                            recursive: true
+                        });
+                    } catch (mkErr) {}
+
                     // Simpan salinan permanen ke Documents/DriverTrack/ agar terlihat di File Manager HP (bukan di /Android/data)
                     try {
                         await Filesystem.writeFile({

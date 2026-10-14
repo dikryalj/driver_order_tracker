@@ -199,9 +199,27 @@
       _fallbackDownloadResto(jsonStr, successMsg);
     }
   }
-  function _fallbackDownloadResto(jsonStr, msg){
+  async function _fallbackDownloadResto(jsonStr, msg){
     try{
       var blob=new Blob([jsonStr],{type:'application/json'});
+      var file=new File([blob], FILENAME, {type:'application/json'});
+      if(typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })){
+        try {
+          await navigator.share({
+            files: [file],
+            title: 'Database Resto DriverTrack',
+            text: 'File database lokasi resto DriverTrack'
+          });
+          var m=loadMeta(); m.lastExport=new Date().toISOString(); saveMeta(m); updateInfo();
+          toast('Database resto berhasil dibagikan!','emerald');
+          return;
+        } catch (shareErr) {
+          if (shareErr && shareErr.name === 'AbortError') {
+            toast('Share dibatalkan.', 'amber');
+            return;
+          }
+        }
+      }
       var url=URL.createObjectURL(blob), a=document.createElement('a');
       a.href=url; a.download=FILENAME; document.body.appendChild(a); a.click(); document.body.removeChild(a);
       setTimeout(function(){ URL.revokeObjectURL(url); },1500);
@@ -321,7 +339,8 @@
       });
       return out;
     },
-    count:function(){ return Object.keys(getAll()).length; }
+    count:function(){ return Object.keys(getAll()).length; },
+    getAll: getAll
   };
   window.backupDataResto=backupDataResto;
   window.restoreDataResto=restoreDataResto;
