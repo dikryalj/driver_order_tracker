@@ -114,15 +114,28 @@
         const AI_PROMPT = `Anda OCR AI untuk screenshot pesanan driver ojol Indonesia (ShopeeFood, SPX/Shopee Xpress, SPX Instan, Grab, Gojek).
 Balas HANYA satu objek JSON valid (tanpa markdown/penjelasan/<think>) dengan kunci:
 {"category":"Food|SPX|Instan","platform":"ShopeeFood|Grab|Gojek|SPX|SPX Instan","restoName":"","restoAddr":"","recipName":"","recipAddr":"","notes":"","cashAmount":0,"codeOrder":"","totalMenu":"","orderNo":"","weight":"","dimensions":"","itemCategory":""}
-ATURAN:
-- Food = pesanan makanan (menu/resto). SPX = paket reguler dengan kode pesanan/berat/dimensi. Instan = pengiriman instan/same-day (ada "Instan"/"Instant").
-- restoName/restoAddr = RESTO atau PENGIRIM (titik ambil). recipName/recipAddr = PENERIMA (titik antar). Jangan tertukar.
+ATURAN KATEGORI & PLATFORM:
+- Food: Pesanan makanan/minuman (ShopeeFood, GrabFood, GoFood). Ada ringkasan menu (totalMenu).
+- SPX (Reguler/Toko):
+  * Tepat di bawah "Detail Pesanan" ada KODE PENDEK diawali '#' (contoh: #38U8, #4N73). Masukkan ke codeOrder.
+  * Pada "Rincian Paket" ada "Berat" (misal 8.0 kg) dan "Besar" (dimensi cm, misal 5x14x20 cm). Masukkan ke dimensions.
+  * TIDAK ADA baris "Kategori" di dalam Rincian Paket.
+  * Pengirim biasanya toko/agen/merchant (contoh: INDOMARET ...).
+  * Set category: "SPX", platform: "SPX".
+- Instan (SPX Instan):
+  * Tepat di bawah "Detail Pesanan" LANGSUNG berupa NOMOR PESANAN PANJANG 16-20 digit angka murni TANPA tanda '#' (contoh: 3300026836141568094). Masukkan ke orderNo, codeOrder KOSONGKAN ("").
+  * Pada "Rincian Paket" ADA baris "Kategori" (contoh: "Kategori Makanan", "Kategori Dokumen", "Kategori Pakaian", dll) dan "Berat". Masukkan isi kategori ke itemCategory.
+  * TIDAK ADA baris "Besar" (dimensi cm) di Rincian Paket.
+  * Ada bagian "Informasi Pesanan" di bawah dengan No. Pesanan dan Waktu Pesanan.
+  * Pengirim & Penerima biasanya orang perorangan.
+  * Set category: "Instan", platform: "SPX Instan".
+
+ATURAN DATA LAINNYA:
+- restoName/restoAddr = RESTO atau PENGIRIM (titik ambil/pickup). recipName/recipAddr = PENERIMA (titik antar/tujuan). Jangan tertukar.
 - Alamat tulis selengkap yang tampak (jalan, no, RT/RW, kelurahan, kecamatan, kota). Jangan menebak.
 - cashAmount = ANGKA tunai yang ditagih ke penerima/customer (tanpa Rp/titik). Non-tunai/Rp0 = 0.
-- codeOrder = kode pendek (#782 / #4N73) TANPA status (Diambil, Selesai, Diantar, Menuju, Pickup, Delivered).
-- totalMenu = ringkasan menu + jumlah (mis. "2 x Nasi Goreng, 1 x Es Teh"). orderNo = nomor pesanan panjang.
-- weight mis. "1.5 kg"; dimensions mis. "20x10x5 cm"; itemCategory = jenis barang. notes = catatan/patokan pemesan.
-- Teks tidak terlihat/tidak ada = "" (string kosong) atau 0. Status pesanan JANGAN dicatat.`;
+- totalMenu = ringkasan menu + jumlah (mis. "2 x Nasi Goreng, 1 x Es Teh").
+- Teks tidak terlihat/tidak ada = "" (string kosong) atau 0. Status pesanan (Diambil, Diterima, dll) JANGAN dicatat.`;
 
         function aiClean(v) {
             if (v === null || v === undefined) return '';
@@ -146,12 +159,48 @@ ATURAN:
         function aiNormalize(p) {
             const o = {};
             ['restoName','restoAddr','recipName','recipAddr','notes','codeOrder','totalMenu','orderNo','weight','dimensions','itemCategory'].forEach(k => o[k] = aiClean(p[k]));
-            o.codeOrder = o.codeOrder.replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered|Dalam perjalanan)\b/gi, '').trim();
-            const c = aiClean(p.category).toLowerCase();
-            o.category = c.includes('instan') || c.includes('instant') ? 'Instan' : (c.startsWith('spx') || c.includes('paket') ? 'SPX' : (c.includes('food') ? 'Food' : ''));
-            if (!o.category) o.category = o.totalMenu ? 'Food' : (o.weight ? 'SPX' : '');
-            const pl = aiClean(p.platform).toLowerCase();
-            o.platform = pl.includes('grab') ? 'Grab' : (pl.includes('gojek') ? 'Gojek' : (pl.includes('shopee') && o.category === 'Food' ? 'ShopeeFood' : ''));
+            o.codeOrder = o.codeOrder.replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered|Dalam perjalanan|Diterima)\b/gi, '').trim();
+
+            // Jika nomor pesanan panjang salah dimasukkan ke codeOrder, pindahkan ke orderNo
+            const cleanDigitsCode = o.codeOrder.replace(/\D/g, '');
+            if (cleanDigitsCode.length >= 14 && (!o.orderNo || o.orderNo.length < 10)) {
+                o.orderNo = cleanDigitsCode;
+                o.codeOrder = '';
+            }
+
+            const rawCat = aiClean(p.category).toLowerCase();
+            const hasFood = rawCat.includes('food') || !!o.totalMenu;
+            const hasKategoriBarang = !!o.itemCategory; // Ciri khas Instan
+            const hasLongOrderNo = !!(o.orderNo && o.orderNo.length >= 14);
+            const hasCodeOrderHash = o.codeOrder.startsWith('#');
+            const hasDimensions = !!o.dimensions; // Ciri khas SPX
+
+            if (hasFood && !hasKategoriBarang && !hasDimensions && !rawCat.includes('instan')) {
+                o.category = 'Food';
+            } else if (
+                rawCat.includes('instan') || rawCat.includes('instant') ||
+                hasKategoriBarang || // Kategori: Makanan/Barang/Dokumen
+                (hasLongOrderNo && !hasCodeOrderHash && !hasDimensions)
+            ) {
+                o.category = 'Instan';
+                o.platform = 'SPX Instan';
+                if (!o.codeOrder.startsWith('#')) o.codeOrder = '';
+            } else if (rawCat.startsWith('spx') || hasCodeOrderHash || hasDimensions || o.weight) {
+                o.category = 'SPX';
+                o.platform = 'SPX';
+            } else {
+                o.category = 'Food';
+            }
+
+            if (o.category === 'Instan') {
+                o.platform = 'SPX Instan';
+            } else if (o.category === 'SPX') {
+                o.platform = 'SPX';
+            } else if (o.category === 'Food') {
+                const pl = aiClean(p.platform).toLowerCase();
+                o.platform = pl.includes('grab') ? 'Grab' : (pl.includes('gojek') ? 'Gojek' : 'ShopeeFood');
+            }
+
             let cash = typeof p.cashAmount === 'number' ? p.cashAmount : parseInt(String(p.cashAmount || '0').replace(/[^\d]/g, ''), 10);
             o.cashAmount = isNaN(cash) ? 0 : cash;
             return o;

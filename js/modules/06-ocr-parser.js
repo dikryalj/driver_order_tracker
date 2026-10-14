@@ -21,40 +21,71 @@ function ekstrakTeksLokal(rawText) {
         /^(Pembayaran|Rincian|Informasi|Bukti|Total\s+\d|Bayar\s+tunai|Terima\s+Pembayaran|Tagih|No\.\s*Pesanan|Waktu\s*Pesanan|Berat\s|Besar\s|Salin$)/i.test(l) ||
         /^(Pengirim|Penerima|Pembeli)\s*:/i.test(l);
 
-    /* == 1. DETEKSI JENIS STRUK ===================================== */
-    const isFood    = /Total\s+\d+\s+menu|Bayar\s+tunai\s+di\s+Resto|Rincian\s+Barang|Pembeli\s*:/i.test(text);
-    const isInstan  = /SPX\s*Instan|Instant|Sameday/i.test(text);
-    const isExpress = !isFood && (isInstan || /\bBerat\b|\bBesar\b|Pengirim\s*:|Rincian\s*Paket/i.test(text));
+    /* == 1. DATA PENDUKUNG (BERAT, DIMENSI, KATEGORI, KODE, NO PESANAN) == */
+    const matchLines = (re) => { for (const l of lines) { const m = l.match(re); if (m) return (m[1]||'').trim(); } return ''; };
+    const weight       = matchLines(/Berat\s*[:\-]?\s*([\d.,]+\s*(?:kg|gr|gram))/i);
+    const dimensions   = matchLines(/(?:Besar|Dimensi|Ukuran|Size)\s*[:\-]?\s*([\d]+\s*[xX\u00d7]\s*[\d]+\s*[xX\u00d7]\s*[\d]+\s*(?:cm)?)/i);
+    const itemCategory = matchLines(/(?:Kategori|Jenis\s*Barang|Item\s*Type)\s*[:\-]?\s*([^\n\r]+)/i);
+
+    const matchCode = text.match(/#([A-Z0-9]{2,8})\b/i);
+    let codeOrder = matchCode
+        ? ('#' + matchCode[1].toUpperCase())
+            .replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered|Diterima)\b/gi, '').trim()
+        : '';
+
+    let orderNo = '';
+    const mOnoInline = text.match(/(?:No\.?\s*Pesanan|Nomor\s*Pesanan|Order\s*(?:ID|No\.?))\s*[:\-]?\s*(\d{14,20})/i);
+    if (mOnoInline) {
+        orderNo = mOnoInline[1].trim();
+    } else {
+        const iOnoLabel = findIdx(/^(?:No\.?\s*Pesanan|Nomor\s*Pesanan|Order\s*(?:ID|No\.?))\s*[:\-]?\s*$/i);
+        if (iOnoLabel >= 0 && iOnoLabel + 1 < lines.length) {
+            const nextLine = lines[iOnoLabel + 1].replace(/\s/g, '');
+            if (/^\d{14,20}$/.test(nextLine)) orderNo = lines[iOnoLabel + 1].trim();
+        }
+        if (!orderNo) {
+            const mOnoFallback = text.match(/\b(\d{16,20})\b/);
+            if (mOnoFallback) orderNo = mOnoFallback[1].trim();
+        }
+    }
+
+    /* == 2. DETEKSI JENIS STRUK (FOOD vs SPX vs INSTAN) ============= */
+    const isFood = /Total\s+\d+\s+menu|Bayar\s+tunai\s+di\s+Resto|Rincian\s+Barang|Pembeli\s*:/i.test(text);
+
+    // CIRI KHAS SPX INSTAN:
+    // 1. Ada kata "SPX Instan", "Instant", atau "Sameday"
+    // 2. Ada baris "Kategori" di dalam rincian paket (misal: "Kategori Makanan", "Kategori Dokumen", dll)
+    // 3. Ada Nomor Pesanan panjang 16-20 digit TANPA kode '#' dan TANPA dimensi "Besar" (cm)
+    // 4. Ada section "Informasi Pesanan" + "Waktu Pesanan" tanpa dimensi "Besar"
+    const hasExplicitInstan = /SPX\s*Instan|Instant|Sameday/i.test(text);
+    const hasLongOrderNo    = (orderNo && orderNo.length >= 14);
+    const hasCodeOrderHash  = !!codeOrder;
+    const hasDimensions     = !!dimensions;
+
+    const isInstan = !isFood && (
+        hasExplicitInstan ||
+        !!itemCategory ||
+        (hasLongOrderNo && !hasCodeOrderHash && !hasDimensions) ||
+        (/Informasi\s*Pesanan/i.test(text) && !hasDimensions && !hasCodeOrderHash)
+    );
+
+    // CIRI KHAS SPX (REGULER/TOKO):
+    // 1. Ada kode '#' (misal #38U8) ATAU ada dimensi "Besar" (misal 5x14x20 cm)
+    // 2. Berisi Rincian Paket / Berat / Pengirim toko tanpa indikasi Instan
+    const isExpress = !isFood && !isInstan && (
+        hasCodeOrderHash ||
+        hasDimensions ||
+        /\bBerat\b|\bBesar\b|Pengirim\s*:|Rincian\s*Paket/i.test(text)
+    );
 
     let category = isFood ? 'Food' : (isInstan ? 'Instan' : (isExpress ? 'SPX' : 'Food'));
     let platform  = isFood ? 'ShopeeFood' : (isInstan ? 'SPX Instan' : (isExpress ? 'SPX' : 'ShopeeFood'));
     if (/grab\s*food|grabfood/i.test(text))  { platform = 'Grab';  category = 'Food'; }
     if (/gojek|go\s*food/i.test(text))       { platform = 'Gojek'; category = 'Food'; }
 
-    /* == 2. KODE ORDER & NO. PESANAN ================================ */
-    const matchCode = text.match(/#([A-Z0-9]{2,8})\b/i);
-    const codeOrder = matchCode
-        ? ('#' + matchCode[1].toUpperCase())
-            .replace(/\b(Diambil|Selesai|Diantar|Menuju|Pickup|Delivered|Diterima)\b/gi, '').trim()
-        : '';
-    // Coba inline dulu ("No. Pesanan: 12345...") lalu coba lintas-baris
-    // (label "No. Pesanan" di baris N, angka panjang di baris N+1)
-    let orderNo = '';
-    const mOnoInline = text.match(/(?:No\.?\s*Pesanan|Nomor\s*Pesanan|Order\s*(?:ID|No\.?))\s*[:\-]?\s*(\d{14,20})/i);
-    if (mOnoInline) {
-        orderNo = mOnoInline[1].trim();
-    } else {
-        // Lintas-baris: cari baris label lalu periksa baris berikutnya
-        const iOnoLabel = findIdx(/^(?:No\.?\s*Pesanan|Nomor\s*Pesanan|Order\s*(?:ID|No\.?))\s*[:\-]?\s*$/i);
-        if (iOnoLabel >= 0 && iOnoLabel + 1 < lines.length) {
-            const nextLine = lines[iOnoLabel + 1].replace(/\s/g, '');
-            if (/^\d{14,20}$/.test(nextLine)) orderNo = lines[iOnoLabel + 1].trim();
-        }
-        // Fallback: angka 16-20 digit mandiri di teks
-        if (!orderNo) {
-            const mOnoFallback = text.match(/\b(\d{16,20})\b/);
-            if (mOnoFallback) orderNo = mOnoFallback[1].trim();
-        }
+    // Jika pesanan Instan, nomor panjang bukan codeOrder (codeOrder hanya untuk kode pendek bertanda '#')
+    if (isInstan && (!codeOrder || !codeOrder.startsWith('#'))) {
+        codeOrder = '';
     }
 
     /* == 3. INDEKS LANDMARK BARIS =================================== */
@@ -269,11 +300,7 @@ function ekstrakTeksLokal(rawText) {
             : (mTotal ? mTotal[1] + ' menu' : '');
     }
 
-    /* == 8. BERAT & DIMENSI ========================================= */
-    const matchLines = (re) => { for (const l of lines) { const m = l.match(re); if (m) return (m[1]||'').trim(); } return ''; };
-    const weight      = matchLines(/Berat\s*[:\-]?\s*([\d.,]+\s*(?:kg|gr|gram))/i);
-    const dimensions  = matchLines(/(?:Besar|Dimensi|Ukuran|Size)\s*[:\-]?\s*([\d]+\s*[xX\u00d7]\s*[\d]+\s*[xX\u00d7]\s*[\d]+\s*(?:cm)?)/i);
-    const itemCategory = matchLines(/(?:Kategori|Jenis\s*Barang|Item\s*Type)\s*[:\-]?\s*([^\n\r]+)/i);
+    /* == 8. BERAT & DIMENSI (sudah diekstrak di awal untuk deteksi jenis) == */
 
     /* == 9. CATATAN (inline ATAU baris berikutnya) ================== */
     // "Catatan: teks"  → inline
