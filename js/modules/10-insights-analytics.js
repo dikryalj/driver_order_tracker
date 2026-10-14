@@ -262,6 +262,9 @@
 
             // 8. Render Comparison Chart
             renderComparisonChart(weekStart);
+
+            // 9. Render Realtime Resto Rank (Data 30 Hari Penuh)
+            renderRestoRank();
         }
 
         // ============================================================
@@ -704,16 +707,21 @@
                 }
             });
 
-            renderRestoRank(filtered);
+            renderRestoRank();
 
             renderPlatformChart(filtered);
         }
 
 
         // Peringkat resto: daftar HTML (nama penuh, jumlah, bar).
-        // Pesanan single & dobel dihitung. Jika dobel dari resto sama, keduanya masuk data.
-        // Syarat masuk leaderboard: MINIMAL 5 ORDERAN (agar tidak semua resto 1-order masuk).
-        function renderRestoRank(filtered) {
+        // 1. Full sebulan / 30 hari terakhir secara realtime dari ordersList.
+        // 2. Pesanan single & dobel dihitung. Jika dobel dari resto sama, keduanya masuk data (+2).
+        // 3. Seleksi leaderboard berjenjang:
+        //    - Top 1: orderan > 10 (min. 11 order)
+        //    - Top 2: orderan > 5  (min. 6 order)
+        //    - Top 3: orderan > 3  (min. 4 order)
+        //    - Top 4: orderan > 2  (min. 3 order)
+        function renderRestoRank() {
             const el = document.getElementById('resto-rank-list');
             if (!el) return;
             const map = {};
@@ -721,14 +729,25 @@
             function getCleanKey(name) {
                 let k = String(name || '').toLowerCase();
                 try { k = k.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+                k = k.replace(/\brumah\s+makan\b/gi, 'rm');
                 k = k.replace(/\br\.?m\.?\b/gi, 'rm');
                 k = k.replace(/[^a-z0-9]+/g, ' ').trim();
                 return k;
             }
 
-            filtered.forEach(o => {
+            // Ambil seluruh data 30 hari terakhir (full sebulan) secara realtime dari ordersList
+            const now = Date.now();
+            const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
+            const sourceOrders = (typeof ordersList !== 'undefined' && Array.isArray(ordersList))
+                ? ordersList.filter(o => {
+                    const ts = Number(o.timestamp) || new Date(o.orderTime || 0).getTime();
+                    return ts >= thirtyDaysAgo;
+                })
+                : [];
+
+            sourceOrders.forEach(o => {
                 // getOrderRestoNames mengambil dari single maupun dobel (subOrders).
-                // Jika dobel dengan resto sama, masuk 2x sesuai orderan yang terjadi.
+                // Jika dobel dengan resto sama, keduanya masuk data (+2 order).
                 getOrderRestoNames(o).forEach(label => {
                     const key = getCleanKey(label);
                     if (!key) return;
@@ -741,30 +760,55 @@
                 });
             });
 
-            // Syarat masuk leaderboard: MINIMAL 5 ORDERAN
-            const MIN_ORDERS = 5;
-            const rows = Object.values(map)
-                .filter(r => r.n >= MIN_ORDERS)
-                .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))
-                .slice(0, 10);
+            // Urutkan semua resto berdasarkan jumlah order terbanyak
+            const allSorted = Object.values(map).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name));
+
+            // Kriteria seleksi bertingkat:
+            // Top 1: orderan > 10 (min. 11 order)
+            // Top 2: orderan > 5  (min. 6 order)
+            // Top 3: orderan > 3  (min. 4 order)
+            // Top 4: orderan > 2  (min. 3 order)
+            const criteria = [
+                { rank: 1, min: 11, label: '> 10 order' },
+                { rank: 2, min: 6,  label: '> 5 order' },
+                { rank: 3, min: 4,  label: '> 3 order' },
+                { rank: 4, min: 3,  label: '> 2 order' }
+            ];
+
+            const rows = [];
+            for (let i = 0; i < allSorted.length && i < criteria.length; i++) {
+                const r = allSorted[i];
+                const crit = criteria[i];
+                if (r.n >= crit.min) {
+                    rows.push({
+                        ...r,
+                        rank: crit.rank,
+                        reqLabel: crit.label
+                    });
+                } else {
+                    break;
+                }
+            }
 
             if (!rows.length) {
                 el.innerHTML = `
                     <div class="text-center py-6 px-3">
                         <i class="fa-solid fa-store-slash text-slate-300 text-2xl mb-2 block"></i>
-                        <p class="text-xs font-bold text-slate-700">Belum Ada Resto Langganan</p>
-                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">Minimal 5 orderan untuk masuk ke peringkat Resto Paling Sering Order.</p>
+                        <p class="text-xs font-bold text-slate-700">Belum Ada Resto di Leaderboard</p>
+                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                            Kriteria 30 hari: Top 1 (&gt;10 order), Top 2 (&gt;5 order), Top 3 (&gt;3 order), Top 4 (&gt;2 order).
+                        </p>
                     </div>`;
                 return;
             }
 
             const max = rows[0].n;
-            el.innerHTML = rows.map((r, i) => `
+            el.innerHTML = rows.map((r) => `
                 <div class="rk-row">
-                    <span class="rk-no ${i === 0 ? 'rk-top' : ''}">${i + 1}</span>
+                    <span class="rk-no ${r.rank === 1 ? 'rk-top' : ''}">${r.rank}</span>
                     <div class="rk-body">
                         <div class="rk-head"><span class="rk-name">${escapeHtml(r.name)}</span><span class="rk-val">${r.n}<small> order</small></span></div>
-                        <div class="rk-track"><div class="rk-fill ${i === 0 ? 'rk-top' : ''}" style="width:${Math.max(6, Math.round(r.n / max * 100))}%"></div></div>
+                        <div class="rk-track"><div class="rk-fill ${r.rank === 1 ? 'rk-top' : ''}" style="width:${Math.max(6, Math.round(r.n / max * 100))}%"></div></div>
                     </div>
                 </div>`).join('');
         }
