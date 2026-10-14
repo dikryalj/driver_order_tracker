@@ -585,11 +585,21 @@
         }
 
         // Nama resto per pesanan. Orderan gabungan -> nama resto tiap sub-pesanan (bukan kata "gabungan").
-        // Dipakai bersama oleh daftar pesanan Insights dan peringkat resto agar selalu konsisten.
         function normRestoName(n) { return String(n || '').replace(/\s+/g, ' ').trim(); }
         function getOrderRestoNames(o) {
-            const raw = o.isCombined ? (o.subOrders || []).map(x => x.restoName) : [o.restoName];
-            return raw.map(normRestoName).filter(n => n && n !== '-');
+            if (!o) return [];
+            const list = [];
+            if (o.isCombined && Array.isArray(o.subOrders) && o.subOrders.length > 0) {
+                // Pesanan dobel: ambil setiap sub-order. Jika resto nama sama pada dobel, keduanya masuk
+                o.subOrders.forEach(sub => {
+                    if (sub && sub.restoName) list.push(normRestoName(sub.restoName));
+                });
+                if (list.length === 0 && o.restoName) list.push(normRestoName(o.restoName));
+            } else if (o.restoName) {
+                // Pesanan single
+                list.push(normRestoName(o.restoName));
+            }
+            return list.filter(n => n && n !== '-' && n !== '—');
         }
         // "Azdan Seblak ×2 + Seblak Prasmanan" (nama sama digabung dengan jumlah)
         function getOrderRestoLabel(o) {
@@ -700,21 +710,54 @@
         }
 
 
-        // Peringkat resto: daftar HTML (nama penuh, jumlah, bar) agar terbaca di semua tema.
-        // Pesanan gabungan dihitung per resto masing-masing; nama dinormalisasi (besar/kecil huruf, spasi).
+        // Peringkat resto: daftar HTML (nama penuh, jumlah, bar).
+        // Pesanan single & dobel dihitung. Jika dobel dari resto sama, keduanya masuk data.
+        // Syarat masuk leaderboard: MINIMAL 5 ORDERAN (agar tidak semua resto 1-order masuk).
         function renderRestoRank(filtered) {
             const el = document.getElementById('resto-rank-list');
             if (!el) return;
             const map = {};
+
+            function getCleanKey(name) {
+                let k = String(name || '').toLowerCase();
+                try { k = k.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+                k = k.replace(/\br\.?m\.?\b/gi, 'rm');
+                k = k.replace(/[^a-z0-9]+/g, ' ').trim();
+                return k;
+            }
+
             filtered.forEach(o => {
+                // getOrderRestoNames mengambil dari single maupun dobel (subOrders).
+                // Jika dobel dengan resto sama, masuk 2x sesuai orderan yang terjadi.
                 getOrderRestoNames(o).forEach(label => {
-                    const key = label.toLowerCase();
+                    const key = getCleanKey(label);
+                    if (!key) return;
                     if (!map[key]) map[key] = { name: label, n: 0 };
                     map[key].n++;
+                    // Simpan nama dengan panjang/detail terbaik
+                    if (label.length > map[key].name.length) {
+                        map[key].name = label;
+                    }
                 });
             });
-            const rows = Object.values(map).sort((a, b) => b.n - a.n || a.name.localeCompare(b.name)).slice(0, 7);
-            if (!rows.length) { el.innerHTML = '<p class="text-[11px] text-center py-6 rk-muted">Belum ada data resto.</p>'; return; }
+
+            // Syarat masuk leaderboard: MINIMAL 5 ORDERAN
+            const MIN_ORDERS = 5;
+            const rows = Object.values(map)
+                .filter(r => r.n >= MIN_ORDERS)
+                .sort((a, b) => b.n - a.n || a.name.localeCompare(b.name))
+                .slice(0, 10);
+
+            if (!rows.length) {
+                el.innerHTML = `
+                    <div class="text-center py-6 px-3">
+                        <i class="fa-solid fa-store-slash text-slate-300 text-2xl mb-2 block"></i>
+                        <p class="text-xs font-bold text-slate-700">Belum Ada Resto Langganan</p>
+                        <p class="text-[11px] text-slate-400 mt-1 leading-relaxed">Minimal 5 orderan untuk masuk ke peringkat Resto Paling Sering Order.</p>
+                    </div>`;
+                return;
+            }
+
             const max = rows[0].n;
             el.innerHTML = rows.map((r, i) => `
                 <div class="rk-row">
