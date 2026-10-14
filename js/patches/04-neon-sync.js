@@ -32,6 +32,96 @@
     return 'Food';
   }
 
+  function calcDistMeters(lat1, lon1, lat2, lon2) {
+    var R = 6371000;
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+  }
+
+  function normRestoName(name) {
+    var s = String(name || '').toLowerCase();
+    try { s = s.normalize('NFKD').replace(/[\u0300-\u036f]/g, ''); } catch(e) {}
+    s = s.replace(/[^a-z0-9]+/g, ' ').trim();
+    return s;
+  }
+
+  /* Filter deduplikasi: Jika titik resto dobel di titik yang sama dan nama resto sama/mirip, jadikan 1 titik saja */
+  function deduplicateRestoList(list) {
+    if (!Array.isArray(list)) return [];
+    var deduped = [];
+    list.forEach(function(item) {
+      if (!item || !item.lat || !item.lng) return;
+      var lat = Number(item.lat), lng = Number(item.lng);
+      if (isNaN(lat) || isNaN(lng) || (Math.abs(lat) < 0.0001 && Math.abs(lng) < 0.0001)) return;
+
+      var n1 = normRestoName(item.namaResto);
+      var dupIdx = -1;
+
+      for (var i = 0; i < deduped.length; i++) {
+        var ex = deduped[i];
+        var exLat = Number(ex.lat), exLng = Number(ex.lng);
+        var n2 = normRestoName(ex.namaResto);
+        var dist = calcDistMeters(lat, lng, exLat, exLng);
+
+        // KASUS 1: Titik koordinat sama persis atau sangat dekat (<= 30 meter)
+        // Jika nama sama, mirip, atau salah satu kosong -> PASTI duplikat titik resto yang sama
+        if (dist <= 30) {
+          if (!n1 || !n2 || n1 === n2 || n1.indexOf(n2) !== -1 || n2.indexOf(n1) !== -1) {
+            dupIdx = i;
+            break;
+          }
+        }
+
+        // KASUS 2: Nama resto sama persis dan jarak dalam area yang sama (<= 250 meter)
+        if (n1 && n2 && n1 === n2 && dist <= 250) {
+          dupIdx = i;
+          break;
+        }
+
+        // KASUS 3: Nama resto mirip (salah satu mengandung nama lain) dan jarak <= 120 meter
+        if (n1 && n2 && (n1.indexOf(n2) !== -1 || n2.indexOf(n1) !== -1) && dist <= 120) {
+          dupIdx = i;
+          break;
+        }
+
+        // KASUS 4: Koordinat identik sampai 4 desimal (~11m)
+        if (Math.abs(lat - exLat) < 0.00015 && Math.abs(lng - exLng) < 0.00015) {
+          dupIdx = i;
+          break;
+        }
+      }
+
+      if (dupIdx === -1) {
+        deduped.push(item);
+      } else {
+        // Ambil data yang lebih lengkap / timestamp terbaru
+        var cur = deduped[dupIdx];
+        var curTs = Number(cur.ts) || 0;
+        var itemTs = Number(item.ts) || 0;
+        if (itemTs >= curTs) {
+          cur.lat = item.lat;
+          cur.lng = item.lng;
+          cur.ts = itemTs;
+        }
+        if ((!cur.alamatResto || cur.alamatResto === '-') && item.alamatResto) {
+          cur.alamatResto = item.alamatResto;
+        }
+        if (item.namaResto && item.namaResto.length > (cur.namaResto || '').length) {
+          cur.namaResto = item.namaResto;
+        }
+        if (!cur.kategori && item.kategori) {
+          cur.kategori = item.kategori;
+        }
+      }
+    });
+
+    return deduped;
+  }
+
   window.nxOpenMapsResto = function() {
     var modal = document.getElementById('modal-maps-resto');
     if (!modal) return;
@@ -43,9 +133,12 @@
     
     var keys = Object.keys(restosObj);
     // KECUALIKAN Instan: karena instan adalah pengirim perorangan/rumah pribadi, bukan resto/toko
-    _cachedRestos = keys.map(function(k) { return restosObj[k]; }).filter(function(r) {
+    var rawList = keys.map(function(k) { return restosObj[k]; }).filter(function(r) {
       return !isInstantResto(r);
     });
+
+    // DEDUPLIKASI: hanya tampilkan 1 titik jika nama & titik resto sama
+    _cachedRestos = deduplicateRestoList(rawList);
 
     _currentCategory = 'all';
     _currentSearchQuery = '';
@@ -156,6 +249,7 @@
     _allRestosLayer.clearLayers();
 
     var bounds = [];
+    var safeList = deduplicateRestoList(restos);
 
     // Ikon Pin Khusus Food (Restoran/Kuliner) - Warna Oranye
     var foodIcon = L.divIcon({
@@ -175,7 +269,7 @@
       popupAnchor: [0, -15]
     });
 
-    restos.forEach(function(r) {
+    safeList.forEach(function(r) {
       if (!r || !r.lat || !r.lng || isInstantResto(r)) return;
       var lat = Number(r.lat), lng = Number(r.lng);
       if (isNaN(lat) || isNaN(lng)) return;

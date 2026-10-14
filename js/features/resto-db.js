@@ -91,7 +91,57 @@
       if(e.ts>cur.ts){ if(!e.alamatResto) e.alamatResto=cur.alamatResto; if(!e.kategori) e.kategori=cur.kategori; all[k]=e; }
       else { if(!cur.alamatResto) cur.alamatResto=e.alamatResto; if(!cur.kategori) cur.kategori=e.kategori; }
     });
-    return all;
+
+    // Deduplikasi jika ada titik ganda pada koordinat/nama yang sama
+    var list = Object.keys(all).map(function(k){ return all[k]; });
+    var deduped = [];
+    list.forEach(function(item){
+      var lat = Number(item.lat), lng = Number(item.lng);
+      if(!validCoord(lat, lng)) return;
+      var k1 = normKey(item.namaResto);
+
+      var dup = deduped.find(function(ex){
+        var dist = meters(lat, lng, Number(ex.lat), Number(ex.lng));
+        var k2 = normKey(ex.namaResto);
+
+        // 1. Titik koordinat sangat dekat (<= 30 meter) dan nama sama/mirip
+        if (dist <= 30) {
+          if (!k1 || !k2 || k1 === k2 || k1.indexOf(k2) !== -1 || k2.indexOf(k1) !== -1) return true;
+        }
+        // 2. Nama sama persis dan jarak radius area (<= 250 meter)
+        if (k1 && k2 && k1 === k2 && dist <= 250) return true;
+        // 3. Nama mirip dan jarak <= 120 meter
+        if (k1 && k2 && (k1.indexOf(k2) !== -1 || k2.indexOf(k1) !== -1) && dist <= 120) return true;
+        // 4. Koordinat identik sampai 4 desimal (~11m)
+        if (Math.abs(lat - Number(ex.lat)) < 0.00015 && Math.abs(lng - Number(ex.lng)) < 0.00015) return true;
+
+        return false;
+      });
+
+      if (!dup) {
+        deduped.push(item);
+      } else {
+        if ((item.ts || 0) >= (dup.ts || 0)) {
+          dup.lat = item.lat;
+          dup.lng = item.lng;
+          dup.ts = item.ts;
+        }
+        if (item.alamatResto && !dup.alamatResto) dup.alamatResto = item.alamatResto;
+        if (item.namaResto && item.namaResto.length > (dup.namaResto || '').length) dup.namaResto = item.namaResto;
+        if (item.kategori && !dup.kategori) dup.kategori = item.kategori;
+      }
+    });
+
+    var finalObj = {};
+    deduped.forEach(function(r, idx){
+      var baseKey = normKey(r.namaResto) || ('r_' + idx);
+      var key = baseKey;
+      if (finalObj[key]) {
+        key = baseKey + '_' + idx;
+      }
+      finalObj[key] = r;
+    });
+    return finalObj;
   }
 
   function updateInfo(){
