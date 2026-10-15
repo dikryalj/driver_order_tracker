@@ -174,6 +174,7 @@
         // supaya konsisten, dan supaya Orders bisa kasih info jelas kenapa
         // daftarnya kosong/terbatas).
         function getActiveFilterPeriodLabel() {
+            if (activeFilterDays === 'today' || activeFilterDays === 1) return 'Hari Ini';
             return activeFilterDays === 7 ? '7 Hari Terakhir' : (activeFilterDays === 30 ? '30 Hari Terakhir' : 'Semua Periode');
         }
 
@@ -222,8 +223,6 @@
 
         // Jumlah unit order HARI INI (kalender lokal, mulai 00:00), diambil dari
         // SELURUH ordersList — bukan cuma yang lolos filter tab 7/30/Semua Hari.
-        // "Target Harian" secara definisi selalu soal progres HARI INI, jadi
-        // tidak boleh ikut berubah kalau user switch tab periode di Insights.
         function getTodayOrderUnitCount() {
             const startOfToday = new Date();
             startOfToday.setHours(0, 0, 0, 0);
@@ -233,11 +232,10 @@
 
         // Pembagi rata-rata order/hari: pakai rentang HARI AKTUAL dari order
         // tertua di data terfilter sampai sekarang, dibatasi maksimal panjang
-        // tab filter yang dipilih. Ini mencegah rata-rata under-estimate kalau
-        // history order user lebih pendek dari panjang tab (misal baru pakai
-        // app 2 hari tapi tab yang aktif "7 Hari").
+        // tab filter yang dipilih.
         function computeDaysSpan(filteredOrders, filterDays) {
             if (filteredOrders.length === 0) return 1;
+            if (filterDays === 'today' || filterDays === 1) return 1;
             const earliest = Math.min(...filteredOrders.map(o => o.timestamp));
             const daysSinceEarliest = Math.max(1, Math.ceil((Date.now() - earliest) / 86400000));
             if (filterDays === 'all') return daysSinceEarliest;
@@ -252,23 +250,40 @@
             document.getElementById('hero-total-orders').innerText = `${unitCount} Orders`;
             document.getElementById('home-count-badge').innerText = filtered.length;
             
-            const target = insightsDailyTarget || 10;
+            const baseDailyTarget = insightsDailyTarget || 10;
+            const daysCount = computeDaysSpan(filtered, activeFilterDays);
+            
+            let targetLabel = '';
+            let targetCount = baseDailyTarget;
+            let currentAchieved = 0;
+
+            if (activeFilterDays === 'today' || activeFilterDays === 1) {
+                targetCount = baseDailyTarget;
+                targetLabel = `Target Harian (${baseDailyTarget} Order)`;
+                currentAchieved = getTodayOrderUnitCount();
+            } else if (activeFilterDays === 7) {
+                targetCount = baseDailyTarget * 7;
+                targetLabel = `Target 7 Hari (${targetCount} Order)`;
+                currentAchieved = unitCount;
+            } else if (activeFilterDays === 30) {
+                targetCount = baseDailyTarget * 30;
+                targetLabel = `Target 30 Hari (${targetCount} Order)`;
+                currentAchieved = unitCount;
+            } else { // 'all'
+                targetCount = Math.max(baseDailyTarget, baseDailyTarget * daysCount);
+                targetLabel = `Target Semua (${targetCount} Order)`;
+                currentAchieved = unitCount;
+            }
+
             const targetLabelEl = document.getElementById('hero-target-label');
             if (targetLabelEl) {
-                targetLabelEl.innerText = `Target Harian (${target} Order)`;
+                targetLabelEl.innerText = targetLabel;
             }
-            
-            // PENTING: progress Target Harian dihitung dari order HARI INI saja
-            // (getTodayOrderUnitCount), TIDAK dari unitCount periode filter di
-            // atas. Sebelumnya total order 7/30 hari dibandingkan langsung ke
-            // target harian, jadi persentasenya menyesatkan (mis. "80% Reached"
-            // padahal rata-rata harian sebenarnya jauh di bawah target).
-            const todayCount = getTodayOrderUnitCount();
-            const progress = target > 0 ? Math.min(100, Math.round((todayCount / target) * 100)) : 0;
-            document.getElementById('hero-progress-text').innerText = `${todayCount}/${target} (${progress}%)`;
+
+            const progress = targetCount > 0 ? Math.min(100, Math.round((currentAchieved / targetCount) * 100)) : 0;
+            document.getElementById('hero-progress-text').innerText = `${currentAchieved}/${targetCount} (${progress}%)`;
             document.getElementById('hero-progress-bar').style.width = `${progress}%`;
 
-            const daysCount = computeDaysSpan(filtered, activeFilterDays);
             document.getElementById('kpi-avg-daily').innerText = (unitCount / daysCount).toFixed(1);
             document.getElementById('kpi-screenshot-count').innerText = countRealScreenshots(filtered);
 

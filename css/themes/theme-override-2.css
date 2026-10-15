@@ -14,8 +14,8 @@
     html body .purple-card-gradient .grid>div>span.text-amber-300,html body .purple-card-gradient .grid>div>span.text-emerald-300{color:var(--lime)!important}
     /* filter: pil outline, aktif gelap */
     html body div:has(>#filter-7d),html body div:has(>#filter-orders-7d){background:transparent!important;box-shadow:none!important;border:0!important;padding:0!important;gap:8px}
-    html body :is(#filter-7d,#filter-30d,#filter-all,#filter-orders-7d,#filter-orders-30d,#filter-orders-14d,#filter-orders-today,#filter-orders-all,[id^="cat-filter-"]){border-radius:999px!important;padding-top:9px;padding-bottom:9px}
-    html body :is(#filter-7d,#filter-30d,#filter-all,#filter-orders-7d,#filter-orders-30d,#filter-orders-14d,#filter-orders-today,#filter-orders-all,[id^="cat-filter-"]):not(.bg-indigo-600){background:rgba(255,255,255,.35)!important;border:1px solid rgba(27,29,26,.2)!important;color:var(--ink)!important}
+    html body :is(#filter-today,#filter-7d,#filter-30d,#filter-all,#filter-orders-today,#filter-orders-7d,#filter-orders-14d,#filter-orders-30d,#filter-orders-all,[id^="cat-filter-"]){border-radius:999px!important;padding-top:9px;padding-bottom:9px}
+    html body :is(#filter-today,#filter-7d,#filter-30d,#filter-all,#filter-orders-today,#filter-orders-7d,#filter-orders-14d,#filter-orders-30d,#filter-orders-all,[id^="cat-filter-"]):not(.bg-indigo-600){background:rgba(255,255,255,.35)!important;border:1px solid rgba(27,29,26,.2)!important;color:var(--ink)!important}
     html body #home-count-badge{background:var(--lime)!important;color:var(--ink)!important}
     /* ringkasan finansial: kartu bersih, proporsional, dan rapi */
     html body #finance-period-label{background:rgba(27,29,26,.06)!important;color:var(--ink)!important;padding:3px 9px!important;border-radius:999px!important;font-size:10px!important;font-weight:700!important}

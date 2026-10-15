@@ -173,10 +173,10 @@
         function filterDays(days) {
             activeFilterDays = days;
             // Ada 2 set tombol yang harus disinkronkan: yang di Dashboard
-            // (filter-7d/30d/all) dan yang di tab Orders (filter-orders-7d/30d/all),
+            // (filter-today/7d/30d/all) dan yang di tab Orders (filter-orders-today/7d/30d/all),
             // karena keduanya kontrol untuk state activeFilterDays yang sama.
-            ['7d', '30d', 'all'].forEach(id => {
-                const isActive = (days === 7 && id === '7d') || (days === 30 && id === '30d') || (days === 'all' && id === 'all');
+            ['today', '7d', '30d', 'all'].forEach(id => {
+                const isActive = (days === 'today' && id === 'today') || (days === 7 && id === '7d') || (days === 30 && id === '30d') || (days === 'all' && id === 'all');
                 const activeClass = "flex-1 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-md transition";
                 const inactiveClass = "flex-1 py-2 text-xs font-medium rounded-xl text-slate-500 hover:text-slate-900 transition";
                 [`filter-${id}`, `filter-orders-${id}`].forEach(btnId => {
@@ -210,7 +210,16 @@
             const platformFilter = document.getElementById('filter-platform')?.value || 'ALL';
 
             const now = Date.now();
-            const cutoff = activeFilterDays === 7 ? now - 7 * 86400000 : (activeFilterDays === 30 ? now - 30 * 86400000 : 0);
+            let cutoff = 0;
+            if (activeFilterDays === 'today' || activeFilterDays === 1) {
+                const startOfToday = new Date();
+                startOfToday.setHours(0, 0, 0, 0);
+                cutoff = startOfToday.getTime();
+            } else if (activeFilterDays === 7) {
+                cutoff = now - 7 * 86400000;
+            } else if (activeFilterDays === 30) {
+                cutoff = now - 30 * 86400000;
+            }
 
             return ordersList.filter(o => {
                 if (cutoff > 0 && o.timestamp < cutoff) return false;
