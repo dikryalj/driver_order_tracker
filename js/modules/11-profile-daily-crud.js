@@ -8,13 +8,14 @@
                     const p = JSON.parse(saved);
                     userProfile = {
                         name: p.name || '',
+                        email: p.email || '',
                         photo: p.photo || null,
                         driverTypes: Array.isArray(p.driverTypes) ? p.driverTypes : [],
                         otherType: p.otherType || ''
                     };
                 }
             } catch(e) {
-                userProfile = { name: '', photo: null, driverTypes: [], otherType: '' };
+                userProfile = { name: '', email: '', photo: null, driverTypes: [], otherType: '' };
             }
             renderProfileUI();
         }
@@ -269,10 +270,19 @@
                 } else if (types.length > 0) {
                     const labels = types.map(t => t === 'Lainnya' ? otherType || 'Lainnya' : t);
                     profileSubtitle.innerText = labels.join(' • ');
-                    profileSubtitle.classList.remove('cursor-pointer');
                 } else {
                     profileSubtitle.innerText = 'Driver';
                     profileSubtitle.classList.remove('cursor-pointer');
+                }
+            }
+
+            const profileEmail = document.getElementById('profile-driver-email');
+            if (profileEmail) {
+                if (userProfile.email) {
+                    profileEmail.innerHTML = `<i class="fa-solid fa-envelope text-[10px]"></i> ${userProfile.email}`;
+                    profileEmail.classList.remove('hidden');
+                } else {
+                    profileEmail.classList.add('hidden');
                 }
             }
             if (profileAvatarContainer) {

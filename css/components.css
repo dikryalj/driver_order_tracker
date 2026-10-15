@@ -66,4 +66,44 @@
     #notif-panel>div,#notif-modal>div{animation:nt-up .35s cubic-bezier(.2,.8,.2,1) both}
     .nt-out{opacity:0!important;transform:translateY(-10px)!important;transition:all .3s}
     @media (prefers-reduced-motion:reduce){.nt-pop,#notif-panel>div,#notif-modal>div{animation:none}}
+
+/* === ONBOARDING THEME COMPATIBILITY === */
+html[data-ui-theme="sales"] #onboarding-screen button.bg-indigo-600,
+html[data-ui-theme="sales"] #onboarding-screen .bg-indigo-600,
+html[data-ui-theme="lime"] #onboarding-screen button.bg-indigo-600,
+html[data-ui-theme="lime"] #onboarding-screen .bg-indigo-600 {
+    background: var(--lime) !important;
+    color: var(--ink) !important;
+    box-shadow: 0 10px 24px rgba(166,255,31,.35) !important;
+}
+html[data-ui-theme="sales"] #onboarding-screen .text-indigo-600,
+html[data-ui-theme="lime"] #onboarding-screen .text-indigo-600 {
+    color: var(--ink) !important;
+}
+html[data-ui-theme="sales"] #onboarding-screen .bg-indigo-50,
+html[data-ui-theme="lime"] #onboarding-screen .bg-indigo-50 {
+    background: rgba(166,255,31,.2) !important;
+    border-color: rgba(166,255,31,.4) !important;
+}
+
+html[data-ui-theme="neon"] #onboarding-screen button.bg-indigo-600,
+html[data-ui-theme="neon"] #onboarding-screen .bg-indigo-600 {
+    background: #99FF33 !important;
+    color: #15171A !important;
+    box-shadow: 0 10px 24px rgba(153,255,51,.35) !important;
+}
+html[data-ui-theme="neon"] #onboarding-screen .text-indigo-600 {
+    color: #15171A !important;
+}
+html[data-ui-theme="neon"] #onboarding-screen .bg-indigo-50 {
+    background: rgba(153,255,51,.2) !important;
+    border-color: rgba(153,255,51,.4) !important;
+}
+
+html[data-ui-theme="focus"] #onboarding-screen button.bg-indigo-600,
+html[data-ui-theme="focus"] #onboarding-screen .bg-indigo-600 {
+    background: #3E5BFF !important;
+    color: #fff !important;
+    box-shadow: 0 10px 24px rgba(62,91,255,.3) !important;
+}
     

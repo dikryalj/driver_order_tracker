@@ -103,6 +103,9 @@
                 screen.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
                 setTimeout(() => {
                     screen.style.display = 'none';
+                    if (typeof checkAndTriggerOnboarding === 'function') {
+                        checkAndTriggerOnboarding();
+                    }
                 }, 700);
             }, 350);
         }

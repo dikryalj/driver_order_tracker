@@ -18,6 +18,8 @@
     <!-- Leaflet OpenStreetMap CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Identity Services (Client-Side Sign-In) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Ai lokal -->
     <!-- ============================================================
          GOOGLE MAPS (OPSI 2 — POSISI OTOMATIS)
@@ -106,6 +108,200 @@
             </div>
             
             <p class="text-[10px] text-center text-slate-400 font-medium">Rekap Pendapatan · Limnas GPS · Est. BBM</p>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         ONBOARDING 2 LANGKAH (CREATE PROFILE & LOCATION PERMISSION)
+         ============================================================ -->
+    <div id="onboarding-screen" class="fixed inset-0 z-[900] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto hidden">
+        <div class="bg-white rounded-3xl max-w-sm w-full card-shadow border border-slate-100 overflow-hidden relative my-auto animate-fade-in">
+            <!-- Step 1: Create Profile -->
+            <div id="onboarding-step-1" class="p-6 space-y-4">
+                <!-- Header Atas: Tombol SKIP -->
+                <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600">Langkah 1 / 2</span>
+                    <button type="button" onclick="goToOnboardingStep(2)" class="text-xs font-bold text-slate-400 hover:text-slate-600 transition px-2 py-1 active:scale-95">
+                        LEWATI
+                    </button>
+                </div>
+
+                <!-- Judul & Subjudul -->
+                <div class="text-center space-y-1">
+                    <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">BUAT PROFIL DRIVER</h2>
+                    <p class="text-xs text-slate-500 leading-snug">Kenalan dulu agar rekap orderan dan estimasi BBM-mu makin akurat.</p>
+                </div>
+
+                <!-- Avatar Tengah -->
+                <div class="flex flex-col items-center justify-center pt-1 pb-1">
+                    <div class="relative">
+                        <div id="onboarding-avatar-preview" class="w-20 h-20 rounded-full ring-4 ring-indigo-100 overflow-hidden flex items-center justify-center bg-indigo-50 text-indigo-300 font-extrabold text-3xl shadow-inner">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <label for="onboarding-photo-input" class="absolute bottom-0 right-0 w-7 h-7 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full flex items-center justify-center cursor-pointer shadow-md transition active:scale-95 border-2 border-white" title="Unggah Foto Profil">
+                            <i class="fa-solid fa-camera text-[11px]"></i>
+                            <input type="file" id="onboarding-photo-input" accept="image/*" class="hidden" onchange="handleOnboardingPhotoSelect(event)">
+                        </label>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-medium mt-1.5">Foto Profil (Opsional)</span>
+                </div>
+
+                <!-- Tombol Login Google Client-Side -->
+                <div class="space-y-1.5">
+                    <button type="button" onclick="handleGoogleSignInClick()" class="w-full py-2.5 px-4 bg-white hover:bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center gap-2.5 text-xs font-bold text-slate-700 shadow-xs transition active:scale-95">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Lanjutkan dengan Akun Google</span>
+                    </button>
+                    <!-- Container tersembunyi untuk auto-render Google SDK jika aktif -->
+                    <div id="g-signin-hidden-btn" class="hidden"></div>
+                    <!-- Badge jika Google berhasil terhubung -->
+                    <p id="onboarding-google-connected-badge" class="hidden text-[10px] text-center text-emerald-600 bg-emerald-50 rounded-xl py-1 px-2 border border-emerald-100 flex items-center justify-center gap-1"></p>
+                </div>
+
+                <div class="relative flex py-1 items-center">
+                    <div class="flex-grow border-t border-slate-100"></div>
+                    <span class="flex-shrink mx-2 text-[10px] text-slate-400 font-bold uppercase">Atau Isi Manual</span>
+                    <div class="flex-grow border-t border-slate-100"></div>
+                </div>
+
+                <!-- Form Input -->
+                <div class="space-y-3">
+                    <!-- Nama Lengkap -->
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-slate-700 mb-1">NAMA LENGKAP <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                                <i class="fa-solid fa-user"></i>
+                            </span>
+                            <input type="text" id="onboarding-name" maxlength="30" placeholder="Contoh: Bang Budi" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 font-medium placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-slate-700 mb-1">ALAMAT EMAIL <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                                <i class="fa-solid fa-envelope"></i>
+                            </span>
+                            <input type="email" id="onboarding-email" placeholder="budi@example.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 font-medium placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Platform Driver (Chips) -->
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-slate-700 mb-1">PLATFORM DRIVER</label>
+                        <div id="onboarding-types-chips" class="flex flex-wrap gap-1.5"></div>
+                        <div id="onboarding-custom-type-wrap" class="hidden mt-2">
+                            <input type="text" id="onboarding-custom-type" placeholder="Sebutkan platform lainnya..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Tarif BBM -->
+                    <div>
+                        <label class="block text-[11px] font-extrabold text-slate-700 mb-1">TARIF BBM (Rp / km)</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 text-xs">
+                                <i class="fa-solid fa-gas-pump"></i>
+                            </span>
+                            <input type="number" id="onboarding-fuel-rate" value="1500" step="50" min="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-800 font-medium placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <p class="text-[9.5px] text-slate-400 mt-1">Digunakan untuk menghitung estimasi pengeluaran bensin otomatis.</p>
+                    </div>
+                </div>
+
+                <!-- Tombol Lanjutkan -->
+                <div class="pt-2">
+                    <button type="button" onclick="saveOnboardingStep1AndNext()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-indigo-200 transition active:scale-95">
+                        <span>LANJUTKAN</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Location Permission -->
+            <div id="onboarding-step-2" class="p-6 space-y-4 hidden">
+                <!-- Header Atas: Back & SKIP -->
+                <div class="flex items-center justify-between">
+                    <button type="button" onclick="goToOnboardingStep(1)" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition flex items-center justify-center active:scale-95" title="Kembali ke Langkah 1">
+                        <i class="fa-solid fa-arrow-left text-xs"></i>
+                    </button>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600">Langkah 2 / 2</span>
+                    <button type="button" onclick="finishOnboarding(false)" class="text-xs font-bold text-slate-400 hover:text-slate-600 transition px-2 py-1 active:scale-95">
+                        LEWATI
+                    </button>
+                </div>
+
+                <!-- Judul & Subjudul -->
+                <div class="text-center space-y-1">
+                    <h2 class="text-xl font-extrabold text-slate-900 tracking-tight">IZINKAN AKSES LOKASI</h2>
+                    <p class="text-xs text-slate-500 leading-snug">Aktifkan akses lokasi GPS agar fitur pelacakan rute dan perhitungan BBM bekerja optimal.</p>
+                </div>
+
+                <!-- Ilustrasi Peta & Radar Pin -->
+                <div class="relative py-2 flex items-center justify-center">
+                    <div class="w-36 h-36 rounded-3xl bg-gradient-to-br from-indigo-50 to-slate-100 border border-indigo-100/60 flex items-center justify-center relative overflow-hidden shadow-inner">
+                        <!-- Pola grid peta samar -->
+                        <div class="absolute inset-0 opacity-15" style="background-image: radial-gradient(#4f46e5 1px, transparent 1px); background-size: 14px 14px;"></div>
+                        <!-- Lingkaran radar pulse -->
+                        <div class="absolute w-28 h-28 rounded-full border border-indigo-400/30 animate-ping"></div>
+                        <div class="absolute w-20 h-20 rounded-full bg-indigo-500/10 border border-indigo-400/40"></div>
+                        <!-- Pin Lokasi -->
+                        <div class="relative z-10 w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-300 transform -rotate-3">
+                            <i class="fa-solid fa-location-dot text-xl text-white"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 Poin Manfaat -->
+                <div class="space-y-2.5">
+                    <div class="flex items-start gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-xs">
+                            <i class="fa-solid fa-location-crosshairs"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-slate-800 leading-tight">Check-in Akurat</p>
+                            <p class="text-[10px] text-slate-500 leading-snug">Deteksi lokasi Resto &amp; Penerima secara presisi.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-xs">
+                            <i class="fa-solid fa-route"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-slate-800 leading-tight">Rute Otomatis &amp; BBM</p>
+                            <p class="text-[10px] text-slate-500 leading-snug">Hitung otomatis jarak rute (km) &amp; estimasi biaya bensin.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-3 p-2.5 rounded-2xl bg-slate-50 border border-slate-100">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 text-xs">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <div class="text-left">
+                            <p class="text-xs font-bold text-slate-800 leading-tight">Peta Limnas</p>
+                            <p class="text-[10px] text-slate-500 leading-snug">Rekap jejak pergerakan harian yang aman di perangkatmu.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Aksi Bawah -->
+                <div class="pt-2 space-y-2">
+                    <button type="button" onclick="handleOnboardingAllowLocation()" class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl flex items-center justify-center gap-2 shadow-md shadow-indigo-200 transition active:scale-95">
+                        <span>IZINKAN LOKASI (ALLOW LOCATION)</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                    <button type="button" onclick="finishOnboarding(false)" class="w-full py-2 text-center text-xs font-bold text-slate-400 hover:text-slate-600 transition active:scale-95">
+                        NANTI SAJA (NOT NOW)
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -767,9 +963,34 @@
                 </div>
                 <div>
                     <h3 class="font-extrabold text-slate-900 text-lg" id="profile-driver-name">Driver</h3>
+                    <p id="profile-driver-email" class="hidden text-[11px] font-semibold text-indigo-600 truncate max-w-[240px] mx-auto"></p>
                     <p class="text-xs text-slate-400 font-medium cursor-pointer" onclick="openEditProfileModal()" id="profile-driver-subtitle">Ketuk untuk melengkapi profil</p>
                 </div>
                 <div id="profile-driver-chips" class="flex flex-wrap justify-center gap-1.5 pt-1"></div>
+            </div>
+
+            <!-- Akun Google & Onboarding -->
+            <div class="bg-white rounded-3xl card-shadow border border-slate-100 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-extrabold text-slate-900 flex items-center gap-2">
+                        <i class="fa-brands fa-google text-indigo-600"></i> Akun Google &amp; Onboarding
+                    </p>
+                    <span id="profile-google-status-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">Belum Diatur</span>
+                </div>
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    Hubungkan akun Google atau buka ulang Onboarding 2 Langkah untuk memperbarui profil dan izin lokasi kapan saja.
+                </p>
+                <div class="space-y-2">
+                    <label class="block text-[11px] font-bold text-slate-600">Google OAuth 2.0 Web Client ID</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="setting-google-client-id" placeholder="xxxx.apps.googleusercontent.com" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 font-mono text-[11px]">
+                        <button type="button" onclick="saveGoogleClientIdFromProfile()" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-xs rounded-xl transition active:scale-95">Simpan</button>
+                    </div>
+                    <p class="text-[9.5px] text-slate-400 leading-tight">Opsional: Jika kosong, aplikasi tetap berjalan normal dengan pengisian nama dan foto secara manual.</p>
+                </div>
+                <button type="button" onclick="openOnboardingModal(true)" class="w-full py-2.5 px-4 rounded-2xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-95 border border-indigo-100/60">
+                    <i class="fa-solid fa-arrows-rotate"></i> Buka Ulang Onboarding / Hubungkan Google
+                </button>
             </div>
 
             <!-- Tema Tampilan -->
@@ -1663,6 +1884,7 @@
     <!-- Features -->
     <script src="js/features/combined-orders-edit.js" defer></script>
     <script src="js/features/notifications.js" defer></script>
+    <script src="js/features/onboarding.js" defer></script>
 
     <!-- Patches & Feature Extensions (Urutan Preserved) -->
     <script src="js/patches/01-platform-limnas.js" defer></script>
