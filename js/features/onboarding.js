@@ -297,6 +297,12 @@
                 'emerald'
             );
         }
+
+        setTimeout(() => {
+            if (typeof maybeStartFirstTimeTour === 'function') {
+                maybeStartFirstTimeTour();
+            }
+        }, 600);
     }
 
     function checkAndTriggerOnboarding() {

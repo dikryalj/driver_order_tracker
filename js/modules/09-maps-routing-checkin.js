@@ -64,6 +64,11 @@
             renderCombinedPointsList(order);
 
             setTimeout(() => { initCombinedOrderMap(order); }, 150);
+
+            // Mini-tour panduan detail pesanan gabungan jika belum pernah dibuka
+            if (typeof maybeStartOrderDetailTour === 'function') {
+                maybeStartOrderDetailTour(order);
+            }
         }
 
         function renderCombinedPointsList(order) {

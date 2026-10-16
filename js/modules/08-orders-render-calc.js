@@ -647,6 +647,11 @@
             setTimeout(() => {
                 initOrderMap(order);
             }, 150);
+
+            // Mini-tour panduan detail pesanan jika belum pernah dibuka
+            if (typeof maybeStartOrderDetailTour === 'function') {
+                maybeStartOrderDetailTour(order);
+            }
         }
 
         // Refresh angka Est. BBM/Bersih di modal detail setelah distanceKm baru

@@ -769,6 +769,7 @@
                 updateLightBackupInfo();
                 if (window.syncThemeButtons) window.syncThemeButtons();
                 if (window.syncNotifPrefs) window.syncNotifPrefs();
+                if (window.updateTourStatusBadge) window.updateTourStatusBadge();
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }

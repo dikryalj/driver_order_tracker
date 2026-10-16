@@ -106,6 +106,11 @@
                     if (typeof checkAndTriggerOnboarding === 'function') {
                         checkAndTriggerOnboarding();
                     }
+                    setTimeout(() => {
+                        if (typeof maybeStartFirstTimeTour === 'function') {
+                            maybeStartFirstTimeTour();
+                        }
+                    }, 600);
                 }, 700);
             }, 350);
         }
