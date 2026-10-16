@@ -667,7 +667,7 @@
                     </h4>
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600" id="finance-period-label">Periode terpilih</span>
                 </div>
-                <div class="grid grid-cols-3 gap-2 text-center">
+                <div id="finance-summary-grid" class="grid grid-cols-3 gap-2 text-center">
                     <div class="bg-emerald-50 rounded-2xl p-2.5 border border-emerald-100 cursor-pointer active:scale-95 transition" onclick="showFinanceExact('gross')" title="Ketuk untuk melihat nominal lengkap">
                         <span class="text-[9.5px] text-emerald-600 font-semibold block">Kotor</span>
                         <span class="text-xs font-extrabold text-emerald-700 block mt-0.5" id="finance-gross">Rp0</span>
@@ -1676,7 +1676,7 @@
 
             <!-- Floating Action Button (+) -->
             <div class="relative -top-5">
-                <button onclick="switchTab('upload')" class="w-14 h-14 rounded-full purple-gradient text-white flex items-center justify-center text-xl fab-shadow active:scale-95 transition transform border-4 border-slate-50">
+                <button id="nav-btn-upload-fab" onclick="switchTab('upload')" class="w-14 h-14 rounded-full purple-gradient text-white flex items-center justify-center text-xl fab-shadow active:scale-95 transition transform border-4 border-slate-50">
                     <i class="fa-solid fa-plus"></i>
                 </button>
             </div>

@@ -23,38 +23,37 @@
         window.isTourActive = false;
     }
 
-    // Scroll otomatis agar elemen yang disorot selalu berada di tengah safe area
-    // (tidak tertutup bottom navigation bar atau header sticky)
+    // Scroll instan & presisi agar elemen yang disorot selalu berada di tengah safe area
+    // (tidak tertutup bottom navigation bar atau header sticky).
+    // Menggunakan behavior: 'auto' (instant) secara sinkron di onHighlightStarted
+    // SEBELUM Driver.js membaca getBoundingClientRect() untuk spotlight & popover.
     function scrollElementIntoSafeView(element) {
         if (!element) return;
         try {
-            // Jangan scroll jika elemen berada di dalam fixed bottom nav
-            if (element.closest && element.closest('nav.fixed')) return;
+            // Jangan scroll jika elemen berada di dalam fixed bottom nav atau berposisi fixed
+            if (element.closest && (element.closest('nav.fixed') || window.getComputedStyle(element).position === 'fixed')) {
+                return;
+            }
+
+            // Jangan scroll window jika elemen berada dalam modal Peta Resto
+            if (element.closest && element.closest('#modal-maps-resto')) {
+                return;
+            }
 
             const rect = element.getBoundingClientRect();
             const topHeader = document.querySelector('header') ? document.querySelector('header').offsetHeight : 60;
             const navBar = document.querySelector('nav.fixed.bottom-0');
-            const bottomNavHeight = navBar ? navBar.offsetHeight + 28 : 88;
-
-            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
-            const elAbsoluteTop = rect.top + currentScrollY;
-            const elHeight = rect.height;
-
-            // Safe viewable height between top header and bottom nav
-            const safeViewHeight = window.innerHeight - topHeader - bottomNavHeight;
-
-            // Target scroll agar elemen berada di tengah-tengah area pandang aman
-            let targetScrollY = elAbsoluteTop - topHeader - Math.max(15, (safeViewHeight - elHeight) / 2);
-            targetScrollY = Math.max(0, Math.round(targetScrollY));
+            const bottomNavHeight = navBar ? (navBar.offsetHeight + 24) : 90;
 
             // Cek apakah elemen saat ini terhalang bottom nav atau header
             const isCutOffBottom = (rect.bottom > window.innerHeight - bottomNavHeight);
             const isCutOffTop = (rect.top < topHeader + 10);
 
             if (isCutOffBottom || isCutOffTop) {
-                window.scrollTo({
-                    top: targetScrollY,
-                    behavior: 'smooth'
+                element.scrollIntoView({
+                    behavior: 'auto',
+                    block: 'center',
+                    inline: 'nearest'
                 });
             }
         } catch(e) {
@@ -108,13 +107,15 @@
             if (typeof activeTab !== 'undefined' && activeTab !== 'dashboard' && typeof switchTab === 'function') {
                 switchTab('dashboard');
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'auto' });
 
             setTimeout(() => {
                 const driverObj = window.driver.js.driver({
                     showProgress: true,
                     animate: true,
                     allowClose: true,
+                    smoothScroll: false,
+                    disableActiveInteraction: true,
                     overlayColor: 'rgba(0, 0, 0, 0.65)',
                     stagePadding: 6,
                     stageRadius: 16,
@@ -122,13 +123,8 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
-                    onHighlightStarted: (element, step) => {
+                    onHighlightStarted: (element) => {
                         scrollElementIntoSafeView(element);
-                        setTimeout(() => {
-                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
-                                window.currentDriverInstance.refresh();
-                            }
-                        }, 240);
                     },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
@@ -149,16 +145,16 @@
                             }
                         },
                         {
-                            element: '.grid:has(#finance-gross)',
+                            element: document.querySelector('#finance-summary-grid') ? '#finance-summary-grid' : '.grid:has(#finance-gross)',
                             popover: {
                                 title: '💰 Kalkulator Bersih & BBM Otomatis',
                                 description: 'Pendapatan kotor, potongan estimasi bensin (BBM) berdasarkan jarak kilometer rute, dan pendapatan bersihmu dihitung otomatis di sini.',
-                                side: 'bottom',
+                                side: 'top',
                                 align: 'center'
                             }
                         },
                         {
-                            element: 'nav button[onclick="switchTab(\'upload\')"]',
+                            element: document.querySelector('#nav-btn-upload-fab') ? '#nav-btn-upload-fab' : 'nav button[onclick="switchTab(\'upload\')"]',
                             popover: {
                                 title: '✨ Scan Struk & Resi dengan AI',
                                 description: 'Dapat orderan baru? Ketuk tombol (+) ini untuk upload screenshot orderan atau foto label paket. AI akan membaca alamat & nominal secara otomatis!',
@@ -189,7 +185,7 @@
 
                 window.currentDriverInstance = driverObj;
                 driverObj.drive();
-            }, 250);
+            }, 120);
         } catch (e) {
             window.isTourActive = false;
             console.warn('[DriverTour] startAppTour error:', e);
@@ -226,7 +222,7 @@
             if (typeof activeTab !== 'undefined' && activeTab !== 'orders' && typeof switchTab === 'function') {
                 switchTab('orders');
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'auto' });
 
             setTimeout(() => {
                 const searchEl = document.querySelector('#search-input');
@@ -293,6 +289,8 @@
                     showProgress: true,
                     animate: true,
                     allowClose: true,
+                    smoothScroll: false,
+                    disableActiveInteraction: true,
                     overlayColor: 'rgba(0, 0, 0, 0.65)',
                     stagePadding: 6,
                     stageRadius: 16,
@@ -300,13 +298,8 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
-                    onHighlightStarted: (element, step) => {
+                    onHighlightStarted: (element) => {
                         scrollElementIntoSafeView(element);
-                        setTimeout(() => {
-                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
-                                window.currentDriverInstance.refresh();
-                            }
-                        }, 240);
                     },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
@@ -320,7 +313,7 @@
 
                 window.currentDriverInstance = driverObj;
                 driverObj.drive();
-            }, 300);
+            }, 120);
         } catch (e) {
             window.isTourActive = false;
             console.warn('[DriverTour] startOrdersTour error:', e);
@@ -342,13 +335,15 @@
             if (typeof activeTab !== 'undefined' && activeTab !== 'upload' && typeof switchTab === 'function') {
                 switchTab('upload');
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            window.scrollTo({ top: 0, behavior: 'auto' });
 
             setTimeout(() => {
                 const driverObj = window.driver.js.driver({
                     showProgress: true,
                     animate: true,
                     allowClose: true,
+                    smoothScroll: false,
+                    disableActiveInteraction: true,
                     overlayColor: 'rgba(0, 0, 0, 0.65)',
                     stagePadding: 6,
                     stageRadius: 16,
@@ -356,13 +351,8 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
-                    onHighlightStarted: (element, step) => {
+                    onHighlightStarted: (element) => {
                         scrollElementIntoSafeView(element);
-                        setTimeout(() => {
-                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
-                                window.currentDriverInstance.refresh();
-                            }
-                        }, 240);
                     },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
@@ -403,7 +393,7 @@
 
                 window.currentDriverInstance = driverObj;
                 driverObj.drive();
-            }, 250);
+            }, 120);
         } catch (e) {
             window.isTourActive = false;
             console.warn('[DriverTour] startUploadTour error:', e);
@@ -513,6 +503,8 @@
                     showProgress: true,
                     animate: true,
                     allowClose: true,
+                    smoothScroll: false,
+                    disableActiveInteraction: true,
                     overlayColor: 'rgba(0, 0, 0, 0.65)',
                     stagePadding: 6,
                     stageRadius: 16,
@@ -520,13 +512,8 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
-                    onHighlightStarted: (element, step) => {
+                    onHighlightStarted: (element) => {
                         scrollElementIntoSafeView(element);
-                        setTimeout(() => {
-                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
-                                window.currentDriverInstance.refresh();
-                            }
-                        }, 240);
                     },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
@@ -540,7 +527,7 @@
 
                 window.currentDriverInstance = driverObj;
                 driverObj.drive();
-            }, 350);
+            }, 200);
         } catch (e) {
             window.isTourActive = false;
             console.warn('[DriverTour] startMapsRestoTour error:', e);
@@ -574,6 +561,8 @@
                     showProgress: true,
                     animate: true,
                     allowClose: true,
+                    smoothScroll: false,
+                    disableActiveInteraction: true,
                     overlayColor: 'rgba(0, 0, 0, 0.65)',
                     stagePadding: 6,
                     stageRadius: 16,
@@ -581,13 +570,8 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Paham ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
-                    onHighlightStarted: (element, step) => {
+                    onHighlightStarted: (element) => {
                         scrollElementIntoSafeView(element);
-                        setTimeout(() => {
-                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
-                                window.currentDriverInstance.refresh();
-                            }
-                        }, 240);
                     },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
