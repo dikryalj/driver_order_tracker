@@ -217,8 +217,24 @@
       else emptyNotice.classList.add('hidden');
     }
 
-    renderRestoMarkers(filtered);
+    _activeRestoList = deduplicateRestoList(filtered);
+
+    var bounds = [];
+    _activeRestoList.forEach(function(r) {
+      if (!r || !r.lat || !r.lng || isInstantResto(r)) return;
+      var lat = Number(r.lat), lng = Number(r.lng);
+      if (!isNaN(lat) && !isNaN(lng)) bounds.push([lat, lng]);
+    });
+
+    if (bounds.length > 0 && _allRestosMap) {
+      _allRestosMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
+    }
+
+    renderRestoMarkersLOD();
   }
+
+  var _activeRestoList = [];
+  var _restoCanvasRenderer = null;
 
   function initAllRestosMap() {
     var mapEl = document.getElementById('all-restos-map');
@@ -227,8 +243,15 @@
     if (!_allRestosMap) {
       _allRestosMap = L.map('all-restos-map', {
         zoomControl: true,
-        attributionControl: true
+        attributionControl: true,
+        preferCanvas: true
       }).setView([-7.558, 110.771], 13);
+
+      try {
+        _restoCanvasRenderer = L.canvas({ padding: 0.5 });
+      } catch (e) {
+        _restoCanvasRenderer = null;
+      }
 
       if (typeof createBaseTileLayer === 'function') {
         createBaseTileLayer().addTo(_allRestosMap);
@@ -239,17 +262,35 @@
         }).addTo(_allRestosMap);
       }
       _allRestosLayer = L.layerGroup().addTo(_allRestosMap);
+
+      // Level of Detail dinamis saat zoom berubah (ala Google Maps agar tidak lag & bersih)
+      _allRestosMap.on('zoomend', function() {
+        renderRestoMarkersLOD();
+      });
     } else {
       _allRestosMap.invalidateSize();
     }
   }
 
-  function renderRestoMarkers(restos) {
+  function renderRestoMarkersLOD() {
     if (!_allRestosMap || !_allRestosLayer) return;
     _allRestosLayer.clearLayers();
 
-    var bounds = [];
-    var safeList = deduplicateRestoList(restos);
+    var list = _activeRestoList;
+    if (!list || list.length === 0) return;
+
+    var zoom = _allRestosMap.getZoom();
+
+    // LOD Grid System ala Google Maps:
+    // Zoom out jauh (<= 12): Tampilkan titik (dot) dan beberapa ikon representatif per grid area.
+    // Zoom in dekat (>= 15): Tampilkan semua sebagai ikon pin lengkap.
+    var cellSize = 0;
+    if (zoom <= 10) cellSize = 95;
+    else if (zoom === 11) cellSize = 75;
+    else if (zoom === 12) cellSize = 60;
+    else if (zoom === 13) cellSize = 45;
+    else if (zoom === 14) cellSize = 30;
+    else cellSize = 0; // Zoom >= 15: Semua ikon terbuka
 
     // Ikon Pin Khusus Food (Restoran/Kuliner) - Warna Oranye
     var foodIcon = L.divIcon({
@@ -269,15 +310,28 @@
       popupAnchor: [0, -15]
     });
 
-    safeList.forEach(function(r) {
+    var gridOccupied = {};
+    var dotMarkers = [];
+    var iconMarkers = [];
+
+    list.forEach(function(r) {
       if (!r || !r.lat || !r.lng || isInstantResto(r)) return;
       var lat = Number(r.lat), lng = Number(r.lng);
       if (isNaN(lat) || isNaN(lng)) return;
 
-      bounds.push([lat, lng]);
-      var rCat = getRestoCat(r);
-      var icon = (rCat === 'Express') ? spxIcon : foodIcon;
+      var isLeader = false;
+      if (cellSize === 0) {
+        isLeader = true;
+      } else {
+        var pt = _allRestosMap.project([lat, lng], zoom);
+        var cellKey = Math.floor(pt.x / cellSize) + '_' + Math.floor(pt.y / cellSize);
+        if (!gridOccupied[cellKey]) {
+          gridOccupied[cellKey] = true;
+          isLeader = true;
+        }
+      }
 
+      var rCat = getRestoCat(r);
       var badgeHtml = (rCat === 'Express')
         ? '<span style="display:inline-flex;align-items:center;gap:4px;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:6px;"><i class="fa-solid fa-box"></i> SPX (Toko)</span>'
         : '<span style="display:inline-flex;align-items:center;gap:4px;background:#ffedd5;color:#c2410c;font-size:10px;font-weight:700;padding:2px 8px;border-radius:6px;margin-bottom:6px;"><i class="fa-solid fa-utensils"></i> Food (Restoran)</span>';
@@ -291,14 +345,31 @@
         '<i class="fa-solid fa-diamond-turn-right"></i> Buka Google Maps</a>' +
         '</div>';
 
-      L.marker([lat, lng], { icon: icon })
-        .bindPopup(popupContent)
-        .addTo(_allRestosLayer);
+      if (isLeader) {
+        var icon = (rCat === 'Express') ? spxIcon : foodIcon;
+        var marker = L.marker([lat, lng], { icon: icon }).bindPopup(popupContent);
+        iconMarkers.push(marker);
+      } else {
+        // Titik lingkaran kecil khas Google Maps (Gambar 2): ringan dan bebas lag
+        var dotColor = (rCat === 'Express') ? '#ee4d2d' : '#f97316';
+        var dotOpt = {
+          radius: 4,
+          fillColor: dotColor,
+          color: '#ffffff',
+          weight: 1.5,
+          opacity: 1,
+          fillOpacity: 0.9
+        };
+        if (_restoCanvasRenderer) dotOpt.renderer = _restoCanvasRenderer;
+
+        var dotMarker = L.circleMarker([lat, lng], dotOpt).bindPopup(popupContent);
+        dotMarkers.push(dotMarker);
+      }
     });
 
-    if (bounds.length > 0) {
-      _allRestosMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-    }
+    // Render titik terlebih dahulu, lalu ikon di atasnya agar tidak tertutup
+    dotMarkers.forEach(function(m) { m.addTo(_allRestosLayer); });
+    iconMarkers.forEach(function(m) { m.addTo(_allRestosLayer); });
   }
 
   window.nxFilterMapsResto = function(query) {
