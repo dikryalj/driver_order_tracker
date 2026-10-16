@@ -471,15 +471,15 @@
                     <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600" id="finance-period-label">Periode terpilih</span>
                 </div>
                 <div class="grid grid-cols-3 gap-2 text-center">
-                    <div class="bg-emerald-50 rounded-2xl p-2.5 border border-emerald-100">
+                    <div class="bg-emerald-50 rounded-2xl p-2.5 border border-emerald-100 cursor-pointer active:scale-95 transition" onclick="showFinanceExact('gross')" title="Ketuk untuk melihat nominal lengkap">
                         <span class="text-[9.5px] text-emerald-600 font-semibold block">Kotor</span>
                         <span class="text-xs font-extrabold text-emerald-700 block mt-0.5" id="finance-gross">Rp0</span>
                     </div>
-                    <div class="bg-rose-50 rounded-2xl p-2.5 border border-rose-100">
+                    <div class="bg-rose-50 rounded-2xl p-2.5 border border-rose-100 cursor-pointer active:scale-95 transition" onclick="showFinanceExact('fuel')" title="Ketuk untuk melihat nominal lengkap">
                         <span class="text-[9.5px] text-rose-600 font-semibold block">Est. BBM</span>
                         <span class="text-xs font-extrabold text-rose-700 block mt-0.5" id="finance-fuel">Rp0</span>
                     </div>
-                    <div class="bg-indigo-50 rounded-2xl p-2.5 border border-indigo-100">
+                    <div class="bg-indigo-50 rounded-2xl p-2.5 border border-indigo-100 cursor-pointer active:scale-95 transition" onclick="showFinanceExact('net')" title="Ketuk untuk melihat nominal lengkap">
                         <span class="text-[9.5px] text-indigo-600 font-semibold block">Bersih</span>
                         <span class="text-xs font-extrabold text-indigo-700 block mt-0.5" id="finance-net">Rp0</span>
                     </div>

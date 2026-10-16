@@ -178,20 +178,79 @@
             return activeFilterDays === 7 ? '7 Hari Terakhir' : (activeFilterDays === 30 ? '30 Hari Terakhir' : 'Semua Periode');
         }
 
+        let lastFinancialSummary = null;
+
+        // Format ringkas angka finansial: jika >= 1 Juta dibuat "Rp1 JT", "Rp1,07 JT", dst.
+        function formatFinancialCompact(val) {
+            const num = Math.round(Number(val) || 0);
+            const abs = Math.abs(num);
+            const sign = num < 0 ? '-' : '';
+
+            if (abs >= 1000000000) {
+                const m = abs / 1000000000;
+                const str = parseFloat(m.toFixed(2)).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                return `${sign}Rp${str} M`;
+            }
+
+            if (abs >= 1000000) {
+                const jt = abs / 1000000;
+                const str = parseFloat(jt.toFixed(2)).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                return `${sign}Rp${str} JT`;
+            }
+
+            return `${sign}Rp${abs.toLocaleString('id-ID')}`;
+        }
+
+        function showFinanceExact(type) {
+            if (!lastFinancialSummary) return;
+            if (typeof showToast !== 'function') return;
+            if (type === 'gross') {
+                showToast(`💰 Pendapatan Kotor: Rp${Math.round(lastFinancialSummary.grossIncome).toLocaleString('id-ID')}`, 'emerald');
+            } else if (type === 'fuel') {
+                showToast(`⛽ Est. BBM: Rp${Math.round(lastFinancialSummary.estFuelCost).toLocaleString('id-ID')}`, 'rose');
+            } else if (type === 'net') {
+                showToast(`💵 Pendapatan Bersih: Rp${Math.round(lastFinancialSummary.netIncome).toLocaleString('id-ID')}`, 'indigo');
+            }
+        }
+        window.showFinanceExact = showFinanceExact;
+        window.formatFinancialCompact = formatFinancialCompact;
+
         function renderFinancialSummaryUI(filtered) {
             const summary = computeFinancialSummary(filtered);
-            document.getElementById('finance-gross').innerText = `Rp${Math.round(summary.grossIncome).toLocaleString('id-ID')}`;
-            document.getElementById('finance-fuel').innerText = `Rp${Math.round(summary.estFuelCost).toLocaleString('id-ID')}`;
-            document.getElementById('finance-net').innerText = `Rp${Math.round(summary.netIncome).toLocaleString('id-ID')}`;
+            lastFinancialSummary = summary;
+
+            const grossEl = document.getElementById('finance-gross');
+            const fuelEl = document.getElementById('finance-fuel');
+            const netEl = document.getElementById('finance-net');
+
+            const fullGross = `Rp${Math.round(summary.grossIncome).toLocaleString('id-ID')}`;
+            const fullFuel = `Rp${Math.round(summary.estFuelCost).toLocaleString('id-ID')}`;
+            const fullNet = `Rp${Math.round(summary.netIncome).toLocaleString('id-ID')}`;
+
+            if (grossEl) {
+                grossEl.innerText = formatFinancialCompact(summary.grossIncome);
+                grossEl.title = `Kotor: ${fullGross} (Ketuk untuk detail)`;
+            }
+            if (fuelEl) {
+                fuelEl.innerText = formatFinancialCompact(summary.estFuelCost);
+                fuelEl.title = `Est. BBM: ${fullFuel} (Ketuk untuk detail)`;
+            }
+            if (netEl) {
+                netEl.innerText = formatFinancialCompact(summary.netIncome);
+                netEl.title = `Bersih: ${fullNet} (Ketuk untuk detail)`;
+            }
 
             const periodLabel = getActiveFilterPeriodLabel();
-            document.getElementById('finance-period-label').innerText = periodLabel;
+            const periodLabelEl = document.getElementById('finance-period-label');
+            if (periodLabelEl) periodLabelEl.innerText = periodLabel;
 
             const kmInfoEl = document.getElementById('finance-km-info');
-            if (summary.kmKnownCount === 0) {
-                kmInfoEl.innerText = 'Buka detail peta tiap order agar jarak & estimasi BBM terhitung otomatis.';
-            } else {
-                kmInfoEl.innerText = `Total ${summary.totalKm.toFixed(1)} km dari ${summary.kmKnownCount}/${summary.totalOrders} order yang sudah dipetakan.`;
+            if (kmInfoEl) {
+                if (summary.kmKnownCount === 0) {
+                    kmInfoEl.innerText = 'Buka detail peta tiap order agar jarak & estimasi BBM terhitung otomatis.';
+                } else {
+                    kmInfoEl.innerText = `Total ${summary.totalKm.toFixed(1)} km dari ${summary.kmKnownCount}/${summary.totalOrders} order yang sudah dipetakan.`;
+                }
             }
         }
 
