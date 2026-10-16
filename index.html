@@ -732,6 +732,9 @@
                         <option value="Lainnya">📱 Lainnya</option>
                     </select>
                     <div class="flex gap-1 flex-shrink-0">
+                        <button onclick="startOrdersTour()" class="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs rounded-xl transition" title="Panduan Tab Orderan">
+                            <i class="fa-solid fa-circle-question"></i>
+                        </button>
                         <button onclick="resetToMockData()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs rounded-xl transition" title="Muat Contoh">
                             <i class="fa-solid fa-rotate-right"></i>
                         </button>
@@ -1499,12 +1502,18 @@
                 <p class="text-[11px] text-slate-400 leading-relaxed">
                     Lupa cara pakai fitur tertentu? Putar ulang tur panduan interaktif di bawah ini kapan saja.
                 </p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="replayMainTour()" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs active:scale-95">
-                        <i class="fa-solid fa-play text-xs"></i> Mulai Tur Utama
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" onclick="replayMainTour()" class="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition shadow-xs active:scale-95 text-center">
+                        <i class="fa-solid fa-play text-xs"></i>
+                        <span>Tur Utama</span>
                     </button>
-                    <button type="button" onclick="startUploadTour()" class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition active:scale-95">
-                        <i class="fa-solid fa-wand-magic-sparkles text-xs text-indigo-600"></i> Cara Scan &amp; Input
+                    <button type="button" onclick="startOrdersTour()" class="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition active:scale-95 text-center">
+                        <i class="fa-solid fa-receipt text-xs text-indigo-600"></i>
+                        <span>Tur Orderan</span>
+                    </button>
+                    <button type="button" onclick="startUploadTour()" class="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition active:scale-95 text-center">
+                        <i class="fa-solid fa-wand-magic-sparkles text-xs text-indigo-600"></i>
+                        <span>Scan &amp; Input</span>
                     </button>
                 </div>
             </div>

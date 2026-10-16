@@ -5,6 +5,7 @@
 (function() {
     const TOUR_STORAGE_KEY = 'drivertrack_first_tour_done';
     const DETAIL_TOUR_KEY = 'drivertrack_detail_tour_done';
+    const ORDERS_TOUR_KEY = 'drivertrack_orders_tour_done';
 
     function isDriverJsReady() {
         return !!(window.driver && window.driver.js && typeof window.driver.js.driver === 'function');
@@ -123,6 +124,114 @@
             }, 250);
         } catch (e) {
             console.warn('[DriverTour] startAppTour error:', e);
+        }
+    }
+
+    function maybeStartOrdersTour() {
+        try {
+            if (localStorage.getItem(ORDERS_TOUR_KEY) === 'true') return;
+            if (!isDriverJsReady()) return;
+            setTimeout(() => {
+                startOrdersTour();
+            }, 350);
+        } catch (e) {
+            console.warn('[DriverTour] maybeStartOrdersTour error:', e);
+        }
+    }
+
+    function startOrdersTour() {
+        try {
+            if (!isDriverJsReady()) {
+                if (typeof showToast === 'function') {
+                    showToast('Fitur panduan memerlukan akses internet/CDN Driver.js.', 'amber');
+                }
+                return;
+            }
+
+            if (typeof switchTab === 'function') {
+                switchTab('orders');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            setTimeout(() => {
+                const searchEl = document.querySelector('#search-input');
+                const rangeFilterEl = document.querySelector('#filter-orders-today') ? document.querySelector('#filter-orders-today').closest('.flex') : null;
+                const catFilterEl = document.querySelector('#filter-category-select');
+                const firstCardEl = document.querySelector('#orders-container > div') || document.querySelector('#empty-orders-state') || document.querySelector('#orders-container');
+
+                const steps = [];
+
+                if (searchEl) {
+                    steps.push({
+                        element: '#search-input',
+                        popover: {
+                            title: '🔍 Pencarian Cepat',
+                            description: 'Ketik nama resto, penerima, alamat pengiriman, atau no. pesanan/resi untuk menyaring riwayat orderan dengan instan.',
+                            side: 'bottom',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (rangeFilterEl) {
+                    steps.push({
+                        element: rangeFilterEl,
+                        popover: {
+                            title: '📅 Filter Rentang Tanggal',
+                            description: 'Pilih rekap periode orderan: Hari Ini, 7 Hari, 14 Hari, 30 Hari, atau Semua riwayat pesanan yang pernah tercatat.',
+                            side: 'bottom',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (catFilterEl) {
+                    steps.push({
+                        element: catFilterEl.closest('.flex') || '#filter-category-select',
+                        popover: {
+                            title: '🏷️ Filter Kategori & Pembayaran',
+                            description: 'Saring daftar berdasarkan jenis orderan (Food, SPX, Instan, Gabungan), platform, serta tipe pembayaran tunai/non-tunai.',
+                            side: 'bottom',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (firstCardEl) {
+                    steps.push({
+                        element: firstCardEl,
+                        popover: {
+                            title: '📦 Kartu Pesanan & Rute',
+                            description: 'Setiap kartu pesanan menampilkan status, nominal, dan foto. Ketuk tombol "Detail" untuk membuka peta rute & check-in resto, atau "Edit" untuk merubah data.',
+                            side: 'top',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (!steps.length) return;
+
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    animate: true,
+                    allowClose: true,
+                    overlayColor: 'rgba(0, 0, 0, 0.65)',
+                    stagePadding: 6,
+                    stageRadius: 16,
+                    nextBtnText: 'Lanjut →',
+                    prevBtnText: '← Kembali',
+                    doneBtnText: 'Selesai ✓',
+                    progressText: 'Langkah {{current}} dari {{total}}',
+                    onDestroyed: () => {
+                        localStorage.setItem(ORDERS_TOUR_KEY, 'true');
+                    },
+                    steps: steps
+                });
+
+                driverObj.drive();
+            }, 250);
+        } catch (e) {
+            console.warn('[DriverTour] startOrdersTour error:', e);
         }
     }
 
@@ -250,6 +359,7 @@
     function replayMainTour() {
         try {
             localStorage.removeItem(DETAIL_TOUR_KEY);
+            localStorage.removeItem(ORDERS_TOUR_KEY);
             if (typeof showToast === 'function') {
                 showToast('Memulai ulang panduan aplikasi...', 'indigo');
             }
@@ -262,7 +372,10 @@
     // Expose ke scope window
     window.TOUR_STORAGE_KEY = TOUR_STORAGE_KEY;
     window.DETAIL_TOUR_KEY = DETAIL_TOUR_KEY;
+    window.ORDERS_TOUR_KEY = ORDERS_TOUR_KEY;
     window.startAppTour = startAppTour;
+    window.startOrdersTour = startOrdersTour;
+    window.maybeStartOrdersTour = maybeStartOrdersTour;
     window.startUploadTour = startUploadTour;
     window.maybeStartFirstTimeTour = maybeStartFirstTimeTour;
     window.maybeStartOrderDetailTour = maybeStartOrderDetailTour;

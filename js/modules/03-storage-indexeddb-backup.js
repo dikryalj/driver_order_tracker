@@ -759,6 +759,9 @@
                 }
             });
 
+            if (tab === 'orders') {
+                if (window.maybeStartOrdersTour) window.maybeStartOrdersTour();
+            }
             if (tab === 'insights') {
                 renderInsightsView();
             }
