@@ -89,8 +89,8 @@
             if (pct) pct.innerText = `${percent}%`;
             if (stat && text) {
                 stat.innerHTML = percent < 100 
-                    ? `<i class="fa-solid fa-circle-notch fa-spin text-lime-400 text-xs"></i> ${text}`
-                    : `<i class="fa-solid fa-circle-check text-lime-400 text-xs"></i> ${text}`;
+                    ? `<i class="fa-solid fa-circle-notch fa-spin preload-accent-color text-xs flex-shrink-0"></i> <span class="truncate">${text}</span>`
+                    : `<i class="fa-solid fa-circle-check preload-accent-color text-xs flex-shrink-0"></i> <span class="truncate">${text}</span>`;
             }
         }
 

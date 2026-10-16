@@ -45,17 +45,45 @@
     <script>
     (function(){
       try{
-        var t = localStorage.getItem('drivertrack_ui_theme');
-        if(t==='sales'||t==='focus'||t==='lime'||t==='neon'){
-          document.documentElement.setAttribute('data-ui-theme', t);
-          var on = t==='sales'||t==='lime';
-          var fe=document.getElementById('theme-focus'), le=document.getElementById('theme-lime'), ne=document.getElementById('theme-neon');
-          if(fe) fe.media = t==='focus'?'all':'not all';
-          if(le) le.media = t==='lime'?'all':'not all';
-          if(ne) ne.media = t==='neon'?'all':'not all';
-          ['theme-override','theme-override-2'].forEach(function(id){
-            var el=document.getElementById(id); if(el) el.media = on?'all':'not all';
-          });
+        var t = localStorage.getItem('drivertrack_ui_theme') || 'default';
+        document.documentElement.setAttribute('data-ui-theme', t);
+        var on = t==='sales'||t==='lime';
+        var fe=document.getElementById('theme-focus'), le=document.getElementById('theme-lime'), ne=document.getElementById('theme-neon');
+        if(fe) fe.media = t==='focus'?'all':'not all';
+        if(le) le.media = t==='lime'?'all':'not all';
+        if(ne) ne.media = t==='neon'?'all':'not all';
+        ['theme-override','theme-override-2'].forEach(function(id){
+          var el=document.getElementById(id); if(el) el.media = on?'all':'not all';
+        });
+
+        function syncPreloadThemeDetails() {
+          var badgeText = document.getElementById('preload-theme-name');
+          if (badgeText) {
+            var labels = {
+              'default': 'INDIGO PRO',
+              'sales': 'SALES LIME',
+              'focus': 'FOCUS BLUE',
+              'lime': 'LIME RIDER',
+              'neon': 'NEON CYBER'
+            };
+            badgeText.textContent = labels[t] || 'ONLINE';
+          }
+          try {
+            var profStr = localStorage.getItem('drivertrack_profile');
+            if (profStr) {
+              var prof = JSON.parse(profStr);
+              if (prof && prof.name && prof.name.trim()) {
+                var sub = document.getElementById('preload-subtitle-text');
+                if (sub) sub.textContent = 'Siap Mengaspal, ' + prof.name.trim() + ' 🚀';
+              }
+            }
+          } catch(e){}
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', syncPreloadThemeDetails);
+        } else {
+          syncPreloadThemeDetails();
         }
       }catch(e){}
     })();
@@ -63,51 +91,81 @@
 </head>
 
 <body class="min-h-screen flex flex-col justify-between pb-32 selection:bg-indigo-500 selection:text-white relative">
-<!-- ==========================================
-         PRELOAD / SPLASH SCREEN (GAMBAR 2)
+    <!-- ==========================================
+         PRELOAD / SPLASH SCREEN (THEME-AWARE & ELEGAN)
          ========================================== -->
-    <div id="app-preload-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-between bg-gradient-to-b from-[#0B1120] via-[#0F172A] to-[#1E1B4B] text-white p-6 select-none overflow-hidden transition-all duration-700 ease-out">
-        <!-- Top indicator -->
-        <div class="w-full max-w-sm flex items-center justify-between text-[11px] font-bold tracking-wider text-indigo-300/80 pt-2">
-            <span class="flex items-center gap-1.5"><i class="fa-solid fa-motorcycle text-lime-400"></i> DRIVERTRACK</span>
-            <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px]">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
-            </span>
-        </div>
+    <div id="app-preload-screen" class="fixed inset-0 z-[999] flex flex-col items-center justify-between text-white p-5 sm:p-6 select-none overflow-hidden transition-all duration-700 ease-out">
+        <!-- Background Ambient Grid Pattern & Radial Depth -->
+        <div class="absolute inset-0 pointer-events-none opacity-40 preload-grid-bg"></div>
 
-        <!-- Center: Gambar 2 with ambient glow & 3D styling -->
-        <div class="relative flex flex-col items-center justify-center my-auto">
-            <!-- Glowing background aura -->
-            <div class="absolute w-72 h-72 rounded-full bg-gradient-to-tr from-indigo-500/25 via-lime-400/20 to-blue-500/25 blur-3xl pointer-events-none -z-10 animate-pulse"></div>
+        <!-- Dual Ambient Glow Orbs (Dynamic Theme Responsive) -->
+        <div class="absolute top-[20%] w-80 h-80 rounded-full blur-3xl pointer-events-none -z-10 preload-glow-ring animate-pulse"></div>
+        <div class="absolute -bottom-10 w-96 h-48 rounded-full blur-3xl pointer-events-none -z-10 preload-glow-ring opacity-60"></div>
+
+        <!-- Top Header Bar -->
+        <div class="w-full max-w-sm flex items-center justify-between text-xs pt-1 sm:pt-2 relative z-10">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-xs backdrop-blur-md">
+                    <i class="fa-solid fa-motorcycle text-xs preload-accent-color"></i>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <span class="font-extrabold tracking-wider text-xs text-white">DRIVERTRACK</span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white/10 border border-white/10 text-white/80">PRO</span>
+                </div>
+            </div>
             
-            <!-- Logo Gambar 2 -->
-            <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center drop-shadow-2xl">
-                <img src="assets/splash-logo.png" alt="DriverTrack App" class="w-full h-full object-contain preload-logo-anim filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)]">
-            </div>
-
-            <!-- Subtitle badge -->
-            <div class="mt-4 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md shadow-lg">
-                <p class="text-[11px] font-bold text-indigo-200 tracking-wide flex items-center gap-1.5">
-                    <i class="fa-solid fa-bolt text-lime-400"></i> Partner Pintar Driver Harian
-                </p>
-            </div>
-        </div>
-
-        <!-- Bottom: Progress Bar & Status Loading -->
-        <div class="w-full max-w-xs space-y-3 pb-8">
-            <div class="flex justify-between items-center text-xs font-bold">
-                <span id="preload-status-text" class="text-slate-300 flex items-center gap-1.5">
-                    <i class="fa-solid fa-circle-notch fa-spin text-lime-400 text-xs"></i> Memuat modul aplikasi...
+            <div id="preload-theme-badge" class="flex items-center gap-1.5 px-3 py-1 rounded-full preload-badge border text-[10px] font-bold tracking-wide backdrop-blur-md shadow-xs">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 preload-accent-bg"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 preload-accent-bg"></span>
                 </span>
-                <span id="preload-percent" class="text-lime-400 font-extrabold text-xs">0%</span>
+                <span id="preload-theme-name" class="uppercase">ONLINE</span>
+            </div>
+        </div>
+
+        <!-- Center: 3D Mascot Hero with Multi-Ring Backdrop -->
+        <div class="relative flex flex-col items-center justify-center my-auto py-2 sm:py-4 relative z-10">
+            <!-- Decorative Subtle Orbit Rings -->
+            <div class="absolute w-64 h-64 sm:w-72 sm:h-72 rounded-full border border-white/5 pointer-events-none -z-10"></div>
+            <div class="absolute w-80 h-80 sm:w-96 sm:h-96 rounded-full border border-white/[0.03] pointer-events-none -z-10"></div>
+
+            <!-- Logo Mascot with Levitation Animation -->
+            <div class="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
+                <img src="assets/splash-logo.png" alt="DriverTrack App" class="w-full h-full object-contain preload-logo-anim filter drop-shadow-[0_24px_36px_rgba(0,0,0,0.65)]">
+            </div>
+
+            <!-- Capsule Motto / Greeting Badge -->
+            <div class="mt-4 px-4 py-1.5 rounded-full preload-badge border backdrop-blur-xl shadow-lg flex items-center gap-2">
+                <i class="fa-solid fa-bolt text-xs preload-accent-color"></i>
+                <span id="preload-subtitle-text" class="text-xs font-bold text-slate-100 tracking-wide">Partner Pintar Driver Harian</span>
+            </div>
+        </div>
+
+        <!-- Bottom: Elegant Floating Glassmorphism Card -->
+        <div class="w-full max-w-sm rounded-3xl p-4 sm:p-5 backdrop-blur-2xl preload-card-box border shadow-2xl relative z-10 space-y-3 pb-5">
+            <div class="flex justify-between items-center text-xs">
+                <div id="preload-status-text" class="text-slate-300 font-semibold flex items-center gap-2 truncate pr-2">
+                    <i class="fa-solid fa-circle-notch fa-spin preload-accent-color text-xs"></i>
+                    <span>Memuat modul aplikasi...</span>
+                </div>
+                <span id="preload-percent" class="font-black text-sm font-mono tracking-tight flex-shrink-0">0%</span>
             </div>
             
-            <!-- Progress Bar Track -->
-            <div class="w-full h-2.5 bg-slate-900/90 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner">
-                <div id="preload-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-lime-400 rounded-full transition-all duration-300 ease-out w-0 shadow-md shadow-lime-400/30"></div>
+            <!-- Progress Bar Track with Shimmer Light Beam -->
+            <div class="w-full h-2.5 bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/10 shadow-inner relative">
+                <div id="preload-progress-bar" class="h-full rounded-full transition-all duration-300 ease-out w-0 relative overflow-hidden">
+                    <div class="preload-bar-shimmer"></div>
+                </div>
             </div>
             
-            <p class="text-[10px] text-center text-slate-400 font-medium">Rekap Pendapatan · Limnas GPS · Est. BBM</p>
+            <!-- 3 Mini Feature Pillars -->
+            <div class="flex items-center justify-between text-[10px] font-medium text-slate-400 pt-1 border-t border-white/5">
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-chart-line text-[9px] preload-accent-color"></i> Rekap Order</span>
+                <span class="text-white/20">•</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-route text-[9px] preload-accent-color"></i> Limnas GPS</span>
+                <span class="text-white/20">•</span>
+                <span class="flex items-center gap-1.5"><i class="fa-solid fa-gas-pump text-[9px] preload-accent-color"></i> Est. BBM</span>
+            </div>
         </div>
     </div>
 

@@ -51,12 +51,153 @@
     #resto-rank-list .rk-fill.rk-top{background:var(--rk-top)}
     #resto-rank-list .rk-muted{color:var(--rk-mute)}
     html[data-ui-theme="focus"] .plat-item p:nth-child(2){color:#111318!important}
-    @keyframes preloadBounce {
-        0%, 100% { transform: translateY(0) scale(1); }
-        50% { transform: translateY(-8px) scale(1.02); }
+    /* ============================================================
+       PRELOAD / SPLASH SCREEN THEME-ADAPTIVE STYLES (5 TEMA)
+       ============================================================ */
+
+    /* 1. Default (Indigo Cosmic) */
+    html[data-ui-theme="default"],
+    html:not([data-ui-theme]) {
+        --pl-bg: radial-gradient(circle at 50% 28%, #161D3B 0%, #0C1022 55%, #060812 100%);
+        --pl-accent: #818CF8;
+        --pl-glow: rgba(129, 140, 248, 0.45);
+        --pl-bar: linear-gradient(90deg, #4F46E5 0%, #818CF8 50%, #38BDF8 100%);
+        --pl-ring: rgba(99, 102, 241, 0.22);
+        --pl-card: rgba(255, 255, 255, 0.045);
+        --pl-card-border: rgba(255, 255, 255, 0.09);
+        --pl-badge-bg: rgba(79, 70, 229, 0.18);
+        --pl-badge-border: rgba(129, 140, 248, 0.35);
+        --pl-badge-text: #C7D2FE;
     }
+
+    /* 2. Sales (Lime Carbon / Dark Technical) */
+    html[data-ui-theme="sales"] {
+        --pl-bg: radial-gradient(circle at 50% 28%, #20261D 0%, #131711 55%, #0A0D09 100%);
+        --pl-accent: #DDFF00;
+        --pl-glow: rgba(221, 255, 0, 0.45);
+        --pl-bar: linear-gradient(90deg, #47522D 0%, #A2C700 50%, #DDFF00 100%);
+        --pl-ring: rgba(221, 255, 0, 0.18);
+        --pl-card: rgba(255, 255, 255, 0.035);
+        --pl-card-border: rgba(221, 255, 0, 0.16);
+        --pl-badge-bg: rgba(221, 255, 0, 0.12);
+        --pl-badge-border: rgba(221, 255, 0, 0.35);
+        --pl-badge-text: #EEFF66;
+    }
+
+    /* 3. Focus (Cobalt Blue Tech) */
+    html[data-ui-theme="focus"] {
+        --pl-bg: radial-gradient(circle at 50% 28%, #122152 0%, #0B1333 55%, #05081A 100%);
+        --pl-accent: #3E5BFF;
+        --pl-glow: rgba(62, 91, 255, 0.48);
+        --pl-bar: linear-gradient(90deg, #3E5BFF 0%, #687FFF 50%, #D2F44A 100%);
+        --pl-ring: rgba(62, 91, 255, 0.24);
+        --pl-card: rgba(255, 255, 255, 0.04);
+        --pl-card-border: rgba(62, 91, 255, 0.22);
+        --pl-badge-bg: rgba(62, 91, 255, 0.16);
+        --pl-badge-border: rgba(62, 91, 255, 0.4);
+        --pl-badge-text: #DFDDF8;
+    }
+
+    /* 4. Lime Rider (Electric Lime Sporty) */
+    html[data-ui-theme="lime"] {
+        --pl-bg: radial-gradient(circle at 50% 28%, #1A2616 0%, #0F180D 55%, #080D06 100%);
+        --pl-accent: #A6FF1F;
+        --pl-glow: rgba(166, 255, 31, 0.45);
+        --pl-bar: linear-gradient(90deg, #2E451B 0%, #6CC914 50%, #A6FF1F 100%);
+        --pl-ring: rgba(166, 255, 31, 0.2);
+        --pl-card: rgba(255, 255, 255, 0.035);
+        --pl-card-border: rgba(166, 255, 31, 0.18);
+        --pl-badge-bg: rgba(166, 255, 31, 0.14);
+        --pl-badge-border: rgba(166, 255, 31, 0.38);
+        --pl-badge-text: #D2FF80;
+    }
+
+    /* 5. Neon Charcoal (Cyber Neon Minimalist) */
+    html[data-ui-theme="neon"] {
+        --pl-bg: radial-gradient(circle at 50% 28%, #171C22 0%, #0E1116 55%, #08090C 100%);
+        --pl-accent: #99FF33;
+        --pl-glow: rgba(153, 255, 51, 0.46);
+        --pl-bar: linear-gradient(90deg, #22301D 0%, #5CB820 50%, #99FF33 100%);
+        --pl-ring: rgba(153, 255, 51, 0.2);
+        --pl-card: rgba(255, 255, 255, 0.035);
+        --pl-card-border: rgba(153, 255, 51, 0.2);
+        --pl-badge-bg: rgba(153, 255, 51, 0.14);
+        --pl-badge-border: rgba(153, 255, 51, 0.4);
+        --pl-badge-text: #C4FF7A;
+    }
+
+    #app-preload-screen {
+        background: var(--pl-bg) !important;
+        position: fixed;
+        inset: 0;
+        z-index: 999;
+    }
+
+    #preload-progress-bar {
+        background: var(--pl-bar) !important;
+        box-shadow: 0 0 16px var(--pl-glow) !important;
+    }
+
+    #preload-percent {
+        color: var(--pl-accent) !important;
+        text-shadow: 0 0 10px var(--pl-glow);
+    }
+
+    .preload-accent-color {
+        color: var(--pl-accent) !important;
+    }
+
+    .preload-accent-bg {
+        background-color: var(--pl-accent) !important;
+    }
+
+    .preload-glow-ring {
+        background: radial-gradient(circle, var(--pl-ring) 0%, transparent 72%);
+    }
+
+    .preload-card-box {
+        background: var(--pl-card) !important;
+        border-color: var(--pl-card-border) !important;
+    }
+
+    .preload-badge {
+        background: var(--pl-badge-bg) !important;
+        border-color: var(--pl-badge-border) !important;
+        color: var(--pl-badge-text) !important;
+    }
+
+    .preload-grid-bg {
+        background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+        background-size: 22px 22px;
+    }
+
+    @keyframes preloadLevitate {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+        }
+        50% {
+            transform: translateY(-8px) scale(1.018);
+        }
+    }
+
     .preload-logo-anim {
-        animation: preloadBounce 2.6s ease-in-out infinite;
+        animation: preloadLevitate 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes preloadShimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(250%); }
+    }
+
+    .preload-bar-shimmer {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+        animation: preloadShimmer 2s infinite ease-in-out;
+        pointer-events: none;
     }
     
 

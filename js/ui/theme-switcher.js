@@ -46,6 +46,11 @@
         });
         document.documentElement.setAttribute('data-ui-theme', name);
         var mt=document.getElementById('meta-theme-color'); if(mt) mt.setAttribute('content', name==='neon' ? '#F3F4F1' : name==='lime' ? '#EEFFD6' : (on ? '#E8E6EE' : (name==='focus' ? '#FFFFFF' : '#F4F5FB')));
+        var pt=document.getElementById('preload-theme-name');
+        if(pt){
+          var lbls={'default':'INDIGO PRO','sales':'SALES LIME','focus':'FOCUS BLUE','lime':'LIME RIDER','neon':'NEON CYBER'};
+          pt.textContent=lbls[name]||'ONLINE';
+        }
       }
       function syncButtons(){
         document.querySelectorAll('[data-theme-opt]').forEach(function(b){
