@@ -167,7 +167,7 @@
           diperbarui:r.ts>1e11 ? new Date(r.ts).toISOString() : null
         };
       });
-    var payload={format:FORMAT, version:VERSION, app:'DriverTrack', exportedAt:new Date().toISOString(), total:list.length, restos:list};
+    var payload={format:FORMAT, version:VERSION, app:'GacorLens', exportedAt:new Date().toISOString(), total:list.length, restos:list};
     var jsonStr=JSON.stringify(payload,null,2);
     var successMsg='Backup berhasil: '+list.length+' titik Resto/Toko disimpan ke '+FILENAME+' — siap dibagikan!';
 
@@ -209,10 +209,10 @@
           recursive: true
         });
 
-        // Simpan juga salinan permanen ke Documents/DriverTrack/ agar terlihat di File Manager HP
+        // Simpan juga salinan permanen ke Documents/GacorLens/ agar terlihat di File Manager HP
         try {
           await Filesystem.writeFile({
-            path: 'DriverTrack/' + FILENAME,
+            path: 'GacorLens/' + FILENAME,
             data: jsonStr,
             directory: Directory.Documents || 'DOCUMENTS',
             encoding: targetEnc,
@@ -238,14 +238,14 @@
 
         // 4. Panggil Pop-up Share Native Android
         await Share.share({
-          title: 'Backup Database Resto DriverTrack',
-          text: 'File database resto DriverTrack: ' + FILENAME,
+          title: 'Backup Database Resto GacorLens',
+          text: 'File database resto GacorLens: ' + FILENAME,
           url: fileUri,
           dialogTitle: 'Simpan ke Drive / Bagikan via WhatsApp'
         });
 
         var m=loadMeta(); m.lastExport=new Date().toISOString(); saveMeta(m); updateInfo();
-        toast('Backup tersimpan di folder Documents/DriverTrack/ & siap dibagikan!','emerald');
+        toast('Backup tersimpan di folder Documents/GacorLens/ & siap dibagikan!','emerald');
       } catch(err){
         console.error('Error Backup Resto:', err);
         alert('Gagal Ekspor Backup: ' + (err.message || err));
@@ -265,8 +265,8 @@
         try {
           await navigator.share({
             files: [file],
-            title: 'Database Resto DriverTrack',
-            text: 'File database lokasi resto DriverTrack'
+            title: 'Database Resto GacorLens',
+            text: 'File database lokasi resto GacorLens'
           });
           var m=loadMeta(); m.lastExport=new Date().toISOString(); saveMeta(m); updateInfo();
           toast('Database resto berhasil dibagikan!','emerald');
@@ -291,7 +291,7 @@
     var items;
     if(Array.isArray(parsed)){ items=parsed; }
     else if(parsed && typeof parsed==='object'){
-      if(parsed.format && parsed.format!==FORMAT) return {error:'File ini bukan database resto DriverTrack.'};
+      if(parsed.format && parsed.format!==FORMAT) return {error:'File ini bukan database resto GacorLens.'};
       if(Array.isArray(parsed.restos)){ items=parsed.restos; }
       else if(parsed.ordersList || parsed.orders) return {error:'Ini file backup PESANAN, bukan database resto. Gunakan tombol Import Data di kartu Backup & Restore Data.'};
       else return {error:'Struktur file tidak dikenali (daftar "restos" tidak ditemukan).'};
@@ -400,6 +400,7 @@
     count:function(){ return Object.keys(getAll()).length; },
     getAll: getAll
   };
+  window.GacorLensRestoDB = window.DriverTrackRestoDB;
   window.backupDataResto=backupDataResto;
   window.restoreDataResto=restoreDataResto;
 

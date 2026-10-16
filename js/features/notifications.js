@@ -141,7 +141,7 @@
             id: 'lic-' + Date.now(),
             type: 'license',
             title: 'Licensed Closed Source by dikryal',
-            body: 'Aplikasi DriverTrack berlisensi Closed Source oleh dikryal. Terhubung via GitHub & Instagram resmi pengembang.',
+            body: 'Aplikasi GacorLens berlisensi Closed Source oleh dikryal. Terhubung via GitHub & Instagram resmi pengembang.',
             ts: Date.now(),
             read: false
           };

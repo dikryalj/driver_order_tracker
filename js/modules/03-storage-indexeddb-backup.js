@@ -313,19 +313,19 @@
                         recursive: true
                     });
 
-                    // Pastikan folder DriverTrack dibuat di Documents agar bisa dibuka di File Manager HP
+                    // Pastikan folder GacorLens dibuat di Documents agar bisa dibuka di File Manager HP
                     try {
                         await Filesystem.mkdir({
-                            path: 'DriverTrack',
+                            path: 'GacorLens',
                             directory: Directory.Documents || 'DOCUMENTS',
                             recursive: true
                         });
                     } catch (mkErr) {}
 
-                    // Simpan salinan permanen ke Documents/DriverTrack/ agar terlihat di File Manager HP (bukan di /Android/data)
+                    // Simpan salinan permanen ke Documents/GacorLens/ agar terlihat di File Manager HP (bukan di /Android/data)
                     try {
                         await Filesystem.writeFile({
-                            path: 'DriverTrack/' + fileName,
+                            path: 'GacorLens/' + fileName,
                             data: jsonStr,
                             directory: Directory.Documents || 'DOCUMENTS',
                             encoding: targetEnc,
@@ -351,13 +351,13 @@
 
                     // 4. Panggil Pop-up Share Native Android (WhatsApp, Drive, File, dll)
                     await Share.share({
-                        title: shareTitle || 'Backup Data DriverTrack',
-                        text: shareText || ('File backup data DriverTrack: ' + fileName),
+                        title: shareTitle || 'Backup Data GacorLens',
+                        text: shareText || ('File backup data GacorLens: ' + fileName),
                         url: fileUri,
                         dialogTitle: dialogTitle || 'Simpan ke Drive / Bagikan via WhatsApp'
                     });
 
-                    showToast('Backup tersimpan di folder Documents/DriverTrack/ & siap dibagikan!', 'emerald');
+                    showToast('Backup tersimpan di folder Documents/GacorLens/ & siap dibagikan!', 'emerald');
                     return true;
                 } catch (err) {
                     console.error('Error Backup:', err);
@@ -410,7 +410,7 @@
 
                     const now = new Date();
                     const payload = {
-                        app: 'DriverTrack',
+                        app: 'GacorLens',
                         exportVersion: 2,
                         light: true,
                         rangeDays: days,
@@ -424,7 +424,7 @@
 
                     const jsonStr = JSON.stringify(payload);
                     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                    const fileName = `drivertrack_backup_${dateStr}.json`;
+                    const fileName = `gacorlens_backup_${dateStr}.json`;
                     const msg = `Backup ${days} hari: ${subset.length} pesanan${limnasLight ? ` + ${limnasLight.totalDays} hari Limnas` : ''} — siap dibagikan!`;
 
                     await _doNativeShareBackup(jsonStr, fileName, msg);
@@ -476,7 +476,7 @@
             (async () => {
                 try {
                     const payload = {
-                        app: 'DriverTrack',
+                        app: 'GacorLens',
                         exportVersion: 2,
                         exportedAt: new Date().toISOString(),
                         profile: userProfile,
@@ -496,7 +496,7 @@
 
                     const now = new Date();
                     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                    const fileName = `drivertrack_backup_${dateStr}.json`;
+                    const fileName = `gacorlens_backup_${dateStr}.json`;
                     const msg = `Backup berhasil: ${ordersList.length} pesanan${limnasBackup ? ` + ${limnasBackup.totalDays} hari Limnas` : ''} — siap dibagikan!`;
 
                     await _doNativeShareBackup(jsonStr, fileName, msg);
@@ -525,7 +525,7 @@
                 try {
                     // ── 1. Susun payload JSON (sama seperti exportData, tanpa screenshot besar) ──
                     const payload = {
-                        app: 'DriverTrack',
+                        app: 'GacorLens',
                         exportVersion: 2,
                         exportedAt: new Date().toISOString(),
                         profile: userProfile,
@@ -544,7 +544,7 @@
 
                     const now = new Date();
                     const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                    const fileName = `drivertrack_backup_${dateStr}.json`;
+                    const fileName = `gacorlens_backup_${dateStr}.json`;
 
                     // ── 2. Cek apakah di aplikasi Capacitor Native Android ──
                     const isNative = (typeof Capacitor !== 'undefined' && typeof Capacitor.isNativePlatform === 'function')
@@ -553,7 +553,7 @@
 
                     if (isNative) {
                         const msg = `Backup berhasil: ${ordersList.length} pesanan${limnasBackup ? ` + ${limnasBackup.totalDays} hari Limnas` : ''} — siap dibagikan!`;
-                        await _doNativeShareBackup(jsonStr, fileName, msg, 'Backup DriverTrack', `File backup data pesanan DriverTrack (${ordersList.length} pesanan)`, 'Bagikan Backup via WhatsApp / Drive');
+                        await _doNativeShareBackup(jsonStr, fileName, msg, 'Backup GacorLens', `File backup data pesanan GacorLens (${ordersList.length} pesanan)`, 'Bagikan Backup via WhatsApp / Drive');
                         localStorage.setItem(BACKUP_TIMESTAMP_KEY, now.toISOString());
                         updateBackupWarningUI();
                         return;
@@ -574,8 +574,8 @@
                         // ── 4a. Gunakan Web Share API browser ──
                         await navigator.share({
                             files: [file],
-                            title: 'Backup DriverTrack',
-                            text: `File backup data pesanan DriverTrack — ${ordersList.length} pesanan${limnasBackup ? ` + ${limnasBackup.totalDays} hari Limnas` : ''}`
+                            title: 'Backup GacorLens',
+                            text: `File backup data pesanan GacorLens — ${ordersList.length} pesanan${limnasBackup ? ` + ${limnasBackup.totalDays} hari Limnas` : ''}`
                         });
                         showToast('Backup berhasil dibagikan!', 'emerald');
                         localStorage.setItem(BACKUP_TIMESTAMP_KEY, now.toISOString());
@@ -632,12 +632,13 @@
                     candidateList = parsed;
                     pendingImportProfile = null;
                 } else if (parsed && Array.isArray(parsed.ordersList)) {
+                    // Menerima file backup baik dari GacorLens maupun format lama (DriverTrack)
                     candidateList = parsed.ordersList;
                     pendingImportProfile = (parsed.profile && typeof parsed.profile === 'object') ? parsed.profile : null;
                 }
 
                 if (!candidateList) {
-                    showToast("Struktur file tidak dikenali (bukan backup DriverTrack).", "rose");
+                    showToast("Struktur file tidak dikenali (bukan backup GacorLens / DriverTrack).", "rose");
                     event.target.value = '';
                     return;
                 }

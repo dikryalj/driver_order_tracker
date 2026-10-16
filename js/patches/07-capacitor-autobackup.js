@@ -15,9 +15,11 @@
 (function () {
     'use strict';
 
-    var BACKUP_DIR  = 'DriverTrack';
+    var BACKUP_DIR  = 'GacorLens';
+    var LEGACY_DIR  = 'DriverTrack';
     var BACKUP_FILE = 'auto_backup.json';
     var BACKUP_PATH = BACKUP_DIR + '/' + BACKUP_FILE;
+    var LEGACY_PATH = LEGACY_DIR + '/' + BACKUP_FILE;
     var PROFILE_KEY = 'drivertrack_profile';
     var _lastBackupAt = 0;
     var THROTTLE_MS  = 15000; // Jangan tulis lebih dari 1x per 15 detik
@@ -125,11 +127,23 @@
 
         try {
             var fs = window.Capacitor.Plugins.Filesystem;
-            var result = await fs.readFile({
-                path: BACKUP_PATH,
-                directory: 'DOCUMENTS',
-                encoding: 'utf8'
-            });
+            var result = null;
+            try {
+                result = await fs.readFile({
+                    path: BACKUP_PATH,
+                    directory: 'DOCUMENTS',
+                    encoding: 'utf8'
+                });
+            } catch (readErr) {
+                // Fallback ke folder lama DriverTrack
+                try {
+                    result = await fs.readFile({
+                        path: LEGACY_PATH,
+                        directory: 'DOCUMENTS',
+                        encoding: 'utf8'
+                    });
+                } catch (legacyErr) {}
+            }
 
             if (!result || !result.data) return;
             var payload = JSON.parse(result.data);

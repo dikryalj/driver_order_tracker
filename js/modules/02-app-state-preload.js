@@ -248,7 +248,7 @@
                 <text x="40" y="245" font-family="Arial" font-size="16" font-weight="bold" fill="#0f172a">${title}</text>
                 <rect x="40" y="300" width="320" height="200" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
                 <text x="60" y="340" font-family="Arial" font-size="14" font-weight="bold" fill="#10b981">✓ BUKTI TERSIMPAN DALAM SISTEM</text>
-                <text x="60" y="380" font-family="Arial" font-size="12" fill="#64748b">DriverTrack Auto OCR Engine</text>
+                <text x="60" y="380" font-family="Arial" font-size="12" fill="#64748b">GacorLens Auto OCR Engine</text>
             </svg>`;
             return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
         }

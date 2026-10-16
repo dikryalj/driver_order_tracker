@@ -57,7 +57,7 @@
                 const cancelBtn = document.getElementById('gps-perm-cancel-btn');
 
                 if (!modal) {
-                    if (confirm(`Aplikasi DriverTrack memerlukan izin lokasi GPS untuk mengaktifkan: ${featureName}.\n\nApakah Anda ingin mengizinkan akses lokasi sekarang?`)) {
+                    if (confirm(`Aplikasi GacorLens memerlukan izin lokasi GPS untuk mengaktifkan: ${featureName}.\n\nApakah Anda ingin mengizinkan akses lokasi sekarang?`)) {
                         if (onConfirm) onConfirm();
                     } else {
                         if (onCancel) onCancel();
@@ -90,7 +90,7 @@
             showDeniedModal() {
                 const modal = document.getElementById('gps-denied-modal');
                 if (modal) modal.classList.remove('hidden');
-                else alert('Izin lokasi belum diberikan. Silakan aktifkan izin lokasi di Pengaturan HP > Aplikasi > DriverTrack > Izin > Lokasi.');
+                else alert('Izin lokasi belum diberikan. Silakan aktifkan izin lokasi di Pengaturan HP > Aplikasi > GacorLens > Izin > Lokasi.');
             },
 
             async ensurePermission(featureName = 'Fitur Lokasi') {
