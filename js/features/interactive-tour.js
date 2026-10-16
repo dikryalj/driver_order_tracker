@@ -6,6 +6,7 @@
     const TOUR_STORAGE_KEY = 'drivertrack_first_tour_done';
     const DETAIL_TOUR_KEY = 'drivertrack_detail_tour_done';
     const ORDERS_TOUR_KEY = 'drivertrack_orders_tour_done';
+    const MAPS_RESTO_TOUR_KEY = 'drivertrack_maps_resto_tour_done';
 
     window.isTourActive = false;
     window.currentDriverInstance = null;
@@ -20,6 +21,45 @@
             window.currentDriverInstance = null;
         }
         window.isTourActive = false;
+    }
+
+    // Scroll otomatis agar elemen yang disorot selalu berada di tengah safe area
+    // (tidak tertutup bottom navigation bar atau header sticky)
+    function scrollElementIntoSafeView(element) {
+        if (!element) return;
+        try {
+            // Jangan scroll jika elemen berada di dalam fixed bottom nav
+            if (element.closest && element.closest('nav.fixed')) return;
+
+            const rect = element.getBoundingClientRect();
+            const topHeader = document.querySelector('header') ? document.querySelector('header').offsetHeight : 60;
+            const navBar = document.querySelector('nav.fixed.bottom-0');
+            const bottomNavHeight = navBar ? navBar.offsetHeight + 28 : 88;
+
+            const currentScrollY = window.pageYOffset || document.documentElement.scrollTop;
+            const elAbsoluteTop = rect.top + currentScrollY;
+            const elHeight = rect.height;
+
+            // Safe viewable height between top header and bottom nav
+            const safeViewHeight = window.innerHeight - topHeader - bottomNavHeight;
+
+            // Target scroll agar elemen berada di tengah-tengah area pandang aman
+            let targetScrollY = elAbsoluteTop - topHeader - Math.max(15, (safeViewHeight - elHeight) / 2);
+            targetScrollY = Math.max(0, Math.round(targetScrollY));
+
+            // Cek apakah elemen saat ini terhalang bottom nav atau header
+            const isCutOffBottom = (rect.bottom > window.innerHeight - bottomNavHeight);
+            const isCutOffTop = (rect.top < topHeader + 10);
+
+            if (isCutOffBottom || isCutOffTop) {
+                window.scrollTo({
+                    top: targetScrollY,
+                    behavior: 'smooth'
+                });
+            }
+        } catch(e) {
+            console.warn('[DriverTour] scrollElementIntoSafeView error:', e);
+        }
     }
 
     function updateTourStatusBadge() {
@@ -82,6 +122,14 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onHighlightStarted: (element, step) => {
+                        scrollElementIntoSafeView(element);
+                        setTimeout(() => {
+                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
+                                window.currentDriverInstance.refresh();
+                            }
+                        }, 240);
+                    },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
                     },
@@ -252,6 +300,14 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onHighlightStarted: (element, step) => {
+                        scrollElementIntoSafeView(element);
+                        setTimeout(() => {
+                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
+                                window.currentDriverInstance.refresh();
+                            }
+                        }, 240);
+                    },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
                     },
@@ -300,6 +356,14 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onHighlightStarted: (element, step) => {
+                        scrollElementIntoSafeView(element);
+                        setTimeout(() => {
+                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
+                                window.currentDriverInstance.refresh();
+                            }
+                        }, 240);
+                    },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
                     },
@@ -346,6 +410,143 @@
         }
     }
 
+    // ============================================================
+    // PANDUAN PETA RESTO DIINGAT (MAPS RESTO)
+    // ============================================================
+    function maybeStartMapsRestoTour() {
+        try {
+            if (window.isTourActive) return;
+            if (localStorage.getItem(MAPS_RESTO_TOUR_KEY) === 'true') return;
+            if (!isDriverJsReady()) return;
+            setTimeout(() => {
+                startMapsRestoTour();
+            }, 450);
+        } catch (e) {
+            console.warn('[DriverTour] maybeStartMapsRestoTour error:', e);
+        }
+    }
+
+    function startMapsRestoTour() {
+        try {
+            if (!isDriverJsReady()) {
+                if (typeof showToast === 'function') {
+                    showToast('Fitur panduan memerlukan akses internet/CDN Driver.js.', 'amber');
+                }
+                return;
+            }
+
+            cleanupActiveDriver();
+            window.isTourActive = true;
+
+            // Buka modal maps resto jika belum terbuka
+            const modal = document.getElementById('modal-maps-resto');
+            if (modal && modal.classList.contains('hidden')) {
+                if (typeof nxOpenMapsResto === 'function') {
+                    nxOpenMapsResto();
+                } else {
+                    modal.classList.remove('hidden');
+                }
+            }
+
+            setTimeout(() => {
+                const searchEl = document.querySelector('#maps-resto-search');
+                const centerBtn = document.querySelector('button[onclick="nxCenterCurrentLocation()"]');
+                const catTabs = document.querySelector('#modal-maps-resto .overflow-x-auto') || document.querySelector('#tab-resto-all');
+                const mapContainer = document.querySelector('#all-restos-map');
+
+                const steps = [];
+
+                if (searchEl) {
+                    steps.push({
+                        element: '#maps-resto-search',
+                        popover: {
+                            title: '🔍 Cari Resto / Toko',
+                            description: 'Ketik nama resto atau toko untuk menemukan titik koordinat yang pernah tercatat.',
+                            side: 'bottom',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (centerBtn) {
+                    steps.push({
+                        element: centerBtn,
+                        popover: {
+                            title: '📍 Pusatkan Posisi Saya',
+                            description: 'Ketuk tombol ini untuk memusatkan tampilan peta ke koordinat lokasimu saat ini.',
+                            side: 'bottom',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (catTabs) {
+                    steps.push({
+                        element: catTabs,
+                        popover: {
+                            title: '🍲 Kategori Food vs SPX',
+                            description: 'Pilah titik resto antara pesanan makanan (Food) dan toko paket (SPX).',
+                            side: 'bottom',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (mapContainer) {
+                    steps.push({
+                        element: mapContainer,
+                        popover: {
+                            title: '🗺️ Peta Resto Terkumpul',
+                            description: 'Titik resto tersimpan otomatis setiap kamu check-in di resto. Titik dikelompokkan (cluster) agar peta tidak lag saat zoom out.',
+                            side: 'top',
+                            align: 'center'
+                        }
+                    });
+                }
+
+                if (!steps.length) {
+                    window.isTourActive = false;
+                    return;
+                }
+
+                const driverObj = window.driver.js.driver({
+                    showProgress: true,
+                    animate: true,
+                    allowClose: true,
+                    overlayColor: 'rgba(0, 0, 0, 0.65)',
+                    stagePadding: 6,
+                    stageRadius: 16,
+                    nextBtnText: 'Lanjut →',
+                    prevBtnText: '← Kembali',
+                    doneBtnText: 'Selesai ✓',
+                    progressText: 'Langkah {{current}} dari {{total}}',
+                    onHighlightStarted: (element, step) => {
+                        scrollElementIntoSafeView(element);
+                        setTimeout(() => {
+                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
+                                window.currentDriverInstance.refresh();
+                            }
+                        }, 240);
+                    },
+                    onDestroyStarted: () => {
+                        cleanupActiveDriver();
+                    },
+                    onDestroyed: () => {
+                        cleanupActiveDriver();
+                        localStorage.setItem(MAPS_RESTO_TOUR_KEY, 'true');
+                    },
+                    steps: steps
+                });
+
+                window.currentDriverInstance = driverObj;
+                driverObj.drive();
+            }, 350);
+        } catch (e) {
+            window.isTourActive = false;
+            console.warn('[DriverTour] startMapsRestoTour error:', e);
+        }
+    }
+
     function maybeStartOrderDetailTour(order) {
         try {
             if (window.isTourActive) return;
@@ -380,6 +581,14 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Paham ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onHighlightStarted: (element, step) => {
+                        scrollElementIntoSafeView(element);
+                        setTimeout(() => {
+                            if (window.currentDriverInstance && typeof window.currentDriverInstance.refresh === 'function') {
+                                window.currentDriverInstance.refresh();
+                            }
+                        }, 240);
+                    },
                     onDestroyStarted: () => {
                         cleanupActiveDriver();
                     },
@@ -423,6 +632,7 @@
             cleanupActiveDriver();
             localStorage.removeItem(DETAIL_TOUR_KEY);
             localStorage.removeItem(ORDERS_TOUR_KEY);
+            localStorage.removeItem(MAPS_RESTO_TOUR_KEY);
             if (typeof showToast === 'function') {
                 showToast('Memulai ulang panduan aplikasi...', 'indigo');
             }
@@ -436,10 +646,13 @@
     window.TOUR_STORAGE_KEY = TOUR_STORAGE_KEY;
     window.DETAIL_TOUR_KEY = DETAIL_TOUR_KEY;
     window.ORDERS_TOUR_KEY = ORDERS_TOUR_KEY;
+    window.MAPS_RESTO_TOUR_KEY = MAPS_RESTO_TOUR_KEY;
     window.startAppTour = startAppTour;
     window.startOrdersTour = startOrdersTour;
     window.maybeStartOrdersTour = maybeStartOrdersTour;
     window.startUploadTour = startUploadTour;
+    window.startMapsRestoTour = startMapsRestoTour;
+    window.maybeStartMapsRestoTour = maybeStartMapsRestoTour;
     window.maybeStartFirstTimeTour = maybeStartFirstTimeTour;
     window.maybeStartOrderDetailTour = maybeStartOrderDetailTour;
     window.replayMainTour = replayMainTour;

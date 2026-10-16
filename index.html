@@ -1518,18 +1518,42 @@
                 <p class="text-[11px] text-slate-400 leading-relaxed">
                     Lupa cara pakai fitur tertentu? Putar ulang tur panduan interaktif di bawah ini kapan saja.
                 </p>
-                <div class="grid grid-cols-3 gap-2">
-                    <button type="button" onclick="replayMainTour()" class="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold transition shadow-xs active:scale-95 text-center">
-                        <i class="fa-solid fa-play text-xs"></i>
-                        <span>Tur Utama</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="replayMainTour()" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition shadow-xs active:scale-95 text-left">
+                        <span class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0 text-sm">
+                            <i class="fa-solid fa-play"></i>
+                        </span>
+                        <div>
+                            <span class="block text-xs font-extrabold leading-tight">Tur Utama</span>
+                            <span class="block text-[10px] text-indigo-100 font-medium">Dashboard &amp; Nav</span>
+                        </div>
                     </button>
-                    <button type="button" onclick="startOrdersTour()" class="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition active:scale-95 text-center">
-                        <i class="fa-solid fa-receipt text-xs text-indigo-600"></i>
-                        <span>Tur Orderan</span>
+                    <button type="button" onclick="startOrdersTour()" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition active:scale-95 text-left">
+                        <span class="w-8 h-8 rounded-xl bg-white text-indigo-600 flex items-center justify-center flex-shrink-0 text-sm shadow-xs">
+                            <i class="fa-solid fa-receipt"></i>
+                        </span>
+                        <div>
+                            <span class="block text-xs font-extrabold text-slate-900 leading-tight">Tur Orderan</span>
+                            <span class="block text-[10px] text-slate-400 font-medium">Filter &amp; Detail</span>
+                        </div>
                     </button>
-                    <button type="button" onclick="startUploadTour()" class="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold transition active:scale-95 text-center">
-                        <i class="fa-solid fa-wand-magic-sparkles text-xs text-indigo-600"></i>
-                        <span>Scan &amp; Input</span>
+                    <button type="button" onclick="startMapsRestoTour()" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition active:scale-95 text-left">
+                        <span class="w-8 h-8 rounded-xl bg-white text-amber-600 flex items-center justify-center flex-shrink-0 text-sm shadow-xs">
+                            <i class="fa-solid fa-map-location-dot"></i>
+                        </span>
+                        <div>
+                            <span class="block text-xs font-extrabold text-slate-900 leading-tight">Peta Resto</span>
+                            <span class="block text-[10px] text-slate-400 font-medium">Titik Diingat</span>
+                        </div>
+                    </button>
+                    <button type="button" onclick="startUploadTour()" class="flex items-center gap-2.5 p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition active:scale-95 text-left">
+                        <span class="w-8 h-8 rounded-xl bg-white text-indigo-600 flex items-center justify-center flex-shrink-0 text-sm shadow-xs">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </span>
+                        <div>
+                            <span class="block text-xs font-extrabold text-slate-900 leading-tight">Scan &amp; Input</span>
+                            <span class="block text-[10px] text-slate-400 font-medium">AI &amp; Kamera</span>
+                        </div>
                     </button>
                 </div>
             </div>
@@ -2146,9 +2170,14 @@
                         <p id="maps-resto-count-label" class="text-[10px] text-slate-500 font-semibold">Memuat lokasi resto...</p>
                     </div>
                 </div>
-                <button type="button" onclick="nxCloseMapsResto()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
+                <div class="flex items-center gap-1.5">
+                    <button type="button" onclick="startMapsRestoTour()" class="w-8 h-8 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-600 flex items-center justify-center text-xs transition active:scale-95" title="Panduan Peta Resto">
+                        <i class="fa-solid fa-circle-question"></i>
+                    </button>
+                    <button type="button" onclick="nxCloseMapsResto()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
             </div>
 
             <!-- Search & Actions -->

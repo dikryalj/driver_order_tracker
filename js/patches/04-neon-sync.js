@@ -152,6 +152,9 @@
     setTimeout(function() {
       initAllRestosMap();
       applyRestoFilters();
+      if (typeof maybeStartMapsRestoTour === 'function') {
+        maybeStartMapsRestoTour();
+      }
     }, 150);
   };
 
