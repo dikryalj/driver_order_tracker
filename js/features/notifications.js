@@ -8,7 +8,12 @@
       var lsGet=function(k,def){try{var v=localStorage.getItem(k);return v==null?def:JSON.parse(v);}catch(e){return def;}};
       var lsSet=function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}};
       var prefs=function(){var p=lsGet(PK,{}); return {order:p.order!==false,summaryTime:p.summaryTime||'21:00',sys:!!p.sys};};
-      var TYPES={order:['fa-receipt','bg-emerald-50 text-emerald-600'],storage:['fa-hard-drive','bg-rose-50 text-rose-600'],summary:['fa-sack-dollar','bg-indigo-50 text-indigo-600']};
+      var TYPES={
+        order:['fa-receipt','bg-emerald-50 text-emerald-600'],
+        storage:['fa-hard-drive','bg-rose-50 text-rose-600'],
+        summary:['fa-sack-dollar','bg-indigo-50 text-indigo-600'],
+        license:['fa-shield-halved','bg-indigo-50 text-indigo-600']
+      };
       var known=null, lastStorageCheck=0, lastFailPopup=0;
 
       /* ---------- riwayat ---------- */
@@ -27,26 +32,44 @@
       function showPopup(n){
         var box=$('notif-popups'); if(!box) return;
         var t=TYPES[n.type]||TYPES.order, el=document.createElement('div');
-        el.className='nt-pop pointer-events-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-3 flex items-start gap-3 cursor-pointer';
+        el.className='nt-pop pointer-events-auto bg-white rounded-2xl shadow-xl border border-slate-100 p-3.5 flex items-start gap-3 cursor-pointer';
+
+        var linksHtml = '';
+        if(n.type === 'license'){
+          linksHtml = '<div class="mt-2.5 flex items-center gap-2 pt-0.5" onclick="event.stopPropagation()">' +
+            '<a href="https://github.com/dikryalj" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold shadow-xs transition active:scale-95"><i class="fa-brands fa-github text-xs"></i> GitHub</a>' +
+            '<a href="https://www.instagram.com/dzkkry_?cplk=eHB1eDNrMGZndnB4" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white text-[11px] font-bold shadow-xs hover:opacity-95 transition active:scale-95"><i class="fa-brands fa-instagram text-xs"></i> Instagram</a>' +
+            '</div>';
+        }
+
         el.innerHTML='<span class="w-9 h-9 rounded-full '+t[1]+' flex items-center justify-center flex-shrink-0"><i class="fa-solid '+t[0]+' text-sm"></i></span>'+
-          '<div class="flex-1 min-w-0"><p class="text-xs font-extrabold text-slate-900">'+esc(n.title)+'</p><p class="text-[11px] text-slate-500 mt-0.5 leading-snug">'+esc(n.body)+'</p></div>'+
-          '<button type="button" class="text-slate-400 text-xs p-1" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>';
+          '<div class="flex-1 min-w-0"><p class="text-xs font-extrabold text-slate-900">'+esc(n.title)+'</p><p class="text-[11px] text-slate-500 mt-0.5 leading-snug">'+esc(n.body)+'</p>' + linksHtml + '</div>'+
+          '<button type="button" class="text-slate-400 hover:text-slate-600 text-xs p-1" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>';
         var kill=function(){el.classList.add('nt-out'); setTimeout(function(){el.remove();},300);};
-        el.onclick=function(e){ if(e.target.closest('button')){kill();return;} kill(); openPanel(); };
-        box.appendChild(el); setTimeout(kill,6500);
+        el.onclick=function(e){ if(e.target.closest('button') || e.target.closest('a')){ if(e.target.closest('button')) kill(); return;} kill(); if(n.type==='license'){ openLicenseModal(); } else { openPanel(); } };
+        box.appendChild(el); setTimeout(kill, n.type==='license' ? 9500 : 6500);
         while(box.children.length>3) box.firstChild.remove();
       }
       function renderList(){
         var a=refreshOrderNotifs(), el=$('notif-list'); if(!el) return;
         if(!a.length){el.innerHTML='<div class="text-center py-10 text-xs text-slate-400"><i class="fa-regular fa-bell-slash text-2xl block mb-2"></i>Belum ada notifikasi</div>';return;}
         el.innerHTML=a.map(function(n){var t=TYPES[n.type]||TYPES.order;
-          return '<button type="button" data-nid="'+n.id+'" class="w-full text-left flex items-start gap-3 p-3 rounded-2xl '+(n.read?'bg-slate-50':'bg-indigo-50')+' active:scale-[.98] transition">'+
+          var linksHtml = '';
+          if(n.type === 'license'){
+            linksHtml = '<div class="mt-2.5 flex items-center gap-2 pt-0.5" onclick="event.stopPropagation()">' +
+              '<a href="https://github.com/dikryalj" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold shadow-xs transition active:scale-95"><i class="fa-brands fa-github text-xs"></i> GitHub</a>' +
+              '<a href="https://www.instagram.com/dzkkry_?cplk=eHB1eDNrMGZndnB4" target="_blank" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white text-[10px] font-bold shadow-xs hover:opacity-95 transition active:scale-95"><i class="fa-brands fa-instagram text-xs"></i> Instagram</a>' +
+              '</div>';
+          }
+          return '<button type="button" data-nid="'+n.id+'" class="w-full text-left flex items-start gap-3 p-3 rounded-2xl '+(n.read?'bg-slate-50':'bg-indigo-50/80')+' active:scale-[.98] transition">'+
           '<span class="w-9 h-9 rounded-full bg-white flex items-center justify-center flex-shrink-0 '+t[1].split(' ')[1]+'"><i class="fa-solid '+t[0]+' text-sm"></i></span>'+
-          '<span class="flex-1 min-w-0"><span class="block text-xs font-extrabold text-slate-900">'+esc(n.title)+'</span><span class="block text-[11px] text-slate-500 mt-0.5 leading-snug">'+esc(n.body)+'</span><span class="block text-[10px] text-slate-400 mt-1">'+timeAgo(n.ts)+'</span></span></button>';}).join('');
-        el.querySelectorAll('[data-nid]').forEach(function(b){b.onclick=function(){
+          '<span class="flex-1 min-w-0"><span class="block text-xs font-extrabold text-slate-900">'+esc(n.title)+'</span><span class="block text-[11px] text-slate-500 mt-0.5 leading-snug">'+esc(n.body)+'</span>' + linksHtml + '<span class="block text-[10px] text-slate-400 mt-1">'+timeAgo(n.ts)+'</span></span></button>';}).join('');
+        el.querySelectorAll('[data-nid]').forEach(function(b){b.onclick=function(e){
+          if(e.target.closest('a')) return;
           var n=list().filter(function(x){return x.id===b.getAttribute('data-nid');})[0]; if(!n) return; closePanel();
           if(n.type==='summary'&&n.date) openSummary(new Date(n.date+'T12:00:00'),{title:n.title});
           else if(n.type==='storage'){ if(typeof switchTab==='function') switchTab('profile'); }
+          else if(n.type==='license'){ openLicenseModal(); }
           else if(typeof switchTab==='function') switchTab('orders');
         };});
       }
@@ -64,6 +87,76 @@
       function openPanel(){renderList(); $('notif-panel').classList.remove('hidden'); var a=list(); a.forEach(function(n){n.read=true;}); lsSet(NK,a); updateDot();}
       function closePanel(){$('notif-panel').classList.add('hidden');}
       function modal(html){$('notif-modal-body').innerHTML=html; $('notif-modal').classList.remove('hidden');}
+
+      function openLicenseModal(){
+        modal('<div class="p-6 space-y-4">' +
+          '<div class="flex items-center gap-3.5 pb-3 border-b border-slate-100">' +
+            '<div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl shadow-inner flex-shrink-0">' +
+              '<i class="fa-solid fa-shield-halved"></i>' +
+            '</div>' +
+            '<div>' +
+              '<span class="text-[9.5px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 tracking-wider">Closed Source License</span>' +
+              '<h3 class="font-black text-slate-900 text-base leading-tight mt-0.5">DriverTrack</h3>' +
+              '<p class="text-[11px] font-bold text-slate-500">by dikryal</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="space-y-2 text-xs text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-100">' +
+            '<p class="font-bold text-slate-800 flex items-center gap-1.5"><i class="fa-solid fa-lock text-indigo-500 text-[11px]"></i> Lisensi Hak Cipta &amp; Kepemilikan:</p>' +
+            '<p class="text-[11px] text-slate-500 leading-relaxed">Aplikasi ini berlisensi <b>Closed Source</b>. Seluruh kode program, arsitektur, desain antarmuka, dan hak cipta merupakan milik eksklusif <b>dikryal</b>. Dilarang menggandakan, mendistribusikan ulang, atau memodifikasi tanpa izin resmi dari pemilik hak cipta.</p>' +
+          '</div>' +
+          '<div class="space-y-2 pt-1">' +
+            '<p class="text-[11px] font-extrabold text-slate-700">Tautan Resmi Pengembang:</p>' +
+            '<a href="https://github.com/dikryalj" target="_blank" class="flex items-center justify-between p-3 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm active:scale-98">' +
+              '<div class="flex items-center gap-3">' +
+                '<i class="fa-brands fa-github text-xl text-white"></i>' +
+                '<div>' +
+                  '<p class="text-xs font-bold leading-tight">GitHub @dikryalj</p>' +
+                  '<p class="text-[10px] text-slate-400">github.com/dikryalj</p>' +
+                '</div>' +
+              '</div>' +
+              '<i class="fa-solid fa-arrow-up-right-from-square text-xs text-slate-400 mr-1"></i>' +
+            '</a>' +
+            '<a href="https://www.instagram.com/dzkkry_?cplk=eHB1eDNrMGZndnB4" target="_blank" class="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white hover:opacity-95 transition shadow-sm active:scale-98">' +
+              '<div class="flex items-center gap-3">' +
+                '<i class="fa-brands fa-instagram text-xl text-white"></i>' +
+                '<div>' +
+                  '<p class="text-xs font-bold leading-tight">Instagram @dzkkry_</p>' +
+                  '<p class="text-[10px] text-rose-100">instagram.com/dzkkry_</p>' +
+                '</div>' +
+              '</div>' +
+              '<i class="fa-solid fa-arrow-up-right-from-square text-xs text-rose-200 mr-1"></i>' +
+            '</a>' +
+          '</div>' +
+          '<button type="button" onclick="closeNotifModal()" class="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition active:scale-95 mt-2">Tutup</button>' +
+        '</div>');
+      }
+      window.openLicenseModal = openLicenseModal;
+
+      var LK_WELCOME = 'drivertrack_welcome_license_v1';
+      function checkFirstTimeLicenseNotif(){
+        var notified = localStorage.getItem(LK_WELCOME);
+        if(!notified){
+          localStorage.setItem(LK_WELCOME, 'true');
+          var licNotif = {
+            id: 'lic-' + Date.now(),
+            type: 'license',
+            title: 'Licensed Closed Source by dikryal',
+            body: 'Aplikasi DriverTrack berlisensi Closed Source oleh dikryal. Terhubung via GitHub & Instagram resmi pengembang.',
+            ts: Date.now(),
+            read: false
+          };
+          var a = list();
+          a.unshift(licNotif);
+          lsSet(NK, a.slice(0, 50));
+          updateDot();
+
+          // Munculkan popup notifikasi pertama kali buka setelah splash screen selesai
+          setTimeout(function(){
+            showPopup(licNotif);
+          }, 2400);
+        }
+      }
+
       window.pushNotifExt=pushNotif; window.openNotifPanel=openPanel; window.closeNotifPanel=closePanel;
       window.closeNotifModal=function(){$('notif-modal').classList.add('hidden');};
       window.clearNotifs=function(){lsSet(NK,[]); updateDot(); renderList();};
@@ -208,7 +301,18 @@
         if(!window.Notification){ if(typeof showToast==='function') showToast('Browser ini tidak mendukung notifikasi sistem.','amber'); return; }
         Notification.requestPermission().then(function(r){var p=prefs(); p.sys=(r==='granted'); lsSet(PK,p); syncPrefs(); if(typeof showToast==='function') showToast(r==='granted'?'Notifikasi browser aktif':'Izin notifikasi ditolak',r==='granted'?'emerald':'amber');});
       };
-      document.addEventListener('DOMContentLoaded',function(){syncPrefs(); updateDot();});
+      function onReady(){
+        syncPrefs();
+        updateDot();
+        checkFirstTimeLicenseNotif();
+      }
+      if(document.readyState==='loading'){
+        document.addEventListener('DOMContentLoaded', onReady);
+      } else {
+        onReady();
+      }
       window.syncNotifPrefs=syncPrefs;
+      window.checkFirstTimeLicenseNotif=checkFirstTimeLicenseNotif;
     })();
+
     
