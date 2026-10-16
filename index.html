@@ -200,6 +200,22 @@
         html[data-ui-theme="neon"] .driver-popover-next-btn:hover {
             background-color: #00d5e3 !important;
         }
+
+        /* Arrow theme adaptations */
+        html[data-ui-theme="focus"] .driver-popover-arrow-side-top { border-top-color: #1e293b !important; }
+        html[data-ui-theme="focus"] .driver-popover-arrow-side-bottom { border-bottom-color: #1e293b !important; }
+        html[data-ui-theme="focus"] .driver-popover-arrow-side-left { border-left-color: #1e293b !important; }
+        html[data-ui-theme="focus"] .driver-popover-arrow-side-right { border-right-color: #1e293b !important; }
+
+        html[data-ui-theme="lime"] .driver-popover-arrow-side-top { border-top-color: #1e211d !important; }
+        html[data-ui-theme="lime"] .driver-popover-arrow-side-bottom { border-bottom-color: #1e211d !important; }
+        html[data-ui-theme="lime"] .driver-popover-arrow-side-left { border-left-color: #1e211d !important; }
+        html[data-ui-theme="lime"] .driver-popover-arrow-side-right { border-right-color: #1e211d !important; }
+
+        html[data-ui-theme="neon"] .driver-popover-arrow-side-top { border-top-color: #13141f !important; }
+        html[data-ui-theme="neon"] .driver-popover-arrow-side-bottom { border-bottom-color: #13141f !important; }
+        html[data-ui-theme="neon"] .driver-popover-arrow-side-left { border-left-color: #13141f !important; }
+        html[data-ui-theme="neon"] .driver-popover-arrow-side-right { border-right-color: #13141f !important; }
     </style>
     <!-- Ai lokal -->
     <!-- ============================================================
@@ -701,7 +717,7 @@
                      bisa kelihatan kosong tanpa penjelasan. Sekarang kontrolnya
                      juga tersedia langsung di tab Orders (state activeFilterDays
                      dipakai bersama Dashboard lewat filterDays()). -->
-                <div class="flex bg-slate-100 p-1 rounded-2xl overflow-x-auto">
+                <div id="orders-date-filters" class="flex bg-slate-100 p-1 rounded-2xl overflow-x-auto">
                     <button onclick="setOrdersRange('today')" id="filter-orders-today" class="flex-1 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow-md transition">Hari Ini</button>
                     <button onclick="setOrdersRange(7)" id="filter-orders-7d" class="flex-1 py-2 text-xs font-medium rounded-xl text-slate-500 hover:text-slate-900 transition">7 Hari</button>
                     <button onclick="setOrdersRange(14)" id="filter-orders-14d" class="flex-1 py-2 text-xs font-medium rounded-xl text-slate-500 hover:text-slate-900 transition">14 Hari</button>
@@ -710,7 +726,7 @@
                 </div>
                 <p id="orders-range-hint" class="text-[10px] text-slate-400 px-1 leading-snug"></p>
 
-                <div class="flex items-center justify-between gap-2 pt-1 flex-wrap">
+                <div id="orders-select-filters" class="flex items-center justify-between gap-2 pt-1 flex-wrap">
                     <select id="filter-category-select" onchange="filterCategory(this.value)" class="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-indigo-500 flex-1 min-w-[140px]">
                         <option value="ALL">Semua Kategori</option>
                         <option value="Food">🍲 Food</option>

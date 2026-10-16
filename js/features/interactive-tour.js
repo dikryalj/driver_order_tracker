@@ -7,8 +7,19 @@
     const DETAIL_TOUR_KEY = 'drivertrack_detail_tour_done';
     const ORDERS_TOUR_KEY = 'drivertrack_orders_tour_done';
 
+    window.isTourActive = false;
+    window.currentDriverInstance = null;
+
     function isDriverJsReady() {
         return !!(window.driver && window.driver.js && typeof window.driver.js.driver === 'function');
+    }
+
+    function cleanupActiveDriver() {
+        if (window.currentDriverInstance) {
+            try { window.currentDriverInstance.destroy(); } catch(e){}
+            window.currentDriverInstance = null;
+        }
+        window.isTourActive = false;
     }
 
     function updateTourStatusBadge() {
@@ -26,6 +37,7 @@
 
     function maybeStartFirstTimeTour() {
         try {
+            if (window.isTourActive) return;
             if (localStorage.getItem(TOUR_STORAGE_KEY) === 'true') return;
             // Jika modal onboarding sedang terbuka/aktif di layar, tunda agar tidak bertabrakan
             const onboardingScreen = document.getElementById('onboarding-screen');
@@ -49,8 +61,11 @@
                 return;
             }
 
-            // Pindahkan tab ke dashboard & scroll ke atas
-            if (typeof switchTab === 'function') {
+            cleanupActiveDriver();
+            window.isTourActive = true;
+
+            // Pindahkan tab ke dashboard & scroll ke atas jika belum di dashboard
+            if (typeof activeTab !== 'undefined' && activeTab !== 'dashboard' && typeof switchTab === 'function') {
                 switchTab('dashboard');
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -67,7 +82,11 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onDestroyStarted: () => {
+                        cleanupActiveDriver();
+                    },
                     onDestroyed: () => {
+                        cleanupActiveDriver();
                         localStorage.setItem(TOUR_STORAGE_KEY, 'true');
                         updateTourStatusBadge();
                     },
@@ -120,21 +139,26 @@
                     ]
                 });
 
+                window.currentDriverInstance = driverObj;
                 driverObj.drive();
             }, 250);
         } catch (e) {
+            window.isTourActive = false;
             console.warn('[DriverTour] startAppTour error:', e);
         }
     }
 
     function maybeStartOrdersTour() {
         try {
+            if (window.isTourActive) return;
             if (localStorage.getItem(ORDERS_TOUR_KEY) === 'true') return;
             if (!isDriverJsReady()) return;
+            window.isTourActive = true;
             setTimeout(() => {
                 startOrdersTour();
-            }, 350);
+            }, 400);
         } catch (e) {
+            window.isTourActive = false;
             console.warn('[DriverTour] maybeStartOrdersTour error:', e);
         }
     }
@@ -148,16 +172,19 @@
                 return;
             }
 
-            if (typeof switchTab === 'function') {
+            cleanupActiveDriver();
+            window.isTourActive = true;
+
+            if (typeof activeTab !== 'undefined' && activeTab !== 'orders' && typeof switchTab === 'function') {
                 switchTab('orders');
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             setTimeout(() => {
                 const searchEl = document.querySelector('#search-input');
-                const rangeFilterEl = document.querySelector('#filter-orders-today') ? document.querySelector('#filter-orders-today').closest('.flex') : null;
-                const catFilterEl = document.querySelector('#filter-category-select');
-                const firstCardEl = document.querySelector('#orders-container > div') || document.querySelector('#empty-orders-state') || document.querySelector('#orders-container');
+                const rangeFilterEl = document.querySelector('#orders-date-filters') || document.querySelector('#filter-orders-today')?.closest('.flex');
+                const catFilterEl = document.querySelector('#orders-select-filters') || document.querySelector('#filter-category-select')?.closest('.flex');
+                const firstCardEl = document.querySelector('#orders-container .nxc, #orders-container .card-shadow') || document.querySelector('#empty-orders-state');
 
                 const steps = [];
 
@@ -187,7 +214,7 @@
 
                 if (catFilterEl) {
                     steps.push({
-                        element: catFilterEl.closest('.flex') || '#filter-category-select',
+                        element: catFilterEl,
                         popover: {
                             title: '🏷️ Filter Kategori & Pembayaran',
                             description: 'Saring daftar berdasarkan jenis orderan (Food, SPX, Instan, Gabungan), platform, serta tipe pembayaran tunai/non-tunai.',
@@ -209,7 +236,10 @@
                     });
                 }
 
-                if (!steps.length) return;
+                if (!steps.length) {
+                    window.isTourActive = false;
+                    return;
+                }
 
                 const driverObj = window.driver.js.driver({
                     showProgress: true,
@@ -222,15 +252,21 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onDestroyStarted: () => {
+                        cleanupActiveDriver();
+                    },
                     onDestroyed: () => {
+                        cleanupActiveDriver();
                         localStorage.setItem(ORDERS_TOUR_KEY, 'true');
                     },
                     steps: steps
                 });
 
+                window.currentDriverInstance = driverObj;
                 driverObj.drive();
-            }, 250);
+            }, 300);
         } catch (e) {
+            window.isTourActive = false;
             console.warn('[DriverTour] startOrdersTour error:', e);
         }
     }
@@ -244,7 +280,10 @@
                 return;
             }
 
-            if (typeof switchTab === 'function') {
+            cleanupActiveDriver();
+            window.isTourActive = true;
+
+            if (typeof activeTab !== 'undefined' && activeTab !== 'upload' && typeof switchTab === 'function') {
                 switchTab('upload');
             }
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -261,6 +300,12 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Selesai ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onDestroyStarted: () => {
+                        cleanupActiveDriver();
+                    },
+                    onDestroyed: () => {
+                        cleanupActiveDriver();
+                    },
                     steps: [
                         {
                             element: '#dropzone',
@@ -292,17 +337,22 @@
                     ]
                 });
 
+                window.currentDriverInstance = driverObj;
                 driverObj.drive();
             }, 250);
         } catch (e) {
+            window.isTourActive = false;
             console.warn('[DriverTour] startUploadTour error:', e);
         }
     }
 
     function maybeStartOrderDetailTour(order) {
         try {
+            if (window.isTourActive) return;
             if (localStorage.getItem(DETAIL_TOUR_KEY) === 'true') return;
             if (!isDriverJsReady()) return;
+
+            window.isTourActive = true;
 
             setTimeout(() => {
                 const targetStep1 = (order && order.isCombined)
@@ -311,7 +361,13 @@
 
                 const el1 = document.querySelector(targetStep1);
                 const el2 = document.querySelector('#detail-map-container');
-                if (!el1 || !el2) return;
+                if (!el1 || !el2) {
+                    window.isTourActive = false;
+                    return;
+                }
+
+                cleanupActiveDriver();
+                window.isTourActive = true;
 
                 const driverObj = window.driver.js.driver({
                     showProgress: true,
@@ -324,7 +380,11 @@
                     prevBtnText: '← Kembali',
                     doneBtnText: 'Paham ✓',
                     progressText: 'Langkah {{current}} dari {{total}}',
+                    onDestroyStarted: () => {
+                        cleanupActiveDriver();
+                    },
                     onDestroyed: () => {
+                        cleanupActiveDriver();
                         localStorage.setItem(DETAIL_TOUR_KEY, 'true');
                     },
                     steps: [
@@ -349,15 +409,18 @@
                     ]
                 });
 
+                window.currentDriverInstance = driverObj;
                 driverObj.drive();
             }, 400);
         } catch (e) {
+            window.isTourActive = false;
             console.warn('[DriverTour] maybeStartOrderDetailTour error:', e);
         }
     }
 
     function replayMainTour() {
         try {
+            cleanupActiveDriver();
             localStorage.removeItem(DETAIL_TOUR_KEY);
             localStorage.removeItem(ORDERS_TOUR_KEY);
             if (typeof showToast === 'function') {

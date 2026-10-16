@@ -760,7 +760,9 @@
             });
 
             if (tab === 'orders') {
-                if (window.maybeStartOrdersTour) window.maybeStartOrdersTour();
+                if (!window.isTourActive && window.maybeStartOrdersTour) {
+                    window.maybeStartOrdersTour();
+                }
             }
             if (tab === 'insights') {
                 renderInsightsView();
